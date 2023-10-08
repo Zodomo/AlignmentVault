@@ -277,9 +277,9 @@ contract AlignmentVault is Ownable, Initializable {
     * 
     * @param _token The address of the ERC20 token to rescue. Use address(0) for ETH.
     * @param _to The recipient address to send the rescued tokens to.
-    * @return Returns the amount of tokens sent to the recipient. Returns 0 for aligned assets.
+    * @return amount Returns the amount of tokens sent to the recipient. Returns 0 for aligned assets.
     */
-    function rescueERC20(address _token, address _to) external payable virtual onlyOwner returns (uint256) {
+    function rescueERC20(address _token, address _to) external payable virtual onlyOwner returns (uint256 amount) {
         // If address(0), rescue ETH from liq helper to vault
         if (_token == address(0)) {
             _liqHelper.emergencyWithdrawEther();
@@ -333,9 +333,9 @@ contract AlignmentVault is Ownable, Initializable {
     * and reverts if any other NFTs are sent.
     *
     * @param _tokenId The ID of the received NFT.
-    * @return Returns a bytes4 magic value if the NFT transfer is accepted.
+    * @return magicBytes Returns a bytes4 magic value if the NFT transfer is accepted.
     */
-    function onERC721Received(address, address, uint256 _tokenId, bytes calldata) external virtual returns (bytes4) {
+    function onERC721Received(address, address, uint256 _tokenId, bytes calldata) external virtual returns (bytes4 magicBytes) {
         if (msg.sender == address(erc721)) nftsHeld.push(_tokenId);
         else revert UnwantedNFT();
         return AlignmentVault.onERC721Received.selector;

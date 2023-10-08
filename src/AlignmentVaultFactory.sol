@@ -27,14 +27,22 @@ contract AlignmentVaultFactory is Ownable {
         implementation = _implementation;
     }
 
-    // Update implementation address for new clones
-    // NOTE: Does not update implementation of prior clones
+    /**
+     * @notice Updates the implementation address used for new clones.
+     * @dev Does not affect previously deployed clones.
+     * @param _implementation The new implementation address for clones.
+     */
     function updateImplementation(address _implementation) external virtual onlyOwner {
         if (_implementation == implementation) revert();
         implementation = _implementation;
     }
 
-    // Deploy AlignmentVault and fully initialize it
+    /**
+     * @notice Deploys a new AlignmentVault and fully initializes it.
+     * @param _erc721 Address of the ERC721 token associated with the vault.
+     * @param _vaultId NFTX Vault ID associated with _erc721
+     * @return deployment Address of the newly deployed AlignmentVault.
+     */
     function deploy(address _erc721, uint256 _vaultId) external virtual returns (address deployment) {
         deployment = LibClone.clone(implementation);
         vaultDeployers[deployment] = msg.sender;
@@ -44,7 +52,13 @@ contract AlignmentVaultFactory is Ownable {
         IInitialize(deployment).disableInitializers();
     }
 
-    // Deploy AlignmentVault to deterministic address
+    /**
+     * @notice Deploys a new AlignmentVault to a deterministic address based on the provided salt.
+     * @param _erc721 Address of the ERC721 token associated with the vault.
+     * @param _vaultId NFTX Vault ID associated with _erc721
+     * @param _salt A unique salt to determine the address.
+     * @return deployment Address of the newly deployed AlignmentVault.
+     */
     function deployDeterministic(address _erc721, uint256 _vaultId, bytes32 _salt)
         external
         virtual
@@ -58,14 +72,21 @@ contract AlignmentVaultFactory is Ownable {
         IInitialize(deployment).disableInitializers();
     }
 
-    /// @dev Returns the initialization code hash of the clone of `implementation`.
-    /// Used for mining vanity addresses with create2crunch.
-    function initCodeHash() external view returns (bytes32) {
+    /**
+     * @notice Returns the initialization code hash of the clone of the implementation.
+     * @dev This is used primarily for tools like create2crunch to find vanity addresses.
+     * @return codeHash The initialization code hash of the clone.
+     */
+    function initCodeHash() external view returns (bytes32 codeHash) {
         return LibClone.initCodeHash(implementation);
     }
 
-    /// @dev Returns the address of the deterministic clone with `salt`
-    function predictDeterministicAddress(bytes32 _salt) external view returns (address) {
+    /**
+     * @notice Predicts the address of the deterministic clone with the given salt.
+     * @param _salt The unique salt used to determine the address.
+     * @return addr Address of the deterministic clone.
+     */
+    function predictDeterministicAddress(bytes32 _salt) external view returns (address addr) {
         return LibClone.predictDeterministicAddress(implementation, _salt, address(this));
     }
 }
