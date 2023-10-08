@@ -57,6 +57,12 @@ An ERC-1167 factory is deployed to mainnet at `0xD7810e145F1A30C7d0B8C332326050A
 - **NoNFTXVault:** No vault found in NFTX.
 - **UnwantedNFT:** Deposited NFT is not the aligned NFT.
 
+## Usage
+
+1. Call `deploy()` or `deployDeterministic()` on `0xD7810e145F1A30C7d0B8C332326050Af5E067d43` (ETH mainnet) to deploy your own vault.
+    - Provide the address of the NFT you want to align with and the corresponding NFTX vault ID. The salt value in `deployDeterministic()` is used for predicting your deployment address. Only use this if you're familiar with deployment methods like `create2`.
+    - If you are unsure of the vault ID you should use, it is recommended that you visit https://nftx.io/vault/{address}/info/ (replace {address} with the NFT address you'd like to use) and view the Vault ID there. While the contract will use the initial vault automatically if you specify `0`, this is not recommended.
+
 ## Important Points
 
 - The contract allows for the permanent locking of liquidity into a target NFT collection. While the principal is locked, the rewards (or yield) can be claimed indefinitely.
