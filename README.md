@@ -6,6 +6,8 @@ This contract was intentionally designed to harness the economic velocity of col
 
 An ERC-1167 factory is deployed to mainnet at `0xD7810e145F1A30C7d0B8C332326050Af5E067d43`. Usage of this is recommended as it will save gas, and vaults deployed with it will automatically be verified by Etherscan.
 
+There is also an incredible post from @bonkleman_ on X describing what this is, how it works, and why people should consider integrating it in derivative NFT collections. This post can be found at https://twitter.com/bonkleman_/status/1714370560543904021.
+
 ## Contract Details
 
 **SPDX-License-Identifier:** AGPL-3.0  
