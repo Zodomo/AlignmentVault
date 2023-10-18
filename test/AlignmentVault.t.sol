@@ -92,11 +92,132 @@ contract AlignmentVaultTest is DSTestPlus, ERC721Holder {
         require(vaultBelowWeth.call_estimateFloor() > 0);
     }
 
-    function testalignMaxLiquidityNoLiquidity() public {
+    function testAlignNftsNone() public {
+        uint256[] memory tokenIds = new uint256[](0);
+        hevm.expectRevert(bytes(""));
+        alignmentVault.alignNfts(tokenIds);
+    }
+
+    function testAlignNfts() public {
+        hevm.startPrank(nft.ownerOf(42));
+        nft.approve(address(this), 42);
+        nft.safeTransferFrom(nft.ownerOf(42), address(alignmentVault), 42);
+        hevm.stopPrank();
+        hevm.startPrank(nft.ownerOf(69));
+        nft.approve(address(this), 69);
+        nft.safeTransferFrom(nft.ownerOf(69), address(alignmentVault), 69);
+        hevm.stopPrank();
+        hevm.startPrank(nft.ownerOf(777));
+        nft.approve(address(this), 777);
+        nft.safeTransferFrom(nft.ownerOf(777), address(alignmentVault), 777);
+        hevm.stopPrank();
+        require(alignmentVault.nftsHeld(0) == 42, "tokenId error");
+        require(alignmentVault.nftsHeld(1) == 69, "tokenId error");
+        require(alignmentVault.nftsHeld(2) == 777, "tokenId error");
+
+        uint256[] memory tokenIds = new uint256[](3);
+        tokenIds[0] = 42;
+        tokenIds[1] = 69;
+        tokenIds[2] = 777;
+        hevm.deal(address(alignmentVault), 0.1 ether);
+        hevm.expectRevert(AlignmentVault.InsufficientFunds.selector);
+        alignmentVault.alignNfts(tokenIds);
+        hevm.expectRevert(AlignmentVault.InsufficientFunds.selector);
+        alignmentVault.alignNfts{ value: 0.25 ether }(tokenIds);
+        alignmentVault.alignNfts{ value: 50 ether }(tokenIds);
+        require(nft.ownerOf(42) != address(alignmentVault), "alignment error");
+        require(nft.ownerOf(69) != address(alignmentVault), "alignment error");
+        require(nft.ownerOf(777) != address(alignmentVault), "alignment error");
+        uint256[] memory inventory = alignmentVault.getInventory();
+        require(inventory.length == 0, "inventory purge error");
+    }
+
+    function testAlignNftsUnsafelyTransferred() public {
+        hevm.startPrank(nft.ownerOf(42));
+        nft.approve(address(this), 42);
+        nft.transferFrom(nft.ownerOf(42), address(alignmentVault), 42);
+        hevm.stopPrank();
+        hevm.startPrank(nft.ownerOf(69));
+        nft.approve(address(this), 69);
+        nft.transferFrom(nft.ownerOf(69), address(alignmentVault), 69);
+        hevm.stopPrank();
+        hevm.startPrank(nft.ownerOf(777));
+        nft.approve(address(this), 777);
+        nft.transferFrom(nft.ownerOf(777), address(alignmentVault), 777);
+        hevm.stopPrank();
+        uint256[] memory inventory = alignmentVault.getInventory();
+        require(inventory.length == 0, "inventory length error");
+
+        uint256[] memory tokenIds = new uint256[](3);
+        tokenIds[0] = 42;
+        tokenIds[1] = 69;
+        tokenIds[2] = 777;
+        alignmentVault.alignNfts{ value: 50 ether }(tokenIds);
+        require(nft.ownerOf(42) != address(alignmentVault), "alignment error");
+        require(nft.ownerOf(69) != address(alignmentVault), "alignment error");
+        require(nft.ownerOf(777) != address(alignmentVault), "alignment error");
+    }
+
+    function testAlignTokensNone() public {
+        alignmentVault.alignTokens(0);
+    }
+
+    function testAlignTokensInsufficientFunds() public {
+        hevm.expectRevert(AlignmentVault.InsufficientFunds.selector);
+        alignmentVault.alignTokens(1 ether);
+    }
+
+    function testAlignTokensPrepaid() public {
+        (bool success, ) = payable(address(alignmentVault)).call{ value: 5 ether }("");
+        require(success, "transfer failure");
+        alignmentVault.alignTokens(5 ether);
+        require(address(alignmentVault).balance == 0, "ETH balance error");
+        require(wethToken.balanceOf(address(alignmentVault)) == 0, "WETH balance error");
+    }
+    
+    function testAlignTokensPayable() public {
+        alignmentVault.alignTokens{ value: 5 ether }(5 ether);
+        require(address(alignmentVault).balance == 0, "ETH balance error");
+        require(wethToken.balanceOf(address(alignmentVault)) == 0, "WETH balance error");
+    }
+
+    function testAlignTokensFractionalizedNftTokens() public {
+        wethToken.approve(address(sushiRouter), 10 ether);
+        address[] memory path = new address[](2);
+        path[0] = address(weth);
+        path[1] = address(nftxInv);
+        sushiRouter.swapTokensForExactTokens(1 ether, 10 ether, path, address(alignmentVault), block.timestamp);
+        uint256 nftxBal = nftxInv.balanceOf(address(alignmentVault));
+        require(nftxBal > 0, "swap error");
+        alignmentVault.alignTokens(0);
+        nftxBal = nftxInv.balanceOf(address(alignmentVault));
+        require(nftxBal == 0, "align inventory tokens error");
+    }
+
+    function testAlignTokensBoth() public {
+        wethToken.approve(address(sushiRouter), 10 ether);
+        address[] memory path = new address[](2);
+        path[0] = address(weth);
+        path[1] = address(nftxInv);
+        sushiRouter.swapTokensForExactTokens(1 ether, 10 ether, path, address(alignmentVault), block.timestamp);
+        uint256 nftxBal = nftxInv.balanceOf(address(alignmentVault));
+        require(nftxBal > 0, "swap error");
+
+        (bool success, ) = payable(address(alignmentVault)).call{ value: 5 ether }("");
+        require(success, "transfer failure");
+
+        alignmentVault.alignTokens(5 ether);
+        nftxBal = nftxInv.balanceOf(address(alignmentVault));
+        require(nftxBal == 0, "align inventory tokens error");
+        require(address(alignmentVault).balance == 0, "ETH balance error");
+        require(wethToken.balanceOf(address(alignmentVault)) == 0, "WETH balance error");
+    }
+
+    function testAlignMaxLiquidityNoLiquidity() public {
         alignmentVault.alignMaxLiquidity();
     }
 
-    function testalignMaxLiquidityETH() public {
+    function testAlignMaxLiquidityETH() public {
         hevm.deal(address(alignmentVault), 1 ether);
         require(address(alignmentVault).balance == 1 ether);
         alignmentVault.alignMaxLiquidity();
@@ -106,7 +227,7 @@ contract AlignmentVaultTest is DSTestPlus, ERC721Holder {
         require(nftWeth.balanceOf(address(alignmentVault)) == 0, "nftWeth balance error");
     }
 
-    function testalignMaxLiquidityWETH() public {
+    function testAlignMaxLiquidityWETH() public {
         wethToken.transfer(address(alignmentVault), 1 ether);
         require(wethToken.balanceOf(address(alignmentVault)) == 1 ether);
         alignmentVault.alignMaxLiquidity();
@@ -116,7 +237,7 @@ contract AlignmentVaultTest is DSTestPlus, ERC721Holder {
         require(nftWeth.balanceOf(address(alignmentVault)) == 0, "nftWeth balance error");
     }
 
-    function testalignMaxLiquidityNftxInventory() public {
+    function testAlignMaxLiquidityNftxInventory() public {
         wethToken.approve(address(sushiRouter), 10 ether);
         address[] memory path = new address[](2);
         path[0] = address(weth);
@@ -131,7 +252,7 @@ contract AlignmentVaultTest is DSTestPlus, ERC721Holder {
         require(nftWeth.balanceOf(address(alignmentVault)) == 0, "nftWeth balance error");
     }
 
-    function testalignMaxLiquidityNftxLiquidity() public {
+    function testAlignMaxLiquidityNftxLiquidity() public {
         wethToken.approve(address(liquidityHelper), type(uint256).max);
         nftxInv.approve(address(liquidityHelper), type(uint256).max);
         uint256 liquidity = liquidityHelper.swapAndAddLiquidityTokenAndToken(
@@ -147,7 +268,7 @@ contract AlignmentVaultTest is DSTestPlus, ERC721Holder {
         require(nftWeth.balanceOf(address(alignmentVault)) == 0, "nftWeth balance error");
     }
 
-    function testalignMaxLiquidityNftNoETH() public {
+    function testAlignMaxLiquidityNftNoETH() public {
         hevm.deal(nft.ownerOf(42), 1 ether);
         hevm.startPrank(nft.ownerOf(42));
         nft.approve(address(this), 42);
@@ -164,7 +285,7 @@ contract AlignmentVaultTest is DSTestPlus, ERC721Holder {
         alignmentVault.nftsHeld(1);
     }
 
-    function testalignMaxLiquidityNftWithETH() public {
+    function testAlignMaxLiquidityNftWithETH() public {
         hevm.deal(address(alignmentVault), 10 ether);
         hevm.startPrank(nft.ownerOf(42));
         nft.approve(address(this), 42);
@@ -182,7 +303,7 @@ contract AlignmentVaultTest is DSTestPlus, ERC721Holder {
         alignmentVault.nftsHeld(0);
     }
 
-    function testalignMaxLiquidityMultipleNftsWithETH() public {
+    function testAlignMaxLiquidityMultipleNftsWithETH() public {
         hevm.deal(address(alignmentVault), 42 ether);
         hevm.startPrank(nft.ownerOf(42));
         nft.approve(address(this), 42);
@@ -287,6 +408,31 @@ contract AlignmentVaultTest is DSTestPlus, ERC721Holder {
         require(wethToken.balanceOf(address(alignmentVault)) == 0, "weth balance error");
         require(nftxInv.balanceOf(address(alignmentVault)) == 0, "nftxInv balance error");
         require(nftWeth.balanceOf(address(alignmentVault)) == 0, "nftWeth balance error");
+    }
+
+    function testGetInventoryNone() public view {
+        uint256[] memory tokenIds = alignmentVault.getInventory();
+        require(tokenIds.length == 0, "length error");
+    }
+    
+    function testGetInventory() public {
+        hevm.startPrank(nft.ownerOf(69));
+        nft.approve(address(this), 69);
+        nft.safeTransferFrom(nft.ownerOf(69), address(alignmentVault), 69);
+        hevm.stopPrank();
+        hevm.startPrank(nft.ownerOf(420));
+        nft.approve(address(this), 420);
+        nft.safeTransferFrom(nft.ownerOf(420), address(alignmentVault), 420);
+        hevm.stopPrank();
+        hevm.startPrank(nft.ownerOf(710));
+        nft.approve(address(this), 710);
+        nft.safeTransferFrom(nft.ownerOf(710), address(alignmentVault), 710);
+        hevm.stopPrank();
+        uint256[] memory tokenIds = alignmentVault.getInventory();
+        require(tokenIds.length == 3, "length error");
+        require(tokenIds[0] == 69, "tokenId error");
+        require(tokenIds[1] == 420, "tokenId error");
+        require(tokenIds[2] == 710, "tokenId error");
     }
 
     function testCheckInventoryNone() public {

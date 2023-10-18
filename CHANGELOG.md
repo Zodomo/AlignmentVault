@@ -1,3 +1,5 @@
 # Changelog
 
-**2023-Oct-8:** Initial launch. Allows ETH/WETH/fractionalized NFT tokens/NFTs to be utilized for the purpose of deepening NFTX liquidity via an all-in-one liquidity processing function `alignLiquidity()`. Yield is claimable and split 50/50 between the vault owner and compounded back into the aligned NFTX liquidity pool.
+**2023-Oct-17:** V1.1 update. I received some really good feedback and agreed that the all-in-one `alignLiquidity()` function was too restrictive. I implemented `alignNfts()` and `alignTokens()` functions to introduce a bit more manual control. `alignNfts()` allows the owner to specifically add NFTs + ETH for them to the vault and no extra. `alignTokens()` gives the owner fine-tuned control over how much ETH (and all fractionalized tokens) to add to the liquidity. Both functions automatically stake generated liquidity. This also prevents bricking a vault by adding too many NFTs to it and exceeding the gas ceiling.
+
+**2023-Oct-8:** Initial V1 launch. Allows ETH/WETH/fractionalized NFT tokens/NFTs to be utilized for the purpose of deepening NFTX liquidity via an all-in-one liquidity processing function `alignLiquidity()`. Yield is claimable and split 50/50 between the vault owner and compounded back into the aligned NFTX liquidity pool.

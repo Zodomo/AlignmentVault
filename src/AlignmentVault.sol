@@ -162,10 +162,12 @@ contract AlignmentVault is Ownable, Initializable {
 
     /**
     * @notice Add aligned NFTs to NFTX vault by pairing them with their floor price in ETH
-    * @dev This will revert if the contract doesn't hold the NFT
+    * @dev This will revert if the contract doesn't hold the NFT. This doesn't require checkInventory().
     * @param _tokenIds Array of specific NFTs to try and add to the vault
     */
-    function alignNfts(uint256[] memory _tokenIds) public payable virtual onlyOwner {
+    function alignNfts(uint256[] memory _tokenIds) external payable virtual onlyOwner {
+        // Revert if empty _tokenIds array is passed
+        if (_tokenIds.length == 0) revert();
         // Wrap all ETH, if any
         _wrapEth();
         // Retrieve total WETH balance
@@ -182,6 +184,19 @@ contract AlignmentVault is Ownable, Initializable {
         _NFTX_STAKING_ZAP.addLiquidity721(vaultId, _tokenIds, 1, requiredEth);
         // Stake any held liquidity tokens
         _stakeLiquidity();
+        // Purge tokenIds if they exist in nftsHeld inventory
+        for (uint256 i; i < _tokenIds.length;) {
+            // Cache nftsHeld for each aligned tokenId as its length will change upon each pop
+            uint256[] memory inventory = nftsHeld;
+            for (uint256 j; j < inventory.length;) {
+                if (inventory[j] == _tokenIds[i]) {
+                    nftsHeld[j] = nftsHeld[inventory.length - 1];
+                    nftsHeld.pop();
+                }
+                unchecked { ++j; }
+            }
+            unchecked { ++i; }
+        }
     }
 
     /**
@@ -189,19 +204,19 @@ contract AlignmentVault is Ownable, Initializable {
     * @dev Any ETH (msg.value or address(this).balance) will be wrapped to WETH before processing
     * @param _amount is the total amount of WETH to add
     */
-    function alignTokens(uint256 _amount) public payable virtual onlyOwner {
+    function alignTokens(uint256 _amount) external payable virtual onlyOwner {
         // Wrap all ETH, if any
         _wrapEth();
         // Retrieve total WETH balance
         uint256 balance = IERC20(address(_WETH)).balanceOf(address(this));
         // Revert if _amount is over balance
-        if (_amount < balance) revert InsufficientFunds();
+        if (_amount > balance) revert InsufficientFunds();
         // Cache nftxInventory to prevent a double SLOAD
         uint256 nftxInvBal = nftxInventory.balanceOf(address(this));
         // Process rebalancing remaining ETH and inventory tokens (if any) to add to LP
-        if (balance > 0 || nftxInvBal > 0) {
+        if (_amount > 0 || nftxInvBal > 0) {
             _liqHelper.swapAndAddLiquidityTokenAndToken(
-                address(_WETH), address(nftxInventory), uint112(balance), uint112(nftxInvBal), 1, address(this)
+                address(_WETH), address(nftxInventory), uint112(_amount), uint112(nftxInvBal), 1, address(this)
             );
         }
         // Stake any held liquidity tokens
