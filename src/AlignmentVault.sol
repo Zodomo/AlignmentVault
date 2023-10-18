@@ -34,6 +34,7 @@ interface INFTXStakingZap {
  * @author Zodomo.eth (X: @0xZodomo, Telegram: @zodomo, GitHub: Zodomo, Email: zodomo@proton.me)
  */
 contract AlignmentVault is Ownable, Initializable {
+    error InsufficientFunds();
     error InvalidVaultId();
     error AlignedAsset();
     error NoNFTXVault();
@@ -143,18 +144,82 @@ contract AlignmentVault is Ownable, Initializable {
     }
 
     /**
-    * @notice Aligns liquidity by depositing NFTs and ETH into the NFTX vault and staking them
-    * This will add as many NFTs as it can afford, before staking the ETH remainder
-    * Confirm vault has enough ETH for NFTs held before aligning liquidity
+    * @notice Wrap all ETH, if any, before function execution
     */
-    function alignLiquidity() external payable virtual onlyOwner {
-        // Cache vaultId to save gas
-        uint256 _vaultId = vaultId;
+    function _wrapEth() internal virtual {
         // Wrap all ETH, if any
         uint256 balance = address(this).balance;
         if (balance > 0) _WETH.deposit{value: balance}();
-        // Update balance to total WETH
-        balance = IERC20(address(_WETH)).balanceOf(address(this));
+    }
+
+    /**
+    * @notice Stake all LP tokens, if any
+    */
+    function _stakeLiquidity() internal virtual {
+        uint256 liquidity = nftxLiquidity.balanceOf(address(this));
+        if (liquidity > 0) _NFTX_LIQUIDITY_STAKING.deposit(vaultId, liquidity);
+    }
+
+    /**
+    * @notice Add aligned NFTs to NFTX vault by pairing them with their floor price in ETH
+    * @dev This will revert if the contract doesn't hold the NFT
+    * @param _tokenIds Array of specific NFTs to try and add to the vault
+    */
+    function alignNfts(uint256[] memory _tokenIds) public payable virtual onlyOwner {
+        // Wrap all ETH, if any
+        _wrapEth();
+        // Retrieve total WETH balance
+        uint256 balance = IERC20(address(_WETH)).balanceOf(address(this));
+        // Retrieve NFTX LP price for one NFT
+        uint256 floorPrice = _estimateFloor();
+        // Add 1 to floorPrice in order to resolve liquidity rounding issue
+        uint256 afford = balance / (floorPrice + 1);
+        // Revert if we cannot afford this amount of NFTs
+        if (afford < _tokenIds.length) revert InsufficientFunds();
+        // Calculate exact ETH to add to LP with NFTs
+        uint256 requiredEth = _tokenIds.length * (floorPrice + 1);
+        // Stake NFTs and ETH, approvals were given in initializeVault()
+        _NFTX_STAKING_ZAP.addLiquidity721(vaultId, _tokenIds, 1, requiredEth);
+        // Stake any held liquidity tokens
+        _stakeLiquidity();
+    }
+
+    /**
+    * @notice Add specific amount of ETH/WETH and all fractionalized NFT tokens to NFTX vault
+    * @dev Any ETH (msg.value or address(this).balance) will be wrapped to WETH before processing
+    * @param _amount is the total amount of WETH to add
+    */
+    function alignTokens(uint256 _amount) public payable virtual onlyOwner {
+        // Wrap all ETH, if any
+        _wrapEth();
+        // Retrieve total WETH balance
+        uint256 balance = IERC20(address(_WETH)).balanceOf(address(this));
+        // Revert if _amount is over balance
+        if (_amount < balance) revert InsufficientFunds();
+        // Cache nftxInventory to prevent a double SLOAD
+        uint256 nftxInvBal = nftxInventory.balanceOf(address(this));
+        // Process rebalancing remaining ETH and inventory tokens (if any) to add to LP
+        if (balance > 0 || nftxInvBal > 0) {
+            _liqHelper.swapAndAddLiquidityTokenAndToken(
+                address(_WETH), address(nftxInventory), uint112(balance), uint112(nftxInvBal), 1, address(this)
+            );
+        }
+        // Stake any held liquidity tokens
+        _stakeLiquidity();
+    }
+
+    /**
+    * @notice Aligns max liquidity by depositing NFTs and ETH into the NFTX vault and staking them
+    * This will add as many NFTs as it can afford, before staking the ETH remainder
+    * Confirm vault has enough ETH for NFTs held before aligning max liquidity
+    */
+    function alignMaxLiquidity() external payable virtual onlyOwner {
+        // Cache vaultId to save gas
+        uint256 _vaultId = vaultId;
+        // Wrap all ETH, if any
+        _wrapEth();
+        // Retrieve total WETH balance
+        uint256 balance = IERC20(address(_WETH)).balanceOf(address(this));
 
         // Retrieve NFTs held
         uint256[] memory inventory = nftsHeld;
@@ -198,9 +263,8 @@ contract AlignmentVault is Ownable, Initializable {
             );
         }
 
-        // Stake liquidity tokens, if any
-        uint256 liquidity = nftxLiquidity.balanceOf(address(this));
-        if (liquidity > 0) _NFTX_LIQUIDITY_STAKING.deposit(_vaultId, liquidity);
+        // Stake any held liquidity tokens
+        _stakeLiquidity();
     }
 
     /**
@@ -229,10 +293,8 @@ contract AlignmentVault is Ownable, Initializable {
         _liqHelper.swapAndAddLiquidityTokenAndToken(
             address(_WETH), address(nftxInventory), 0, uint112(yield), 1, address(this)
         );
-
-        // Stake that LP
-        uint256 liquidity = nftxLiquidity.balanceOf(address(this));
-        _NFTX_LIQUIDITY_STAKING.deposit(_vaultId, liquidity);
+        // Stake all liquidity tokens
+        _stakeLiquidity();
     }
 
     /**
@@ -267,6 +329,13 @@ contract AlignmentVault is Ownable, Initializable {
                 ++i;
             }
         }
+    }
+
+    /**
+    * @notice Retrieve known NFT inventory to check if contract is aware of holdings
+    */
+    function getInventory() external view virtual returns (uint256[] memory) {
+        return nftsHeld;
     }
 
     /**

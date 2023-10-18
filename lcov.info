@@ -51,8 +51,8 @@ BRDA:127,5,1,4
 DA:128,1
 DA:130,4
 DA:132,5
-FN:136,AlignmentVault.alignLiquidity
-FNDA:10,AlignmentVault.alignLiquidity
+FN:136,AlignmentVault.alignMaxLiquidity
+FNDA:10,AlignmentVault.alignMaxLiquidity
 DA:138,10
 DA:140,10
 DA:141,10

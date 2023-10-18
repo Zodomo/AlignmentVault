@@ -12,7 +12,7 @@ interface IAlignmentVault {
     function initialize(address _erc721, address _owner, uint256 _vaultId) external;
     function disableInitializers() external;
 
-    function alignLiquidity() external;
+    function alignMaxLiquidity() external;
     function claimYield(address _recipient) external;
     function checkInventory(uint256[] memory _tokenIds) external;
 

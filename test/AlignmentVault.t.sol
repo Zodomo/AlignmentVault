@@ -92,31 +92,31 @@ contract AlignmentVaultTest is DSTestPlus, ERC721Holder {
         require(vaultBelowWeth.call_estimateFloor() > 0);
     }
 
-    function testAlignLiquidityNoLiquidity() public {
-        alignmentVault.alignLiquidity();
+    function testalignMaxLiquidityNoLiquidity() public {
+        alignmentVault.alignMaxLiquidity();
     }
 
-    function testAlignLiquidityETH() public {
+    function testalignMaxLiquidityETH() public {
         hevm.deal(address(alignmentVault), 1 ether);
         require(address(alignmentVault).balance == 1 ether);
-        alignmentVault.alignLiquidity();
+        alignmentVault.alignMaxLiquidity();
         require(address(alignmentVault).balance == 0, "eth balance error");
         require(wethToken.balanceOf(address(alignmentVault)) == 0, "weth balance error");
         require(nftxInv.balanceOf(address(alignmentVault)) == 0, "nftxInv balance error");
         require(nftWeth.balanceOf(address(alignmentVault)) == 0, "nftWeth balance error");
     }
 
-    function testAlignLiquidityWETH() public {
+    function testalignMaxLiquidityWETH() public {
         wethToken.transfer(address(alignmentVault), 1 ether);
         require(wethToken.balanceOf(address(alignmentVault)) == 1 ether);
-        alignmentVault.alignLiquidity();
+        alignmentVault.alignMaxLiquidity();
         require(address(alignmentVault).balance == 0, "eth balance error");
         require(wethToken.balanceOf(address(alignmentVault)) == 0, "weth balance error");
         require(nftxInv.balanceOf(address(alignmentVault)) == 0, "nftxInv balance error");
         require(nftWeth.balanceOf(address(alignmentVault)) == 0, "nftWeth balance error");
     }
 
-    function testAlignLiquidityNftxInventory() public {
+    function testalignMaxLiquidityNftxInventory() public {
         wethToken.approve(address(sushiRouter), 10 ether);
         address[] memory path = new address[](2);
         path[0] = address(weth);
@@ -124,14 +124,14 @@ contract AlignmentVaultTest is DSTestPlus, ERC721Holder {
         sushiRouter.swapTokensForExactTokens(1 ether, 10 ether, path, address(alignmentVault), block.timestamp);
         uint256 nftxBal = nftxInv.balanceOf(address(alignmentVault));
         require(nftxBal > 0, "swap error");
-        alignmentVault.alignLiquidity();
+        alignmentVault.alignMaxLiquidity();
         require(address(alignmentVault).balance == 0, "eth balance error");
         require(wethToken.balanceOf(address(alignmentVault)) == 0, "weth balance error");
         require(nftxInv.balanceOf(address(alignmentVault)) == 0, "nftxInv balance error");
         require(nftWeth.balanceOf(address(alignmentVault)) == 0, "nftWeth balance error");
     }
 
-    function testAlignLiquidityNftxLiquidity() public {
+    function testalignMaxLiquidityNftxLiquidity() public {
         wethToken.approve(address(liquidityHelper), type(uint256).max);
         nftxInv.approve(address(liquidityHelper), type(uint256).max);
         uint256 liquidity = liquidityHelper.swapAndAddLiquidityTokenAndToken(
@@ -140,20 +140,20 @@ contract AlignmentVaultTest is DSTestPlus, ERC721Holder {
         uint256 nftxBal = nftWeth.balanceOf(address(alignmentVault));
         require(liquidity == nftxBal, "liqHelper return error");
         require(nftxBal > 0, "swap and add error");
-        alignmentVault.alignLiquidity();
+        alignmentVault.alignMaxLiquidity();
         require(address(alignmentVault).balance == 0, "eth balance error");
         require(wethToken.balanceOf(address(alignmentVault)) == 0, "weth balance error");
         require(nftxInv.balanceOf(address(alignmentVault)) == 0, "nftxInv balance error");
         require(nftWeth.balanceOf(address(alignmentVault)) == 0, "nftWeth balance error");
     }
 
-    function testAlignLiquidityNftNoETH() public {
+    function testalignMaxLiquidityNftNoETH() public {
         hevm.deal(nft.ownerOf(42), 1 ether);
         hevm.startPrank(nft.ownerOf(42));
         nft.approve(address(this), 42);
         nft.safeTransferFrom(nft.ownerOf(42), address(alignmentVault), 42);
         hevm.stopPrank();
-        alignmentVault.alignLiquidity();
+        alignmentVault.alignMaxLiquidity();
         require(address(alignmentVault).balance == 0, "eth balance error");
         require(wethToken.balanceOf(address(alignmentVault)) == 0, "weth balance error");
         require(nftxInv.balanceOf(address(alignmentVault)) == 0, "nftxInv balance error");
@@ -164,7 +164,7 @@ contract AlignmentVaultTest is DSTestPlus, ERC721Holder {
         alignmentVault.nftsHeld(1);
     }
 
-    function testAlignLiquidityNftWithETH() public {
+    function testalignMaxLiquidityNftWithETH() public {
         hevm.deal(address(alignmentVault), 10 ether);
         hevm.startPrank(nft.ownerOf(42));
         nft.approve(address(this), 42);
@@ -172,7 +172,7 @@ contract AlignmentVaultTest is DSTestPlus, ERC721Holder {
         hevm.stopPrank();
         require(nft.balanceOf(address(alignmentVault)) == 1, "nft balance error");
         require(alignmentVault.nftsHeld(0) == 42, "nftsHeld tokenId error");
-        alignmentVault.alignLiquidity();
+        alignmentVault.alignMaxLiquidity();
         require(address(alignmentVault).balance == 0, "eth balance error");
         require(wethToken.balanceOf(address(alignmentVault)) == 0, "weth balance error");
         require(nftxInv.balanceOf(address(alignmentVault)) == 0, "nftxInv balance error");
@@ -182,7 +182,7 @@ contract AlignmentVaultTest is DSTestPlus, ERC721Holder {
         alignmentVault.nftsHeld(0);
     }
 
-    function testAlignLiquidityMultipleNftsWithETH() public {
+    function testalignMaxLiquidityMultipleNftsWithETH() public {
         hevm.deal(address(alignmentVault), 42 ether);
         hevm.startPrank(nft.ownerOf(42));
         nft.approve(address(this), 42);
@@ -200,7 +200,7 @@ contract AlignmentVaultTest is DSTestPlus, ERC721Holder {
         require(alignmentVault.nftsHeld(0) == 42, "nftsHeld tokenId error");
         require(alignmentVault.nftsHeld(1) == 69, "nftsHeld tokenId error");
         require(alignmentVault.nftsHeld(2) == 777, "nftsHeld tokenId error");
-        alignmentVault.alignLiquidity();
+        alignmentVault.alignMaxLiquidity();
         require(address(alignmentVault).balance == 0, "eth balance error");
         require(wethToken.balanceOf(address(alignmentVault)) == 0, "weth balance error");
         require(nftxInv.balanceOf(address(alignmentVault)) == 0, "nftxInv balance error");
@@ -220,7 +220,7 @@ contract AlignmentVaultTest is DSTestPlus, ERC721Holder {
 
     function testClaimYieldGenerated() public {
         hevm.deal(address(alignmentVault), 100 ether);
-        alignmentVault.alignLiquidity();
+        alignmentVault.alignMaxLiquidity();
         require(address(alignmentVault).balance == 0, "eth balance error");
         require(wethToken.balanceOf(address(alignmentVault)) == 0, "weth balance error");
         require(nftxInv.balanceOf(address(alignmentVault)) == 0, "nftxInv balance error");
@@ -256,7 +256,7 @@ contract AlignmentVaultTest is DSTestPlus, ERC721Holder {
 
     function testCompoundYieldGenerated() public {
         hevm.deal(address(alignmentVault), 100 ether);
-        alignmentVault.alignLiquidity();
+        alignmentVault.alignMaxLiquidity();
         require(address(alignmentVault).balance == 0, "eth balance error");
         require(wethToken.balanceOf(address(alignmentVault)) == 0, "weth balance error");
         require(nftxInv.balanceOf(address(alignmentVault)) == 0, "nftxInv balance error");
@@ -299,7 +299,7 @@ contract AlignmentVaultTest is DSTestPlus, ERC721Holder {
         alignmentVault.nftsHeld(0);
     }
 
-    function testCheckInventory() public {
+    function testUnsafeTransferAndCheckInventory() public {
         hevm.startPrank(nft.ownerOf(69));
         nft.approve(address(this), 69);
         nft.transferFrom(nft.ownerOf(69), address(alignmentVault), 69);

@@ -1,0 +1,106 @@
+No files changed, compilation skipped
+
+Running 1 test for test/AlignmentVault.t.sol:AlignmentVaultTest
+[32m[PASS][0m testUnsafeTransferAndCheckInventory() (gas: 382907)
+Test result: [32mok[0m. [32m1[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 2.82s
+| AdminUpgradeabilityProxy contract |                 |       |        |       |         |
+|-----------------------------------|-----------------|-------|--------|-------|---------|
+| Deployment Cost                   | Deployment Size |       |        |       |         |
+| 0                                 | 0               |       |        |       |         |
+| Function Name                     | min             | avg   | median | max   | # calls |
+| childImplementation               | 1138            | 2138  | 2138   | 3138  | 2       |
+| vaultsForAsset                    | 14748           | 14748 | 14748  | 14748 | 1       |
+
+
+| BeaconProxy contract |                 |       |        |       |         |
+|----------------------|-----------------|-------|--------|-------|---------|
+| Deployment Cost      | Deployment Size |       |        |       |         |
+| 0                    | 0               |       |        |       |         |
+| Function Name        | min             | avg   | median | max   | # calls |
+| approve              | 26711           | 26711 | 26711  | 26711 | 1       |
+| vaultId              | 10941           | 10941 | 10941  | 10941 | 1       |
+
+
+| Miladys contract  |                 |       |        |       |         |
+|-------------------|-----------------|-------|--------|-------|---------|
+| Deployment Cost   | Deployment Size |       |        |       |         |
+| 0                 | 0               |       |        |       |         |
+| Function Name     | min             | avg   | median | max   | # calls |
+| approve           | 26150           | 26150 | 26150  | 26150 | 3       |
+| ownerOf           | 1041            | 2207  | 1041   | 7041  | 12      |
+| setApprovalForAll | 24645           | 24645 | 24645  | 24645 | 1       |
+| transferFrom      | 57693           | 66146 | 65533  | 75213 | 3       |
+
+
+| NFTXVaultFactoryUpgradeable contract |                 |      |        |      |         |
+|--------------------------------------|-----------------|------|--------|------|---------|
+| Deployment Cost                      | Deployment Size |      |        |      |         |
+| 0                                    | 0               |      |        |      |         |
+| Function Name                        | min             | avg  | median | max  | # calls |
+| childImplementation                  | 398             | 1398 | 1398   | 2398 | 2       |
+| vaultsForAsset                       | 7493            | 7493 | 7493   | 7493 | 1       |
+
+
+| NFTXVaultUpgradeable contract |                 |       |        |       |         |
+|-------------------------------|-----------------|-------|--------|-------|---------|
+| Deployment Cost               | Deployment Size |       |        |       |         |
+| 0                             | 0               |       |        |       |         |
+| Function Name                 | min             | avg   | median | max   | # calls |
+| approve                       | 24693           | 24693 | 24693  | 24693 | 1       |
+| vaultId                       | 2429            | 2429  | 2429   | 2429  | 1       |
+
+
+| UniswapV2Pair contract |                 |       |        |       |         |
+|------------------------|-----------------|-------|--------|-------|---------|
+| Deployment Cost        | Deployment Size |       |        |       |         |
+| 0                      | 0               |       |        |       |         |
+| Function Name          | min             | avg   | median | max   | # calls |
+| approve                | 24510           | 24510 | 24510  | 24510 | 1       |
+
+
+| WETH9 contract  |                 |       |        |       |         |
+|-----------------|-----------------|-------|--------|-------|---------|
+| Deployment Cost | Deployment Size |       |        |       |         |
+| 0               | 0               |       |        |       |         |
+| Function Name   | min             | avg   | median | max   | # calls |
+| approve         | 24420           | 24420 | 24420  | 24420 | 2       |
+| deposit         | 23974           | 23974 | 23974  | 23974 | 1       |
+
+
+| lib/solady/test/utils/mocks/MockERC20.sol:MockERC20 contract |                 |       |        |       |         |
+|--------------------------------------------------------------|-----------------|-------|--------|-------|---------|
+| Deployment Cost                                              | Deployment Size |       |        |       |         |
+| 641029                                                       | 3916            |       |        |       |         |
+| Function Name                                                | min             | avg   | median | max   | # calls |
+| mint                                                         | 46626           | 46626 | 46626  | 46626 | 1       |
+
+
+| lib/solady/test/utils/mocks/MockERC721.sol:MockERC721 contract |                 |       |        |       |         |
+|----------------------------------------------------------------|-----------------|-------|--------|-------|---------|
+| Deployment Cost                                                | Deployment Size |       |        |       |         |
+| 1128974                                                        | 5671            |       |        |       |         |
+| Function Name                                                  | min             | avg   | median | max   | # calls |
+| safeMint                                                       | 48522           | 48522 | 48522  | 48522 | 1       |
+
+
+| test/AlignmentVault.t.sol:AlignmentVaultTest contract |                 |      |        |      |         |
+|-------------------------------------------------------|-----------------|------|--------|------|---------|
+| Deployment Cost                                       | Deployment Size |      |        |      |         |
+| 12970888                                              | 64018           |      |        |      |         |
+| Function Name                                         | min             | avg  | median | max  | # calls |
+| onERC721Received                                      | 1015            | 1015 | 1015   | 1015 | 1       |
+
+
+| test/TestingAlignmentVault.sol:TestingAlignmentVault contract |                 |         |         |         |         |
+|---------------------------------------------------------------|-----------------|---------|---------|---------|---------|
+| Deployment Cost                                               | Deployment Size |         |         |         |         |
+| 3305467                                                       | 16541           |         |         |         |         |
+| Function Name                                                 | min             | avg     | median  | max     | # calls |
+| checkInventory                                                | 102992          | 102992  | 102992  | 102992  | 1       |
+| initialize                                                    | 1630133         | 1630133 | 1630133 | 1630133 | 1       |
+| nftsHeld                                                      | 413             | 950     | 642     | 2413    | 5       |
+
+
+
+ 
+Ran 1 test suites: [32m1[0m tests passed, [31m0[0m failed, [33m0[0m skipped (1 total tests)
