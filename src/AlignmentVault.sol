@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0
 pragma solidity ^0.8.20;
 
-import "solady/src/auth/Ownable.sol";
-import "openzeppelin/interfaces/IERC20.sol";
-import "openzeppelin/interfaces/IERC721.sol";
-import "openzeppelin/proxy/utils/Initializable.sol";
-import "liquidity-helper/UniswapV2LiquidityHelper.sol";
+import "../lib/solady/src/auth/Ownable.sol";
+import "../lib/openzeppelin-contracts/contracts/interfaces/IERC20.sol";
+import "../lib/openzeppelin-contracts/contracts/interfaces/IERC721.sol";
+import "../lib/openzeppelin-contracts/contracts/proxy/utils/Initializable.sol";
+import "../lib/liquidity-helper/UniswapV2LiquidityHelper.sol";
 
 interface INFTXFactory {
     function vaultsForAsset(address asset) external view returns (address[] memory);
