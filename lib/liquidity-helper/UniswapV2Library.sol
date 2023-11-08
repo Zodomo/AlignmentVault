@@ -1,6 +1,6 @@
 pragma solidity >=0.5.0;
 
-import 'v2-core/interfaces/IUniswapV2Pair.sol';
+import '../v2-core/contracts/interfaces/IUniswapV2Pair.sol';
 
 library UniswapV2Library {
     // returns sorted token addresses, used to handle return values from pairs sorted in this order

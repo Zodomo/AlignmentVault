@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: VPL
 pragma solidity ^0.8.20;
 
-import "solady/src/auth/Ownable.sol";
-import "openzeppelin/token/ERC20/IERC20.sol";
-import "solidity-lib/libraries/TransferHelper.sol";
-import "v2-periphery/interfaces/IUniswapV2Router02.sol";
-import "v2-periphery/interfaces/IWETH.sol";
+import "../solady/src/auth/Ownable.sol";
+import "../openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
+import "../solidity-lib/contracts/libraries/TransferHelper.sol";
+import "../v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
+import "../v2-periphery/contracts/interfaces/IWETH.sol";
 import "./UniswapV2Library.sol";
 
 // Majority of code was taken from the following link
