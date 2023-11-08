@@ -4,7 +4,7 @@ pragma solidity ^0.8.20;
 import "../lib/solady/src/utils/LibClone.sol";
 import "../lib/solady/src/auth/Ownable.sol";
 
-interface IInitialize {
+interface IAVInitialize {
     function initialize(address _erc721, address _owner, uint256 _vaultId) external;
     function disableInitializers() external;
 }
@@ -49,8 +49,8 @@ contract AlignmentVaultFactory is Ownable {
     function deploy(address _erc721, uint256 _vaultId) external virtual returns (address deployment) {
         deployment = LibClone.clone(implementation);
         vaultDeployers[deployment] = msg.sender;
-        IInitialize(deployment).initialize(_erc721, msg.sender, _vaultId);
-        IInitialize(deployment).disableInitializers();
+        IAVInitialize(deployment).initialize(_erc721, msg.sender, _vaultId);
+        IAVInitialize(deployment).disableInitializers();
         emit Deployed(msg.sender, deployment);
     }
 
@@ -68,8 +68,8 @@ contract AlignmentVaultFactory is Ownable {
     {
         deployment = LibClone.cloneDeterministic(implementation, _salt);
         vaultDeployers[deployment] = msg.sender;
-        IInitialize(deployment).initialize(_erc721, msg.sender, _vaultId);
-        IInitialize(deployment).disableInitializers();
+        IAVInitialize(deployment).initialize(_erc721, msg.sender, _vaultId);
+        IAVInitialize(deployment).disableInitializers();
         emit Deployed(msg.sender, deployment);
     }
 
