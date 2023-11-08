@@ -287,10 +287,8 @@ contract AlignmentVault is Ownable, Initializable {
     * @param _recipient Address to receive 50% of the yield. If address(0), the yield will be compounded.
     */
     function claimYield(address _recipient) external payable virtual onlyOwner {
-        // Cache vaultId to save gas
-        uint256 _vaultId = vaultId;
         // Claim SLP rewards
-        _NFTX_LIQUIDITY_STAKING.claimRewards(_vaultId);
+        _NFTX_LIQUIDITY_STAKING.claimRewards(vaultId);
         // Determine yield amount
         uint256 yield = nftxInventory.balanceOf(address(this));
         // If no yield, end execution to save gas
