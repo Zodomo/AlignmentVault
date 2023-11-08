@@ -17,6 +17,7 @@ interface IInitialize {
  */
 contract AlignmentVaultFactory is Ownable {
     event Deployed(address indexed deployer, address indexed vault);
+    event Implementation(address indexed implementation);
 
     address public implementation;
     // Vault address => deployer address
@@ -25,6 +26,7 @@ contract AlignmentVaultFactory is Ownable {
     constructor(address _owner, address _implementation) payable {
         _initializeOwner(_owner);
         implementation = _implementation;
+        emit Implementation(_implementation);
     }
 
     /**
@@ -35,6 +37,7 @@ contract AlignmentVaultFactory is Ownable {
     function updateImplementation(address _implementation) external virtual onlyOwner {
         if (_implementation == implementation) revert();
         implementation = _implementation;
+        emit Implementation(_implementation);
     }
 
     /**
@@ -46,10 +49,9 @@ contract AlignmentVaultFactory is Ownable {
     function deploy(address _erc721, uint256 _vaultId) external virtual returns (address deployment) {
         deployment = LibClone.clone(implementation);
         vaultDeployers[deployment] = msg.sender;
-        emit Deployed(msg.sender, deployment);
-
         IInitialize(deployment).initialize(_erc721, msg.sender, _vaultId);
         IInitialize(deployment).disableInitializers();
+        emit Deployed(msg.sender, deployment);
     }
 
     /**
@@ -66,10 +68,9 @@ contract AlignmentVaultFactory is Ownable {
     {
         deployment = LibClone.cloneDeterministic(implementation, _salt);
         vaultDeployers[deployment] = msg.sender;
-        emit Deployed(msg.sender, deployment);
-
         IInitialize(deployment).initialize(_erc721, msg.sender, _vaultId);
         IInitialize(deployment).disableInitializers();
+        emit Deployed(msg.sender, deployment);
     }
 
     /**
