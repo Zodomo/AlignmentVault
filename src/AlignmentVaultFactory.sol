@@ -16,7 +16,7 @@ interface IInitialize {
  * @author Zodomo.eth (X: @0xZodomo, Telegram: @zodomo, GitHub: Zodomo, Email: zodomo@proton.me)
  */
 contract AlignmentVaultFactory is Ownable {
-    event Deployed(address indexed deployer, address indexed collection);
+    event Deployed(address indexed deployer, address indexed vault);
 
     address public implementation;
     // Vault address => deployer address
