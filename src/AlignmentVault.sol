@@ -11,6 +11,7 @@ import {INFTXVaultFactoryV3} from "../lib/nftx-protocol-v3/src/interfaces/INFTXV
 import {INFTXVaultV3} from "../lib/nftx-protocol-v3/src/interfaces/INFTXVaultV3.sol";
 import {INFTXRouter} from "../lib/nftx-protocol-v3/src/interfaces/INFTXRouter.sol";
 import {IWETH9} from "../lib/nftx-protocol-v3/src/uniswap/v3-periphery/interfaces/external/IWETH9.sol";
+import {console2} from "../lib/forge-std/src/console2.sol";
 
 /**
  * @title AlignmentVault
@@ -32,7 +33,7 @@ contract AlignmentVault is Ownable, Initializable, IAlignmentVault {
     EnumerableSet.UintSet private _nftsHeld;
 
     uint256 public vaultId;
-    address public alignedNft;
+    IERC721 public alignedNft;
 
     constructor() payable {}
 
@@ -42,7 +43,7 @@ contract AlignmentVault is Ownable, Initializable, IAlignmentVault {
         uint256 _vaultId
     ) external payable virtual initializer {
         _initializeOwner(_owner);
-        alignedNft = _alignedNft;
+        alignedNft = IERC721(_alignedNft);
         if (_vaultId != 0) {
             try _NFTX_VAULT_FACTORY.vault(_vaultId) returns (address vaultNft) {
                 if (INFTXVaultV3(vaultNft).assetAddress() != _alignedNft) revert AV_NFTX_InvalidVaultNft();
@@ -75,6 +76,20 @@ contract AlignmentVault is Ownable, Initializable, IAlignmentVault {
         return _nftsHeld.values();
     }
 
+    function updateInventory(uint256[] memory tokenIds) external {
+        for (uint256 i; i < tokenIds.length; ++i) {
+            try alignedNft.ownerOf(tokenIds[i]) returns (address nftOwner) {
+                if (nftOwner != address(this)) continue;
+                else {
+                    bool added = _nftsHeld.add(tokenIds[i]);
+                    if (added) emit AV_ReceivedAlignedNft(tokenIds[i]);
+                }
+            } catch {
+                continue;
+            }
+        }
+    }
+
     function wrapEth() public payable virtual {
         uint256 balance = address(this).balance;
         if (balance > 0) _WETH.deposit{value: balance}();
@@ -89,7 +104,7 @@ contract AlignmentVault is Ownable, Initializable, IAlignmentVault {
     }
 
     function onERC721Received(address, address, uint256 _tokenId, bytes calldata) external virtual returns (bytes4 magicBytes) {
-        if (msg.sender != alignedNft) revert AV_UnalignedNft();
+        if (msg.sender != address(alignedNft)) revert AV_UnalignedNft();
         else {
             _nftsHeld.add(_tokenId);
             emit AV_ReceivedAlignedNft(_tokenId);

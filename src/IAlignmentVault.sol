@@ -19,6 +19,7 @@ interface IAlignmentVault {
     function disableInitializers() external payable;
 
     function getInventory() external view returns (uint256[] memory);
+    function updateInventory(uint256[] memory tokenIds) external;
 
     function wrapEth() external payable;
 
