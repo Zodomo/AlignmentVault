@@ -7,6 +7,7 @@ import {IERC20} from "../lib/openzeppelin-contracts/contracts/interfaces/IERC20.
 import {IERC721} from "../lib/openzeppelin-contracts/contracts/interfaces/IERC721.sol";
 import {INFTXVaultFactoryV3} from "../lib/nftx-protocol-v3/src/interfaces/INFTXVaultFactoryV3.sol";
 import {INFTXVaultV3} from "../lib/nftx-protocol-v3/src/interfaces/INFTXVaultV3.sol";
+import {INFTXRouter} from "../lib/nftx-protocol-v3/src/interfaces/INFTXRouter.sol";
 
 /**
  * @title AlignmentVault
