@@ -18,6 +18,8 @@ interface IAlignmentVault {
     ) external payable;
     function disableInitializers() external payable;
 
+    function getInventory() external view returns (uint256[] memory);
+
     function wrapEth() external payable;
 
     function onERC721Received(address, address, uint256 _tokenId, bytes calldata) external returns (bytes4 magicBytes);
