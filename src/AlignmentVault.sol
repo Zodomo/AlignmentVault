@@ -53,6 +53,7 @@ contract AlignmentVault is Ownable, Initializable {
             for (uint256 i; i < vaults.length; ++i) {
                 (uint256 mintFee, uint256 redeemFee, uint256 swapFee) = INFTXVaultV3(vaults[i]).vaultFees();
                 if (mintFee != NFTX_STANDARD_FEE || redeemFee != NFTX_STANDARD_FEE || swapFee != NFTX_STANDARD_FEE) continue;
+                else if (INFTXVaultV3(vaults[i]).manager() != address(0)) continue;
                 else {
                     _vaultId = INFTXVaultV3(vaults[i]).vaultId();
                     vaultId = _vaultId;
