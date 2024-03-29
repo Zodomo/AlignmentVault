@@ -43,7 +43,7 @@ contract AlignmentVault is Ownable, Initializable {
         if (_vaultId != 0) {
             try NFTX_VAULT_FACTORY.vault(_vaultId) {
                 address vaultNft = NFTX_VAULT_FACTORY.vault(_vaultId);
-                if (vaultNft != _alignedNft) revert AV_NFTX_InvalidVaultNFT();
+                if (INFTXVaultV3(vaultNft).assetAddress() != _alignedNft) revert AV_NFTX_InvalidVaultNFT();
                 vaultId = _vaultId;
             } catch {
                 revert AV_NFTX_InvalidVaultId();
