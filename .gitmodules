@@ -19,3 +19,6 @@
 [submodule "lib/solady"]
 	path = lib/solady
 	url = https://github.com/vectorized/solady
+[submodule "lib/openzeppelin-contracts-v5"]
+	path = lib/openzeppelin-contracts-v5
+	url = https://github.com/openzeppelin/openzeppelin-contracts
