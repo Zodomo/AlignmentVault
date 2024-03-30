@@ -2,6 +2,7 @@
 pragma solidity ^0.8.23;
 
 interface IAlignmentVault {
+    error AV_ERC721();
     error AV_ERC1155();
     error AV_UnalignedNft();
     error AV_ProhibitedWithdrawal();

@@ -162,11 +162,11 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
     }
 
     function addERC1155ToLiquidity(uint256[] calldata tokenIds, uint256[] calldata amounts) external payable virtual onlyOwner {
-
+        if (!is1155) revert AV_ERC721();
     }
 
     function addEthAndERC1155ToLiquidity(uint256[] calldata tokenIds, uint256[] calldata amounts, uint256 ethAmount) external payable virtual onlyOwner {
-        
+        if (!is1155) revert AV_ERC721();
     }
 
     function addMaxLiquidity() external payable virtual onlyOwner {
