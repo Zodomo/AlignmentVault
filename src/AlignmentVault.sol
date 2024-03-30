@@ -10,6 +10,7 @@ import {IAlignmentVault} from "./IAlignmentVault.sol";
 import {EnumerableSet} from "../lib/openzeppelin-contracts-v5/contracts/utils/structs/EnumerableSet.sol";
 
 // Interfaces
+import {IWETH9} from "../lib/nftx-protocol-v3/src/uniswap/v3-periphery/interfaces/external/IWETH9.sol";
 import {IERC20} from "../lib/openzeppelin-contracts-v5/contracts/interfaces/IERC20.sol";
 import {IERC721} from "../lib/openzeppelin-contracts-v5/contracts/interfaces/IERC721.sol";
 import {IERC1155} from "../lib/openzeppelin-contracts-v5/contracts/interfaces/IERC1155.sol";
@@ -17,7 +18,6 @@ import {INFTXVaultFactoryV3} from "../lib/nftx-protocol-v3/src/interfaces/INFTXV
 import {INFTXVaultV3} from "../lib/nftx-protocol-v3/src/interfaces/INFTXVaultV3.sol";
 import {INFTXInventoryStakingV3} from "../lib/nftx-protocol-v3/src/interfaces/INFTXInventoryStakingV3.sol";
 import {INFTXRouter} from "../lib/nftx-protocol-v3/src/interfaces/INFTXRouter.sol";
-import {IWETH9} from "../lib/nftx-protocol-v3/src/uniswap/v3-periphery/interfaces/external/IWETH9.sol";
 
 // Temporary
 import {console2} from "../lib/forge-std/src/console2.sol";
@@ -119,7 +119,7 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
         }
     }
 
-    function updateInventory(uint256[] calldata tokenIds) external {
+    function updateNftInventory(uint256[] calldata tokenIds) external {
         address _alignedNft = alignedNft;
         bool _is1155 = is1155;
         for (uint256 i; i < tokenIds.length; ++i) {

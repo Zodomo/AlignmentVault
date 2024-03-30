@@ -26,7 +26,7 @@ interface IAlignmentVault {
 
     function getNftInventory() external view returns (uint256[] memory tokenIds);
     function getNftInventoryAmounts() external view returns (uint256[] memory tokenIds, uint256[] memory amounts);
-    function updateInventory(uint256[] calldata tokenIds) external;
+    function updateNftInventory(uint256[] calldata tokenIds) external;
 
     function getChildInventoryPositionIds() external view returns (uint256[] memory childPositionIds);
     function getSpecificInventoryPositionFees(uint256 positionId_) external view returns (uint256 balance);

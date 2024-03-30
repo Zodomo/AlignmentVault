@@ -81,6 +81,6 @@ contract AlignmentVaultTest is Test {
         inventory[0] = 333;
         vm.expectEmit(address(av));
         emit IAlignmentVault.AV_ReceivedAlignedNft(333, 1);
-        av.updateInventory(inventory);
+        av.updateNftInventory(inventory);
     }
 }
