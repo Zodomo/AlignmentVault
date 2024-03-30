@@ -40,12 +40,9 @@ interface IAlignmentVault {
     function inventoryPositionCollectFees(uint256[] calldata positionIds) external payable;
     function inventoryPositionCollectAllFees() external payable;
 
-    function rescueERC20All(address token, address recipient) external payable;
     function rescueERC20(address token, uint256 amount, address recipient) external payable;
     function rescueERC721(address token, uint256 tokenId, address recipient) external payable;
-    function rescueERC1155All(address token, uint256 tokenId, address recipient) external payable;
     function rescueERC1155(address token, uint256 tokenId, uint256 amount, address recipient) external payable;
-    function rescueERC1155BatchAll(address token, uint256[] calldata tokenIds, address recipient) external payable;
     function rescueERC1155Batch(address token, uint256[] calldata tokenIds, uint256[] calldata amounts, address recipient) external payable;
 
     function wrapEth() external payable;

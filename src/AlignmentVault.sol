@@ -16,8 +16,7 @@ import {IERC1155} from "../lib/openzeppelin-contracts-v5/contracts/interfaces/IE
 import {INFTXVaultFactoryV3} from "../lib/nftx-protocol-v3/src/interfaces/INFTXVaultFactoryV3.sol";
 import {INFTXVaultV3} from "../lib/nftx-protocol-v3/src/interfaces/INFTXVaultV3.sol";
 import {INFTXInventoryStakingV3} from "../lib/nftx-protocol-v3/src/interfaces/INFTXInventoryStakingV3.sol";
-//import {INFTXRouter} from "../lib/nftx-protocol-v3/src/interfaces/INFTXRouter.sol";
-import {INonfungiblePositionManager} from "../lib/nftx-protocol-v3/src/uniswap/v3-periphery/interfaces/INonfungiblePositionManager.sol";
+import {INFTXRouter} from "../lib/nftx-protocol-v3/src/interfaces/INFTXRouter.sol";
 import {IWETH9} from "../lib/nftx-protocol-v3/src/uniswap/v3-periphery/interfaces/external/IWETH9.sol";
 
 // Temporary
@@ -40,7 +39,7 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
     IWETH9 private constant _WETH = IWETH9(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
     INFTXVaultFactoryV3 private constant _NFTX_VAULT_FACTORY = INFTXVaultFactoryV3(0xC255335bc5aBd6928063F5788a5E420554858f01);
     INFTXInventoryStakingV3 private constant _NFTX_INVENTORY_STAKING = INFTXInventoryStakingV3(0x889f313e2a3FDC1c9a45bC6020A8a18749CD6152);
-    INonfungiblePositionManager private constant _NFP = INonfungiblePositionManager(0x26387fcA3692FCac1C1e8E4E2B22A6CF0d4b71bF);
+    IERC721 private constant _NFP = IERC721(0x26387fcA3692FCac1C1e8E4E2B22A6CF0d4b71bF); // NFTX NonfungiblePositionManager.sol
 
     EnumerableSet.UintSet private _nftsHeld;
     EnumerableSet.UintSet private _childInventoryPositionIds;
@@ -229,11 +228,6 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
         _NFTX_INVENTORY_STAKING.collectWethFees(positionIds);
     }
 
-    function rescueERC20All(address token, address recipient) external payable virtual onlyOwner {
-        if (token == address(vault) || token == address(_WETH)) revert AV_ProhibitedWithdrawal();
-        IERC20(token).transfer(recipient, IERC20(token).balanceOf(address(this)));
-    }
-
     function rescueERC20(address token, uint256 amount, address recipient) external payable virtual onlyOwner {
         if (token == address(vault) || token == address(_WETH)) revert AV_ProhibitedWithdrawal();
         IERC20(token).transfer(recipient, amount);
@@ -244,24 +238,9 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
         IERC721(token).transferFrom(address(this), recipient, tokenId);
     }
 
-    function rescueERC1155All(address token, uint256 tokenId, address recipient) external payable virtual onlyOwner {
-        if (token == alignedNft) revert AV_ProhibitedWithdrawal();
-        uint256 balance = IERC1155(token).balanceOf(address(this), tokenId);
-        IERC1155(token).safeTransferFrom(address(this), recipient, tokenId, balance, "");
-    }
-
     function rescueERC1155(address token, uint256 tokenId, uint256 amount, address recipient) external payable virtual onlyOwner {
         if (token == alignedNft) revert AV_ProhibitedWithdrawal();
         IERC1155(token).safeTransferFrom(address(this), recipient, tokenId, amount, "");
-    }
-
-    function rescueERC1155BatchAll(address token, uint256[] calldata tokenIds, address recipient) external payable virtual onlyOwner {
-        if (token == alignedNft) revert AV_ProhibitedWithdrawal();
-        uint256[] memory amounts = new uint256[](tokenIds.length);
-        for (uint256 i; i < tokenIds.length; ++i) {
-            amounts[i] = IERC1155(token).balanceOf(address(this), tokenIds[i]);
-        }
-        IERC1155(token).safeBatchTransferFrom(address(this), recipient, tokenIds, amounts, "");
     }
 
     function rescueERC1155Batch(address token, uint256[] calldata tokenIds, uint256[] calldata amounts, address recipient) external payable virtual onlyOwner {
