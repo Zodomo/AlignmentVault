@@ -6,6 +6,7 @@ interface IAlignmentVault {
     error AV_ERC1155();
     error AV_NoPosition();
     error AV_UnalignedNft();
+    error AV_PositionExists();
     error AV_ProhibitedWithdrawal();
 
     error AV_NFTX_NoVaultsExist();
@@ -39,13 +40,15 @@ interface IAlignmentVault {
     function inventoryCombinePositions(uint256[] calldata childPositionIds) external payable;
     function inventoryPositionCollectFees(uint256[] calldata positionIds) external payable;
     function inventoryPositionCollectAllFees() external payable;
+    function liquidityPositionCreate(uint256 vTokenAmount, uint256 ethAmount, uint256[] calldata tokenIds, uint256[] calldata amounts) external payable;
+    function liquidityPositionIncrease(uint256 vTokenAmount, uint256 ethAmount, uint256[] calldata tokenIds, uint256[] calldata amounts) external payable;
 
     function rescueERC20(address token, uint256 amount, address recipient) external payable;
     function rescueERC721(address token, uint256 tokenId, address recipient) external payable;
     function rescueERC1155(address token, uint256 tokenId, uint256 amount, address recipient) external payable;
     function rescueERC1155Batch(address token, uint256[] calldata tokenIds, uint256[] calldata amounts, address recipient) external payable;
 
-    function wrapEth() external payable;
+    function unwrapEth() external;
     function onERC721Received(address, address, uint256 _tokenId, bytes calldata) external returns (bytes4 magicBytes);
     function onERC1155Received(
         address,

@@ -39,6 +39,7 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
     IWETH9 private constant _WETH = IWETH9(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
     INFTXVaultFactoryV3 private constant _NFTX_VAULT_FACTORY = INFTXVaultFactoryV3(0xC255335bc5aBd6928063F5788a5E420554858f01);
     INFTXInventoryStakingV3 private constant _NFTX_INVENTORY_STAKING = INFTXInventoryStakingV3(0x889f313e2a3FDC1c9a45bC6020A8a18749CD6152);
+    INFTXRouter private constant _NFTX_ROUTER = INFTXRouter(0x70A741A12262d4b5Ff45C0179c783a380EebE42a);
     IERC721 private constant _NFP = IERC721(0x26387fcA3692FCac1C1e8E4E2B22A6CF0d4b71bF); // NFTX NonfungiblePositionManager.sol
 
     EnumerableSet.UintSet private _nftsHeld;
@@ -47,6 +48,7 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
 
     uint256 public vaultId;
     uint256 public inventoryPositionId;
+    uint256 public liquidityPositionId;
     IERC20 public vault;
     address public alignedNft;
     bool public is1155;
@@ -228,6 +230,42 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
         _NFTX_INVENTORY_STAKING.collectWethFees(positionIds);
     }
 
+    function liquidityPositionCreate(uint256 vTokenAmount, uint256 ethAmount, uint256[] calldata tokenIds, uint256[] calldata amounts) external payable virtual onlyOwner {
+        if (liquidityPositionId != 0) revert AV_PositionExists();
+        INFTXRouter.AddLiquidityParams memory params = INFTXRouter.AddLiquidityParams({
+            vaultId: vaultId,
+            vTokensAmount: vTokenAmount,
+            nftIds: tokenIds,
+            nftAmounts: amounts,
+            tickLower: 0, // TODO: Get correct value
+            tickUpper: 1000000, // TODO: Get correct value
+            fee: 3000,
+            sqrtPriceX96: 23875693892574983, // TODO: Get correct value,
+            vTokenMin: 0,
+            wethMin: 0,
+            deadline: block.timestamp,
+            forceTimelock: true,
+            recipient: address(this)
+        });
+        _NFTX_ROUTER.addLiquidity{value: ethAmount}(params);
+    }
+
+    function liquidityPositionIncrease(uint256 vTokenAmount, uint256 ethAmount, uint256[] calldata tokenIds, uint256[] calldata amounts) external payable virtual onlyOwner {
+        if (liquidityPositionId == 0) revert AV_PositionExists();
+        INFTXRouter.IncreaseLiquidityParams memory params = INFTXRouter.IncreaseLiquidityParams({
+            positionId: liquidityPositionId,
+            vaultId: vaultId,
+            vTokensAmount: vTokenAmount,
+            nftIds: tokenIds,
+            nftAmounts: amounts,
+            vTokenMin: 0,
+            wethMin: 0,
+            deadline: block.timestamp,
+            forceTimelock: true
+        });
+        _NFTX_ROUTER.increaseLiquidity{value: ethAmount}(params);
+    }
+
     function rescueERC20(address token, uint256 amount, address recipient) external payable virtual onlyOwner {
         if (token == address(vault) || token == address(_WETH)) revert AV_ProhibitedWithdrawal();
         IERC20(token).transfer(recipient, amount);
@@ -248,9 +286,8 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
         IERC1155(token).safeBatchTransferFrom(address(this), recipient, tokenIds, amounts, "");
     }
 
-    function wrapEth() external payable virtual {
-        uint256 balance = address(this).balance;
-        if (balance > 0) _WETH.deposit{value: balance}();
+    function unwrapEth() external onlyOwner {
+        _WETH.withdraw(_WETH.balanceOf(address(this)));
     }
 
     function onERC721Received(address, address, uint256 tokenId, bytes memory) public virtual override(ERC721Holder, IAlignmentVault) returns (bytes4 magicBytes) {
@@ -300,11 +337,6 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
         return this.onERC1155BatchReceived.selector;
     }
 
-    receive() external payable virtual {
-        _WETH.deposit{value: address(this).balance}();
-    }
-
-    fallback() external payable virtual {
-        _WETH.deposit{value: address(this).balance}();
-    }
+    receive() external payable virtual {}
+    fallback() external payable virtual {}
 }
