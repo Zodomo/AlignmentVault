@@ -125,8 +125,8 @@ contract AlignmentVault is Ownable, Initializable {
 
     /**
     * @notice The ability to renounce is overridden as it would break the vault. A privileged caller is required.
-    */
     function renounceOwnership() public payable virtual override {}
+    */
 
     /**
     * @notice Estimate the floor price of the NFT in terms of WETH based on NFTX SLP reserves

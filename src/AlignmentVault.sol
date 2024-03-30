@@ -87,9 +87,11 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
         }
     }
 
-    function disableInitializers() external payable virtual {
+    function disableInitializers() external payable virtual override {
         _disableInitializers();
     }
+
+    function renounceOwnership() public payable virtual override(Ownable, IAlignmentVault) {}
 
     function getInventory() external view virtual returns (uint256[] memory tokenIds) {
         tokenIds = _nftsHeld.values();
@@ -145,6 +147,34 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
     function wrapEth() external payable virtual {
         uint256 balance = address(this).balance;
         if (balance > 0) _WETH.deposit{value: balance}();
+    }
+
+    function addEthToLiquidity(uint256 amount) external payable virtual onlyOwner {
+
+    }
+
+    function addERC721ToLiquidity(uint256[] calldata tokenIds) external payable virtual onlyOwner {
+        if (is1155) revert AV_ERC1155();
+    }
+
+    function addEthAndERC721ToLiquidity(uint256[] calldata tokenIds, uint256 ethAmount) external payable virtual onlyOwner {
+        if (is1155) revert AV_ERC1155();
+    }
+
+    function addERC1155ToLiquidity(uint256[] calldata tokenIds, uint256[] calldata amounts) external payable virtual onlyOwner {
+
+    }
+
+    function addEthAndERC1155ToLiquidity(uint256[] calldata tokenIds, uint256[] calldata amounts, uint256 ethAmount) external payable virtual onlyOwner {
+        
+    }
+
+    function addMaxLiquidity() external payable virtual onlyOwner {
+
+    }
+
+    function claimYield(address recipient) external payable virtual onlyOwner {
+
     }
 
     function rescueERC20All(address token, address recipient) external payable virtual onlyOwner {
