@@ -43,9 +43,11 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
     INonfungiblePositionManager private constant _NFP = INonfungiblePositionManager(0x26387fcA3692FCac1C1e8E4E2B22A6CF0d4b71bF);
 
     EnumerableSet.UintSet private _nftsHeld;
+    EnumerableSet.UintSet private _childInventoryPositionIds;
     mapping(uint256 tokenId => uint256 amount) private _erc1155Balances;
 
     uint256 public vaultId;
+    uint256 public inventoryPositionId;
     IERC20 public vault;
     address public alignedNft;
     bool public is1155;
@@ -62,9 +64,13 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
         if (_vaultId != 0) {
             try _NFTX_VAULT_FACTORY.vault(_vaultId) returns (address vaultAddr) {
                 if (INFTXVaultV3(vaultAddr).assetAddress() != _alignedNft) revert AV_NFTX_InvalidVaultNft();
-                if (INFTXVaultV3(vaultAddr).is1155()) is1155 = true;
+                if (INFTXVaultV3(vaultAddr).is1155()) {
+                    is1155 = true;
+                    IERC1155(_alignedNft).setApprovalForAll(address(_NFTX_INVENTORY_STAKING), true);
+                }
                 vaultId = _vaultId;
                 vault = IERC20(vaultAddr);
+                vault.approve(address(_NFTX_INVENTORY_STAKING), type(uint256).max);
                 emit AV_VaultInitialized(vaultAddr, vaultId);
             } catch {
                 revert AV_NFTX_InvalidVaultId();
@@ -77,10 +83,14 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
                 if (mintFee != _NFTX_STANDARD_FEE || redeemFee != _NFTX_STANDARD_FEE || swapFee != _NFTX_STANDARD_FEE) continue;
                 else if (INFTXVaultV3(vaults[i]).manager() != address(0)) continue;
                 else {
-                    if (INFTXVaultV3(vaults[i]).is1155()) is1155 = true;
+                    if (INFTXVaultV3(vaults[i]).is1155()) {
+                        is1155 = true;
+                        IERC1155(_alignedNft).setApprovalForAll(address(_NFTX_INVENTORY_STAKING), true);
+                    }
                     _vaultId = INFTXVaultV3(vaults[i]).vaultId();
                     vaultId = _vaultId;
                     vault = IERC20(vaults[i]);
+                    vault.approve(address(_NFTX_INVENTORY_STAKING), type(uint256).max);
                     emit AV_VaultInitialized(vaults[i], _vaultId);
                     break;
                 }
@@ -146,12 +156,46 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
         }
     }
 
-    function wrapEth() external payable virtual {
-        uint256 balance = address(this).balance;
-        if (balance > 0) _WETH.deposit{value: balance}();
+    function getChildInventoryPositionIds() external view virtual returns (uint256[] memory childPositionIds) {
+        childPositionIds = _childInventoryPositionIds.values();
     }
 
-    
+    function getInventoryPositionsWethBalance() external view virtual returns (uint256 balance) {
+        unchecked {
+            if (inventoryPositionId != 0) balance += _NFTX_INVENTORY_STAKING.wethBalance(inventoryPositionId);
+        }
+        uint256[] memory childPositionIds = _childInventoryPositionIds.values();
+        for (uint256 i; i < childPositionIds.length; ++i) {
+            unchecked {
+                balance += _NFTX_INVENTORY_STAKING.wethBalance(childPositionIds[i]);
+            }
+        }
+    }
+
+    function inventoryVTokenDeposit(uint256 amount) external payable virtual onlyOwner {
+        uint256 _positionId = _NFTX_INVENTORY_STAKING.deposit(
+            vaultId,
+            amount,
+            address(this),
+            "",
+            false,
+            true
+        );
+        if (inventoryPositionId == 0) inventoryPositionId = _positionId;
+        else _childInventoryPositionIds.add(_positionId);
+    }
+
+    function inventoryNftDeposit(uint256[] calldata tokenIds, uint256[] calldata amounts) external payable virtual onlyOwner {
+        uint256 _positionId = _NFTX_INVENTORY_STAKING.depositWithNFT(vaultId, tokenIds, amounts, address(this));
+        if (inventoryPositionId == 0) inventoryPositionId = _positionId;
+        else _childInventoryPositionIds.add(_positionId);
+    }
+
+    function inventoryPositionIncrease(uint256 amount) external payable virtual onlyOwner {
+        uint256 _positionId = inventoryPositionId;
+        if (_positionId == 0) revert AV_NoPosition();
+        _NFTX_INVENTORY_STAKING.increasePosition(_positionId, amount, "", false, true);
+    }
 
     function claimYield(address recipient) external payable virtual onlyOwner {
 
@@ -195,6 +239,11 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
     function rescueERC1155Batch(address token, uint256[] calldata tokenIds, uint256[] calldata amounts, address recipient) external payable virtual onlyOwner {
         if (token == alignedNft) revert AV_ProhibitedWithdrawal();
         IERC1155(token).safeBatchTransferFrom(address(this), recipient, tokenIds, amounts, "");
+    }
+
+    function wrapEth() external payable virtual {
+        uint256 balance = address(this).balance;
+        if (balance > 0) _WETH.deposit{value: balance}();
     }
 
     function onERC721Received(address, address, uint256 tokenId, bytes memory) public virtual override(ERC721Holder, IAlignmentVault) returns (bytes4 magicBytes) {
