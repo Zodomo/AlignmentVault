@@ -2,9 +2,6 @@
 pragma solidity ^0.8.23;
 
 interface IAlignmentVault {
-    error AV_ERC721();
-    error AV_ERC1155();
-    error AV_NoPosition();
     error AV_UnalignedNft();
     error AV_PositionExists();
     error AV_ProhibitedWithdrawal();
@@ -57,4 +54,8 @@ interface IAlignmentVault {
     function rescueERC1155(address token, uint256 tokenId, uint256 amount, address recipient) external payable;
     function rescueERC1155Batch(address token, uint256[] calldata tokenIds, uint256[] calldata amounts, address recipient) external payable;
     function unwrapEth() external payable;
+
+    function onERC721Received(address, address, uint256, bytes memory) external returns (bytes4);
+    function onERC1155Received(address, address, uint256, uint256, bytes memory) external returns (bytes4);
+    function onERC1155BatchReceived(address, address, uint256[] memory, uint256[] memory, bytes memory) external returns (bytes4);
 }

@@ -306,6 +306,33 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
         _WETH.withdraw(_WETH.balanceOf(address(this)));
     }
 
+    function onERC721Received(address, address, uint256, bytes memory) public virtual override(ERC721Holder, IAlignmentVault) returns (bytes4) {
+        if (msg.sender != alignedNft || msg.sender != address(_NFTX_INVENTORY_STAKING) || msg.sender != address(_NFP)) revert AV_UnalignedNft();
+        return this.onERC721Received.selector;
+    }
+
+    function onERC1155Received(
+        address,
+        address,
+        uint256,
+        uint256,
+        bytes memory
+    ) public virtual override(ERC1155Holder, IAlignmentVault) returns (bytes4) {
+        if (msg.sender != alignedNft) revert AV_UnalignedNft();
+        return this.onERC1155Received.selector;
+    }
+
+    function onERC1155BatchReceived(
+        address,
+        address,
+        uint256[] memory,
+        uint256[] memory,
+        bytes memory
+    ) public virtual override(ERC1155Holder, IAlignmentVault) returns (bytes4) {
+        if (msg.sender != alignedNft) revert AV_UnalignedNft();
+        return this.onERC1155BatchReceived.selector;
+    }
+
     receive() external payable virtual {}
     fallback() external payable virtual {}
 }
