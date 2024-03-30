@@ -3,7 +3,6 @@ pragma solidity ^0.8.23;
 
 interface IAlignmentVault {
     error AV_UnalignedNft();
-    error AV_PositionExists();
     error AV_ProhibitedWithdrawal();
 
     error AV_NFTX_NoVaultsExist();
@@ -12,14 +11,18 @@ interface IAlignmentVault {
     error AV_NFTX_NoStandardVault();
 
     event AV_VaultInitialized(address indexed vault, uint256 indexed vaultId);
+    event AV_NftsPurchased(uint256 indexed ethAmount, uint256[] indexed tokenIds);
+    event AV_MintVTokens(uint256[] indexed tokenIds, uint256[] indexed amounts);
 
-    function initialize(
-        address _owner,
-        address _alignedNft,
-        uint256 _vaultId
-    ) external payable;
-    function disableInitializers() external payable;
-    function renounceOwnership() external payable;
+    event AV_InventoryPositionCreated(uint256 indexed positionId, uint256 indexed vTokenAmount);
+    event AV_InventoryPositionIncreased(uint256 indexed positionId, uint256 indexed vTokenAmount);
+    event AV_InventoryPositionWithdrawal(uint256 indexed positionId, uint256 indexed vTokenAmount);
+    event AV_InventoryPositionCombination(uint256 indexed positionId, uint256[] indexed childPositionIds);
+    event AV_InventoryPositionsCollected(uint256[] indexed positionIds);
+
+    event AV_LiquidityPositionCreated(uint256 indexed positionId, uint256 indexed ethAmount, uint256 indexed vTokenAmount);
+    event AV_LiquidityPositionIncreased(uint256 indexed positionId, uint256 indexed ethAmount, uint256 indexed vTokenAmount);
+    event AV_LiquidityPositionsCollected(uint256[] indexed positionIds);
 
     function vaultId() external view returns (uint256);
     function vault() external view returns (address);
@@ -43,10 +46,10 @@ interface IAlignmentVault {
 
     function liquidityPositionCreate(uint256 ethAmount, uint256 vTokenAmount, uint256[] calldata tokenIds, uint256[] calldata amounts, int24 tickLower, int24 tickUpper, uint24 fee, uint160 sqrtPriceX96, uint16 slippage) external payable;
     function liquidityPositionIncrease(uint256 positionId, uint256 ethAmount, uint256 vTokenAmount, uint256[] calldata tokenIds, uint256[] calldata amounts, uint16 slippage) external payable;
-    function liquidityPositionCollectFees(uint256 positionId) external payable;
+    function liquidityPositionCollectFees(uint256[] calldata positionIds) external payable;
     function liquidityPositionCollectAllFees() external payable;
 
-    function buyNftFromPool(uint256 ethAmount, uint256[] calldata tokenIds, uint256 vTokenPremiumLimit, uint24 fee, uint160 sqrtPriceLimitX96) external payable;
+    function buyNftsFromPool(uint256 ethAmount, uint256[] calldata tokenIds, uint256 vTokenPremiumLimit, uint24 fee, uint160 sqrtPriceLimitX96) external payable;
     function mintVToken(uint256 ethAmount, uint256[] calldata tokenIds, uint256[] calldata amounts) external payable;
 
     function rescueERC20(address token, uint256 amount, address recipient) external payable;

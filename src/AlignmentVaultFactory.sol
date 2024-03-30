@@ -7,10 +7,18 @@ import {IAlignmentVaultFactory} from "./IAlignmentVaultFactory.sol";
 import {LibClone} from "../lib/solady/src/utils/LibClone.sol";
 
 // Interfaces
-import {IAlignmentVault} from "./IAlignmentVault.sol";
 import {IERC20} from "../lib/openzeppelin-contracts-v5/contracts/interfaces/IERC20.sol";
 import {IERC721} from "../lib/openzeppelin-contracts-v5/contracts/interfaces/IERC721.sol";
 import {IERC1155} from "../lib/openzeppelin-contracts-v5/contracts/interfaces/IERC1155.sol";
+
+interface IInitialize {
+    function initialize(
+        address _owner,
+        address _alignedNft,
+        uint256 _vaultId
+    ) external payable;
+    function disableInitializers() external payable;
+}
 
 /**
  * @title AlignmentVaultFactory
@@ -50,8 +58,8 @@ contract AlignmentVaultFactory is Ownable, IAlignmentVaultFactory {
     function deploy(address alignedNft, uint256 vaultId) external payable virtual returns (address deployment) {
         deployment = LibClone.clone(implementation);
         vaultDeployers[deployment] = msg.sender;
-        IAlignmentVault(deployment).initialize(msg.sender, alignedNft, vaultId);
-        IAlignmentVault(deployment).disableInitializers();
+        IInitialize(deployment).initialize(msg.sender, alignedNft, vaultId);
+        IInitialize(deployment).disableInitializers();
         emit AVF_Deployed(msg.sender, deployment);
     }
 
@@ -70,8 +78,8 @@ contract AlignmentVaultFactory is Ownable, IAlignmentVaultFactory {
     {
         deployment = LibClone.cloneDeterministic(implementation, salt);
         vaultDeployers[deployment] = msg.sender;
-        IAlignmentVault(deployment).initialize(msg.sender, alignedNft, vaultId);
-        IAlignmentVault(deployment).disableInitializers();
+        IInitialize(deployment).initialize(msg.sender, alignedNft, vaultId);
+        IInitialize(deployment).disableInitializers();
         emit AVF_Deployed(msg.sender, deployment);
     }
 
