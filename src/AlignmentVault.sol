@@ -15,7 +15,8 @@ import {IERC721} from "../lib/openzeppelin-contracts-v5/contracts/interfaces/IER
 import {IERC1155} from "../lib/openzeppelin-contracts-v5/contracts/interfaces/IERC1155.sol";
 import {INFTXVaultFactoryV3} from "../lib/nftx-protocol-v3/src/interfaces/INFTXVaultFactoryV3.sol";
 import {INFTXVaultV3} from "../lib/nftx-protocol-v3/src/interfaces/INFTXVaultV3.sol";
-import {INFTXRouter} from "../lib/nftx-protocol-v3/src/interfaces/INFTXRouter.sol";
+import {INFTXInventoryStakingV3} from "../lib/nftx-protocol-v3/src/interfaces/INFTXInventoryStakingV3.sol";
+//import {INFTXRouter} from "../lib/nftx-protocol-v3/src/interfaces/INFTXRouter.sol";
 import {INonfungiblePositionManager} from "../lib/nftx-protocol-v3/src/uniswap/v3-periphery/interfaces/INonfungiblePositionManager.sol";
 import {IWETH9} from "../lib/nftx-protocol-v3/src/uniswap/v3-periphery/interfaces/external/IWETH9.sol";
 
@@ -38,6 +39,7 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
 
     IWETH9 private constant _WETH = IWETH9(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
     INFTXVaultFactoryV3 private constant _NFTX_VAULT_FACTORY = INFTXVaultFactoryV3(0xC255335bc5aBd6928063F5788a5E420554858f01);
+    INFTXInventoryStakingV3 private constant _NFTX_INVENTORY_STAKING = INFTXInventoryStakingV3(0x889f313e2a3FDC1c9a45bC6020A8a18749CD6152);
     INonfungiblePositionManager private constant _NFP = INonfungiblePositionManager(0x26387fcA3692FCac1C1e8E4E2B22A6CF0d4b71bF);
 
     EnumerableSet.UintSet private _nftsHeld;
@@ -149,29 +151,7 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
         if (balance > 0) _WETH.deposit{value: balance}();
     }
 
-    function addEthToLiquidity(uint256 amount) external payable virtual onlyOwner {
-
-    }
-
-    function addERC721ToLiquidity(uint256[] calldata tokenIds) external payable virtual onlyOwner {
-        if (is1155) revert AV_ERC1155();
-    }
-
-    function addEthAndERC721ToLiquidity(uint256[] calldata tokenIds, uint256 ethAmount) external payable virtual onlyOwner {
-        if (is1155) revert AV_ERC1155();
-    }
-
-    function addERC1155ToLiquidity(uint256[] calldata tokenIds, uint256[] calldata amounts) external payable virtual onlyOwner {
-        if (!is1155) revert AV_ERC721();
-    }
-
-    function addEthAndERC1155ToLiquidity(uint256[] calldata tokenIds, uint256[] calldata amounts, uint256 ethAmount) external payable virtual onlyOwner {
-        if (!is1155) revert AV_ERC721();
-    }
-
-    function addMaxLiquidity() external payable virtual onlyOwner {
-
-    }
+    
 
     function claimYield(address recipient) external payable virtual onlyOwner {
 

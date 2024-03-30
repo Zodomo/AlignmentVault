@@ -28,12 +28,7 @@ interface IAlignmentVault {
     function updateInventory(uint256[] calldata tokenIds) external;
 
     function wrapEth() external payable;
-    function addEthToLiquidity(uint256 amount) external payable;
-    function addERC721ToLiquidity(uint256[] calldata tokenIds) external payable;
-    function addEthAndERC721ToLiquidity(uint256[] calldata tokenIds, uint256 ethAmount) external payable;
-    function addERC1155ToLiquidity(uint256[] calldata tokenIds, uint256[] calldata amounts) external payable;
-    function addEthAndERC1155ToLiquidity(uint256[] calldata tokenIds, uint256[] calldata amounts, uint256 ethAmount) external payable;
-    function addMaxLiquidity() external payable;
+    
     function claimYield(address recipient) external payable;
 
     function rescueERC20All(address token, address recipient) external payable;
