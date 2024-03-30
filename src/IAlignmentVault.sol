@@ -42,6 +42,7 @@ interface IAlignmentVault {
     function inventoryPositionCollectAllFees() external payable;
     function liquidityPositionCreate(uint256 vTokenAmount, uint256 ethAmount, uint256[] calldata tokenIds, uint256[] calldata amounts) external payable;
     function liquidityPositionIncrease(uint256 vTokenAmount, uint256 ethAmount, uint256[] calldata tokenIds, uint256[] calldata amounts) external payable;
+    function liquidityPositionCollectFees() external;
 
     function rescueERC20(address token, uint256 amount, address recipient) external payable;
     function rescueERC721(address token, uint256 tokenId, address recipient) external payable;

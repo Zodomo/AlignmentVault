@@ -18,6 +18,7 @@ import {INFTXVaultFactoryV3} from "../lib/nftx-protocol-v3/src/interfaces/INFTXV
 import {INFTXVaultV3} from "../lib/nftx-protocol-v3/src/interfaces/INFTXVaultV3.sol";
 import {INFTXInventoryStakingV3} from "../lib/nftx-protocol-v3/src/interfaces/INFTXInventoryStakingV3.sol";
 import {INFTXRouter} from "../lib/nftx-protocol-v3/src/interfaces/INFTXRouter.sol";
+import {INonfungiblePositionManager} from "../lib/nftx-protocol-v3/src/uniswap/v3-periphery/interfaces/INonfungiblePositionManager.sol";
 
 // Temporary
 import {console2} from "../lib/forge-std/src/console2.sol";
@@ -40,7 +41,7 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
     INFTXVaultFactoryV3 private constant _NFTX_VAULT_FACTORY = INFTXVaultFactoryV3(0xC255335bc5aBd6928063F5788a5E420554858f01);
     INFTXInventoryStakingV3 private constant _NFTX_INVENTORY_STAKING = INFTXInventoryStakingV3(0x889f313e2a3FDC1c9a45bC6020A8a18749CD6152);
     INFTXRouter private constant _NFTX_ROUTER = INFTXRouter(0x70A741A12262d4b5Ff45C0179c783a380EebE42a);
-    IERC721 private constant _NFP = IERC721(0x26387fcA3692FCac1C1e8E4E2B22A6CF0d4b71bF); // NFTX NonfungiblePositionManager.sol
+    INonfungiblePositionManager private constant _NFP = INonfungiblePositionManager(0x26387fcA3692FCac1C1e8E4E2B22A6CF0d4b71bF);
 
     EnumerableSet.UintSet private _nftsHeld;
     EnumerableSet.UintSet private _childInventoryPositionIds;
@@ -264,6 +265,16 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
             forceTimelock: true
         });
         _NFTX_ROUTER.increaseLiquidity{value: ethAmount}(params);
+    }
+
+    function liquidityPositionCollectFees() external onlyOwner {
+        INonfungiblePositionManager.CollectParams memory params = INonfungiblePositionManager.CollectParams({
+            tokenId: liquidityPositionId,
+            recipient: msg.sender,
+            amount0Max: type(uint128).max,
+            amount1Max: type(uint128).max
+        });
+        _NFP.collect(params);
     }
 
     function rescueERC20(address token, uint256 amount, address recipient) external payable virtual onlyOwner {
