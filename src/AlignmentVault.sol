@@ -166,6 +166,7 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
         _NFTX_INVENTORY_STAKING.increasePosition(_positionId, vTokenAmount, "", false, true);
     }
 
+    // TODO: Make vTokenPremiumLimit more user-friendly
     function inventoryPositionWithdrawal(uint256 positionId_, uint256 vTokenAmount, uint256[] calldata tokenIds, uint256 vTokenPremiumLimit) external payable virtual onlyOwner {
         _NFTX_INVENTORY_STAKING.withdraw(positionId_, vTokenAmount, tokenIds, vTokenPremiumLimit);
     }
@@ -242,6 +243,7 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
         _NFP.collect(params);
     }
 
+    // TODO: Figure out if NFTXRouter or MarketplaceUniversalRouterZap is the correct contract to use for this
     function buyNftFromPool(uint256 ethAmount, uint256[] calldata tokenIds) external payable virtual onlyOwner {
         INFTXRouter.BuyNFTsParams memory params = INFTXRouter.BuyNFTsParams({
             vaultId: vaultId,
