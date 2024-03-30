@@ -32,6 +32,7 @@ interface IAlignmentVault {
     function getChildInventoryPositionIds() external view returns (uint256[] memory childPositionIds);
     function getSpecificInventoryPositionFees(uint256 positionId_) external view returns (uint256 balance);
     function getTotalInventoryPositionFees() external view returns (uint256 balance);
+    function getLiquidityPositionFees() external view returns (uint128 token0Fees, uint128 token1Fees);
 
     function inventoryVTokenDeposit(uint256 vTokenAmount) external payable;
     function inventoryNftDeposit(uint256[] calldata tokenIds, uint256[] calldata amounts) external payable;

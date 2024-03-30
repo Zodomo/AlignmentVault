@@ -178,6 +178,10 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
         }
     }
 
+    function getLiquidityPositionFees() external view virtual returns (uint128 token0Fees, uint128 token1Fees) {
+        (,,,,,,,,,, token0Fees, token1Fees) = _NFP.positions(liquidityPositionId);
+    }
+
     function inventoryVTokenDeposit(uint256 vTokenAmount) external payable virtual onlyOwner {
         uint256 _positionId = _NFTX_INVENTORY_STAKING.deposit(
             vaultId,
