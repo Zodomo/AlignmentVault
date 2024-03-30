@@ -24,22 +24,33 @@ interface IAlignmentVault {
     function disableInitializers() external payable;
     function renounceOwnership() external payable;
 
-    function getChildInventoryPositionIds() external view returns (uint256[] memory childPositionIds);
-    function getSpecificInventoryPositionFees(uint256 positionId_) external view returns (uint256 balance);
-    function getTotalInventoryPositionFees() external view returns (uint256 balance);
-    function getLiquidityPositionFees() external view returns (uint128 token0Fees, uint128 token1Fees);
+    function vaultId() external view returns (uint256);
+    function vault() external view returns (address);
+    function alignedNft() external view returns (address);
+    function is1155() external view returns (bool);
 
-    function inventoryVTokenDeposit(uint256 vTokenAmount) external payable;
-    function inventoryNftDeposit(uint256[] calldata tokenIds, uint256[] calldata amounts) external payable;
-    function inventoryPositionIncrease(uint256 vTokenAmount) external payable;
+    function getInventoryPositionIds() external view returns (uint256[] memory positionIds);
+    function getLiquidityPositionIds() external view returns (uint256[] memory positionIds);
+    function getSpecificInventoryPositionFees(uint256 positionId) external view returns (uint256 balance);
+    function getTotalInventoryPositionFees() external view returns (uint256 balance);
+    function getSpecificLiquidityPositionFees(uint256 positionId) external view returns (uint128 token0Fees, uint128 token1Fees);
+    function getTotalLiquidityPositionFees() external view returns (uint128 token0Fees, uint128 token1Fees);
+
+    function inventoryPositionCreateVToken(uint256 vTokenAmount) external payable;
+    function inventoryPositionCreateNfts(uint256[] calldata tokenIds, uint256[] calldata amounts) external payable;
+    function inventoryPositionIncrease(uint256 positionId, uint256 vTokenAmount) external payable;
     function inventoryPositionWithdrawal(uint256 positionId_, uint256 vTokenAmount, uint256[] calldata tokenIds, uint256 vTokenPremiumLimit) external payable;
-    function inventoryCombinePositions(uint256[] calldata childPositionIds) external payable;
+    function inventoryCombinePositions(uint256 positionId, uint256[] calldata childPositionIds) external payable;
     function inventoryPositionCollectFees(uint256[] calldata positionIds) external payable;
     function inventoryPositionCollectAllFees() external payable;
-    function liquidityPositionCreate(uint256 vTokenAmount, uint256 ethAmount, uint256[] calldata tokenIds, uint256[] calldata amounts) external payable;
-    function liquidityPositionIncrease(uint256 vTokenAmount, uint256 ethAmount, uint256[] calldata tokenIds, uint256[] calldata amounts) external payable;
-    function liquidityPositionCollectFees() external payable;
-    function buyNftFromPool(uint256 ethAmount, uint256[] calldata tokenIds) external payable;
+
+    function liquidityPositionCreate(uint256 ethAmount, uint256 vTokenAmount, uint256[] calldata tokenIds, uint256[] calldata amounts, int24 tickLower, int24 tickUpper, uint24 fee, uint160 sqrtPriceX96, uint16 slippage) external payable;
+    function liquidityPositionIncrease(uint256 positionId, uint256 ethAmount, uint256 vTokenAmount, uint256[] calldata tokenIds, uint256[] calldata amounts, uint16 slippage) external payable;
+    function liquidityPositionCollectFees(uint256 positionId) external payable;
+    function liquidityPositionCollectAllFees() external payable;
+
+    function buyNftFromPool(uint256 ethAmount, uint256[] calldata tokenIds, uint256 vTokenPremiumLimit, uint24 fee, uint160 sqrtPriceLimitX96) external payable;
+    function mintVToken(uint256 ethAmount, uint256[] calldata tokenIds, uint256[] calldata amounts) external payable;
 
     function rescueERC20(address token, uint256 amount, address recipient) external payable;
     function rescueERC721(address token, uint256 tokenId, address recipient) external payable;
