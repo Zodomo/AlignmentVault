@@ -8,45 +8,51 @@ import {IERC721} from "../lib/openzeppelin-contracts-v5/contracts/interfaces/IER
 
 contract AlignmentVaultTest is Test {
     AlignmentVault public av;
-    address public milady = 0x5Af0D9827E0c53E4799BB226655A1de152A425a5;
+    address public constant MILADY = 0x5Af0D9827E0c53E4799BB226655A1de152A425a5;
+    address public constant VAULT = 0xfA95083034ed077860afcEabDF277C1524C644a5;
+    uint256 public constant VAULT_ID = 5;
 
     function setUp() public {
         av = new AlignmentVault();
-        av.initialize(address(this), milady, 5);
+        av.initialize(address(this), MILADY, VAULT_ID);
     }
 
     function targetInitialize() public {
         av = new AlignmentVault();
-        av.initialize(address(this), milady, 5);
+        vm.expectEmit(address(av));
+        emit IAlignmentVault.AV_VaultInitialized(VAULT, VAULT_ID);
+        av.initialize(address(this), MILADY, VAULT_ID);
     }
 
     function lazyInitialize() public {
         av = new AlignmentVault();
-        av.initialize(address(this), milady, 0);
+        vm.expectEmit(address(av));
+        emit IAlignmentVault.AV_VaultInitialized(VAULT, VAULT_ID);
+        av.initialize(address(this), MILADY, 0);
     }
 
     function transferMilady(address recipient, uint256 tokenId) public {
-        address target = IERC721(milady).ownerOf(tokenId);
+        address target = IERC721(MILADY).ownerOf(tokenId);
         vm.prank(target);
-        IERC721(milady).transferFrom(target, recipient, tokenId);
+        IERC721(MILADY).transferFrom(target, recipient, tokenId);
     }
 
     function safeTransferMilady(address recipient, uint256 tokenId) public {
-        address target = IERC721(milady).ownerOf(tokenId);
+        address target = IERC721(MILADY).ownerOf(tokenId);
         vm.prank(target);
-        IERC721(milady).safeTransferFrom(target, recipient, tokenId);
+        IERC721(MILADY).safeTransferFrom(target, recipient, tokenId);
     }
 
     function testTargetInitialize() public {
         targetInitialize();
-        assertEq(av.vaultId(), 5);
-        assertEq(address(av.alignedNft()), milady);
+        assertEq(av.vaultId(), VAULT_ID);
+        assertEq(address(av.alignedNft()), MILADY);
     }
 
     function testLazyInitialize() public {
         lazyInitialize();
-        assertEq(av.vaultId(), 5);
-        assertEq(address(av.alignedNft()), milady);
+        assertEq(av.vaultId(), VAULT_ID);
+        assertEq(address(av.alignedNft()), MILADY);
     }
 
     function testWrapOnReceive() public {
@@ -56,7 +62,7 @@ contract AlignmentVaultTest is Test {
 
     function testOnERC721Received() public {
         vm.expectEmit(address(av));
-        emit IAlignmentVault.AV_ReceivedAlignedNft(420);
+        emit IAlignmentVault.AV_ReceivedAlignedNft(420, 1);
         safeTransferMilady(address(av), 420);
     }
 
@@ -74,7 +80,7 @@ contract AlignmentVaultTest is Test {
         inventory = new uint256[](1);
         inventory[0] = 333;
         vm.expectEmit(address(av));
-        emit IAlignmentVault.AV_ReceivedAlignedNft(333);
+        emit IAlignmentVault.AV_ReceivedAlignedNft(333, 1);
         av.updateInventory(inventory);
     }
 }
