@@ -43,7 +43,6 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
     INFTXRouter private constant _NFTX_ROUTER = INFTXRouter(0x70A741A12262d4b5Ff45C0179c783a380EebE42a);
     INonfungiblePositionManager private constant _NFP = INonfungiblePositionManager(0x26387fcA3692FCac1C1e8E4E2B22A6CF0d4b71bF);
 
-    EnumerableSet.UintSet private _nftsHeld;
     EnumerableSet.UintSet private _childInventoryPositionIds;
     mapping(uint256 tokenId => uint256 amount) private _erc1155Balances;
 
@@ -117,57 +116,6 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
     }
 
     function renounceOwnership() public payable virtual override(Ownable, IAlignmentVault) {}
-
-    function getNftInventory() external view virtual returns (uint256[] memory tokenIds) {
-        tokenIds = _nftsHeld.values();
-    }
-
-    function getNftInventoryAmounts() external view virtual returns (uint256[] memory tokenIds, uint256[] memory amounts) {
-        bool _is1155 = is1155;
-        address _alignedNft = alignedNft;
-        tokenIds = _nftsHeld.values();
-        amounts = new uint256[](tokenIds.length);
-        for (uint256 i; i < tokenIds.length; ++i) {
-            if (!_is1155) amounts[i] = 1;
-            else amounts[i] = IERC1155(_alignedNft).balanceOf(address(this), tokenIds[i]);
-        }
-    }
-
-    function updateNftInventory(uint256[] calldata tokenIds) external payable virtual {
-        address _alignedNft = alignedNft;
-        bool _is1155 = is1155;
-        for (uint256 i; i < tokenIds.length; ++i) {
-            if (!_is1155) {
-                try IERC721(_alignedNft).ownerOf(tokenIds[i]) returns (address nftOwner) {
-                    if (nftOwner != address(this)) continue;
-                    else {
-                        bool added = _nftsHeld.add(tokenIds[i]);
-                        if (added) emit AV_ReceivedAlignedNft(tokenIds[i], 1);
-                    }
-                } catch {
-                    continue;
-                }
-            } else {
-                try IERC1155(_alignedNft).balanceOf(address(this), tokenIds[i]) returns (uint256 currentBalance) {
-                    if (currentBalance == 0) continue;
-                    else {            
-                        _nftsHeld.add(tokenIds[i]);            
-                        uint256 knownBalance = _erc1155Balances[tokenIds[i]];
-                        uint256 difference;
-                        unchecked {
-                            difference = currentBalance - knownBalance;
-                            if (difference > 0) {
-                                _erc1155Balances[tokenIds[i]] += difference;
-                                emit AV_ReceivedAlignedNft(tokenIds[i], difference);
-                            }
-                        }
-                    }
-                } catch {
-                    continue;
-                }
-            }
-        }
-    }
 
     function getChildInventoryPositionIds() external view virtual returns (uint256[] memory childPositionIds) {
         childPositionIds = _childInventoryPositionIds.values();
@@ -328,53 +276,6 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
 
     function unwrapEth() external payable virtual onlyOwner {
         _WETH.withdraw(_WETH.balanceOf(address(this)));
-    }
-
-    function onERC721Received(address, address, uint256 tokenId, bytes memory) public virtual override(ERC721Holder, IAlignmentVault) returns (bytes4 magicBytes) {
-        if (msg.sender != alignedNft) revert AV_UnalignedNft();
-        else {
-            _nftsHeld.add(tokenId);
-            emit AV_ReceivedAlignedNft(tokenId, 1);
-        }
-        return this.onERC721Received.selector;
-    }
-
-    function onERC1155Received(
-        address,
-        address,
-        uint256 tokenId,
-        uint256 amount,
-        bytes memory
-    ) public virtual override(ERC1155Holder, IAlignmentVault) returns (bytes4) {
-        if (msg.sender != alignedNft) revert AV_UnalignedNft();
-        else {
-            _nftsHeld.add(tokenId);
-            unchecked {
-                _erc1155Balances[tokenId] += amount;
-            }
-            emit AV_ReceivedAlignedNft(tokenId, amount);
-        }
-        return this.onERC1155Received.selector;
-    }
-
-    function onERC1155BatchReceived(
-        address,
-        address,
-        uint256[] memory tokenIds,
-        uint256[] memory amounts,
-        bytes memory
-    ) public virtual override(ERC1155Holder, IAlignmentVault) returns (bytes4) {
-        if (msg.sender != alignedNft) revert AV_UnalignedNft();
-        else {
-            for (uint256 i; i < tokenIds.length; ++i) {
-                _nftsHeld.add(tokenIds[i]);
-                unchecked {
-                    _erc1155Balances[tokenIds[i]] += amounts[i];
-                }
-                emit AV_ReceivedAlignedNft(tokenIds[i], amounts[i]);
-            }
-        }
-        return this.onERC1155BatchReceived.selector;
     }
 
     receive() external payable virtual {}

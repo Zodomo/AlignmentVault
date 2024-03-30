@@ -54,33 +54,4 @@ contract AlignmentVaultTest is Test {
         assertEq(av.vaultId(), VAULT_ID);
         assertEq(address(av.alignedNft()), MILADY);
     }
-
-    function testWrapOnReceive() public {
-        (bool success,) = payable(address(av)).call{value: 0.1 ether}("");
-        if (!success) revert("ETH direct payment to contract failed");
-    }
-
-    function testOnERC721Received() public {
-        vm.expectEmit(address(av));
-        emit IAlignmentVault.AV_ReceivedAlignedNft(420, 1);
-        safeTransferMilady(address(av), 420);
-    }
-
-    function testGetInventory() public {
-        uint256[] memory inventory = new uint256[](1);
-        inventory[0] = 69;
-        safeTransferMilady(address(av), 69);
-        assertEq(av.getNftInventory(), inventory);
-    }
-
-    function testUpdateInventory() public {
-        transferMilady(address(av), 333);
-        uint256[] memory inventory = new uint256[](0);
-        assertEq(av.getNftInventory(), inventory);
-        inventory = new uint256[](1);
-        inventory[0] = 333;
-        vm.expectEmit(address(av));
-        emit IAlignmentVault.AV_ReceivedAlignedNft(333, 1);
-        av.updateNftInventory(inventory);
-    }
 }

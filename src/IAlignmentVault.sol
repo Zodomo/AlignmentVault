@@ -15,7 +15,6 @@ interface IAlignmentVault {
     error AV_NFTX_NoStandardVault();
 
     event AV_VaultInitialized(address indexed vault, uint256 indexed vaultId);
-    event AV_ReceivedAlignedNft(uint256 indexed tokenId, uint256 indexed amount);
 
     function initialize(
         address _owner,
@@ -24,10 +23,6 @@ interface IAlignmentVault {
     ) external payable;
     function disableInitializers() external payable;
     function renounceOwnership() external payable;
-
-    function getNftInventory() external view returns (uint256[] memory tokenIds);
-    function getNftInventoryAmounts() external view returns (uint256[] memory tokenIds, uint256[] memory amounts);
-    function updateNftInventory(uint256[] calldata tokenIds) external payable;
 
     function getChildInventoryPositionIds() external view returns (uint256[] memory childPositionIds);
     function getSpecificInventoryPositionFees(uint256 positionId_) external view returns (uint256 balance);
@@ -50,21 +45,5 @@ interface IAlignmentVault {
     function rescueERC721(address token, uint256 tokenId, address recipient) external payable;
     function rescueERC1155(address token, uint256 tokenId, uint256 amount, address recipient) external payable;
     function rescueERC1155Batch(address token, uint256[] calldata tokenIds, uint256[] calldata amounts, address recipient) external payable;
-
     function unwrapEth() external payable;
-    function onERC721Received(address, address, uint256 _tokenId, bytes calldata) external returns (bytes4 magicBytes);
-    function onERC1155Received(
-        address,
-        address,
-        uint256 tokenId,
-        uint256 amount,
-        bytes memory
-    ) external returns (bytes4);
-    function onERC1155BatchReceived(
-        address,
-        address,
-        uint256[] memory tokenIds,
-        uint256[] memory amounts,
-        bytes memory
-    ) external returns (bytes4);
 }
