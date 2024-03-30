@@ -70,13 +70,13 @@ contract AlignmentVaultTest is Test {
         uint256[] memory inventory = new uint256[](1);
         inventory[0] = 69;
         safeTransferMilady(address(av), 69);
-        assertEq(av.getInventory(), inventory);
+        assertEq(av.getNftInventory(), inventory);
     }
 
     function testUpdateInventory() public {
         transferMilady(address(av), 333);
         uint256[] memory inventory = new uint256[](0);
-        assertEq(av.getInventory(), inventory);
+        assertEq(av.getNftInventory(), inventory);
         inventory = new uint256[](1);
         inventory[0] = 333;
         vm.expectEmit(address(av));

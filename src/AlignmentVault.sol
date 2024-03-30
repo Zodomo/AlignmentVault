@@ -105,11 +105,11 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
 
     function renounceOwnership() public payable virtual override(Ownable, IAlignmentVault) {}
 
-    function getInventory() external view virtual returns (uint256[] memory tokenIds) {
+    function getNftInventory() external view virtual returns (uint256[] memory tokenIds) {
         tokenIds = _nftsHeld.values();
     }
 
-    function getInventoryAmounts() external view virtual returns (uint256[] memory tokenIds, uint256[] memory amounts) {
+    function getNftInventoryAmounts() external view virtual returns (uint256[] memory tokenIds, uint256[] memory amounts) {
         bool _is1155 = is1155;
         address _alignedNft = alignedNft;
         tokenIds = _nftsHeld.values();
@@ -160,7 +160,11 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
         childPositionIds = _childInventoryPositionIds.values();
     }
 
-    function getInventoryPositionsWethBalance() external view virtual returns (uint256 balance) {
+    function getSpecificInventoryPositionFees(uint256 positionId_) external view virtual returns (uint256 balance) {
+        balance = _NFTX_INVENTORY_STAKING.wethBalance(positionId_);
+    }
+
+    function getTotalInventoryPositionFees() external view virtual returns (uint256 balance) {
         unchecked {
             if (inventoryPositionId != 0) balance += _NFTX_INVENTORY_STAKING.wethBalance(inventoryPositionId);
         }
@@ -172,10 +176,10 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
         }
     }
 
-    function inventoryVTokenDeposit(uint256 amount) external payable virtual onlyOwner {
+    function inventoryVTokenDeposit(uint256 vTokenAmount) external payable virtual onlyOwner {
         uint256 _positionId = _NFTX_INVENTORY_STAKING.deposit(
             vaultId,
-            amount,
+            vTokenAmount,
             address(this),
             "",
             false,
@@ -191,14 +195,38 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
         else _childInventoryPositionIds.add(_positionId);
     }
 
-    function inventoryPositionIncrease(uint256 amount) external payable virtual onlyOwner {
+    function inventoryPositionIncrease(uint256 vTokenAmount) external payable virtual onlyOwner {
         uint256 _positionId = inventoryPositionId;
         if (_positionId == 0) revert AV_NoPosition();
-        _NFTX_INVENTORY_STAKING.increasePosition(_positionId, amount, "", false, true);
+        _NFTX_INVENTORY_STAKING.increasePosition(_positionId, vTokenAmount, "", false, true);
     }
 
-    function claimYield(address recipient) external payable virtual onlyOwner {
+    function inventoryPositionWithdrawal(uint256 positionId_, uint256 vTokenAmount, uint256[] calldata tokenIds, uint256 vTokenPremiumLimit) external payable virtual onlyOwner {
+        _NFTX_INVENTORY_STAKING.withdraw(positionId_, vTokenAmount, tokenIds, vTokenPremiumLimit);
+    }
 
+    function inventoryCombinePositions(uint256[] calldata childPositionIds) external payable virtual onlyOwner {
+        _NFTX_INVENTORY_STAKING.combinePositions(inventoryPositionId, childPositionIds);
+    }
+
+    function inventoryPositionCollectFees(uint256[] calldata positionIds) external payable virtual onlyOwner {
+        _NFTX_INVENTORY_STAKING.collectWethFees(positionIds);
+    }
+
+    function inventoryPositionCollectAllFees() external payable virtual onlyOwner {
+        uint256 _inventoryPositionId = inventoryPositionId;
+        uint256[] memory childPositionIds = _childInventoryPositionIds.values();
+        uint256 positionCount;
+        unchecked {
+            if (_inventoryPositionId != 0) ++positionCount;
+            positionCount += childPositionIds.length;
+        }
+        uint256[] memory positionIds = new uint256[](positionCount);
+        if (_inventoryPositionId != 0) positionIds[0] = _inventoryPositionId;
+        for (uint256 i = 1; i < positionCount; ++i) {
+            positionIds[i] = childPositionIds[i - 1];
+        }
+        _NFTX_INVENTORY_STAKING.collectWethFees(positionIds);
     }
 
     function rescueERC20All(address token, address recipient) external payable virtual onlyOwner {

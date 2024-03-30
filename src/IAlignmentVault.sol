@@ -24,17 +24,21 @@ interface IAlignmentVault {
     function disableInitializers() external payable;
     function renounceOwnership() external payable;
 
-    function getInventory() external view returns (uint256[] memory tokenIds);
-    function getInventoryAmounts() external view returns (uint256[] memory tokenIds, uint256[] memory amounts);
+    function getNftInventory() external view returns (uint256[] memory tokenIds);
+    function getNftInventoryAmounts() external view returns (uint256[] memory tokenIds, uint256[] memory amounts);
     function updateInventory(uint256[] calldata tokenIds) external;
 
     function getChildInventoryPositionIds() external view returns (uint256[] memory childPositionIds);
-    function getInventoryPositionsWethBalance() external view returns (uint256 balance);
+    function getSpecificInventoryPositionFees(uint256 positionId_) external view returns (uint256 balance);
+    function getTotalInventoryPositionFees() external view returns (uint256 balance);
 
-    function inventoryVTokenDeposit(uint256 amount) external payable;
+    function inventoryVTokenDeposit(uint256 vTokenAmount) external payable;
     function inventoryNftDeposit(uint256[] calldata tokenIds, uint256[] calldata amounts) external payable;
-    function inventoryPositionIncrease(uint256 amount) external payable;
-    function claimYield(address recipient) external payable;
+    function inventoryPositionIncrease(uint256 vTokenAmount) external payable;
+    function inventoryPositionWithdrawal(uint256 positionId_, uint256 vTokenAmount, uint256[] calldata tokenIds, uint256 vTokenPremiumLimit) external payable;
+    function inventoryCombinePositions(uint256[] calldata childPositionIds) external payable;
+    function inventoryPositionCollectFees(uint256[] calldata positionIds) external payable;
+    function inventoryPositionCollectAllFees() external payable;
 
     function rescueERC20All(address token, address recipient) external payable;
     function rescueERC20(address token, uint256 amount, address recipient) external payable;
