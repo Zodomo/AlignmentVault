@@ -133,7 +133,7 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
         }
     }
 
-    function updateNftInventory(uint256[] calldata tokenIds) external {
+    function updateNftInventory(uint256[] calldata tokenIds) external payable virtual {
         address _alignedNft = alignedNft;
         bool _is1155 = is1155;
         for (uint256 i; i < tokenIds.length; ++i) {
@@ -284,7 +284,7 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
         _NFTX_ROUTER.increaseLiquidity{value: ethAmount}(params);
     }
 
-    function liquidityPositionCollectFees() external onlyOwner {
+    function liquidityPositionCollectFees() external payable virtual onlyOwner {
         INonfungiblePositionManager.CollectParams memory params = INonfungiblePositionManager.CollectParams({
             tokenId: liquidityPositionId,
             recipient: msg.sender,
@@ -292,6 +292,18 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
             amount1Max: type(uint128).max
         });
         _NFP.collect(params);
+    }
+
+    function buyNftFromPool(uint256 ethAmount, uint256[] calldata tokenIds) external payable virtual onlyOwner {
+        INFTXRouter.BuyNFTsParams memory params = INFTXRouter.BuyNFTsParams({
+            vaultId: vaultId,
+            nftIds: tokenIds,
+            vTokenPremiumLimit: type(uint256).max,
+            deadline: block.timestamp,
+            fee: 3000,
+            sqrtPriceLimitX96: type(uint160).max
+        });
+        _NFTX_ROUTER.buyNFTs{value: ethAmount}(params);
     }
 
     function rescueERC20(address token, uint256 amount, address recipient) external payable virtual onlyOwner {
@@ -314,7 +326,7 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
         IERC1155(token).safeBatchTransferFrom(address(this), recipient, tokenIds, amounts, "");
     }
 
-    function unwrapEth() external onlyOwner {
+    function unwrapEth() external payable virtual onlyOwner {
         _WETH.withdraw(_WETH.balanceOf(address(this)));
     }
 

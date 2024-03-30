@@ -27,7 +27,7 @@ interface IAlignmentVault {
 
     function getNftInventory() external view returns (uint256[] memory tokenIds);
     function getNftInventoryAmounts() external view returns (uint256[] memory tokenIds, uint256[] memory amounts);
-    function updateNftInventory(uint256[] calldata tokenIds) external;
+    function updateNftInventory(uint256[] calldata tokenIds) external payable;
 
     function getChildInventoryPositionIds() external view returns (uint256[] memory childPositionIds);
     function getSpecificInventoryPositionFees(uint256 positionId_) external view returns (uint256 balance);
@@ -43,14 +43,15 @@ interface IAlignmentVault {
     function inventoryPositionCollectAllFees() external payable;
     function liquidityPositionCreate(uint256 vTokenAmount, uint256 ethAmount, uint256[] calldata tokenIds, uint256[] calldata amounts) external payable;
     function liquidityPositionIncrease(uint256 vTokenAmount, uint256 ethAmount, uint256[] calldata tokenIds, uint256[] calldata amounts) external payable;
-    function liquidityPositionCollectFees() external;
+    function liquidityPositionCollectFees() external payable;
+    function buyNftFromPool(uint256 ethAmount, uint256[] calldata tokenIds) external payable;
 
     function rescueERC20(address token, uint256 amount, address recipient) external payable;
     function rescueERC721(address token, uint256 tokenId, address recipient) external payable;
     function rescueERC1155(address token, uint256 tokenId, uint256 amount, address recipient) external payable;
     function rescueERC1155Batch(address token, uint256[] calldata tokenIds, uint256[] calldata amounts, address recipient) external payable;
 
-    function unwrapEth() external;
+    function unwrapEth() external payable;
     function onERC721Received(address, address, uint256 _tokenId, bytes calldata) external returns (bytes4 magicBytes);
     function onERC1155Received(
         address,
