@@ -240,7 +240,7 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
         }
         uint256 positionId = _NFTX_ROUTER.addLiquidity{value: ethAmount}(params);
         _liquidityPositionIds.add(positionId);
-        emit AV_LiquidityPositionCreated(positionId, ethAmount, vTokenAmount + tokenIds.length * 10e18);
+        emit AV_LiquidityPositionCreated(positionId);
     }
 
     function liquidityPositionIncrease(uint256 positionId, uint256 ethAmount, uint256 vTokenAmount, uint256[] calldata tokenIds, uint256[] calldata amounts, uint16 slippage) external payable virtual onlyOwner {
@@ -259,7 +259,23 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
             });
         }
         _NFTX_ROUTER.increaseLiquidity{value: ethAmount}(params);
-        emit AV_LiquidityPositionIncreased(positionId, ethAmount, vTokenAmount + tokenIds.length * 10e18);
+        emit AV_LiquidityPositionIncreased(positionId);
+    }
+
+    function liquidityPositionWithdrawal(uint256 positionId, uint256[] calldata tokenIds, uint256 vTokenPremiumLimit, uint128 liquidity, uint256 amount0Min, uint256 amount1Min) external payable virtual onlyOwner {
+        if (vTokenPremiumLimit == 0) vTokenPremiumLimit = type(uint256).max;
+        INFTXRouter.RemoveLiquidityParams memory params = INFTXRouter.RemoveLiquidityParams({
+            positionId: positionId,
+            vaultId: vaultId,
+            nftIds: tokenIds,
+            vTokenPremiumLimit: vTokenPremiumLimit,
+            liquidity: liquidity,
+            amount0Min: amount0Min,
+            amount1Min: amount1Min,
+            deadline: block.timestamp
+        });
+        _NFTX_ROUTER.removeLiquidity(params);
+        emit AV_LiquidityPositionWithdrawal(positionId);
     }
 
     function liquidityPositionCollectFees(uint256[] calldata positionIds) external payable virtual onlyOwner {
