@@ -57,6 +57,7 @@ interface IAlignmentVault {
     function donateInventoryPositionIncrease(uint256 positionId, uint256 vTokenAmount) external payable;
     function donateInventoryCombinePositions(uint256 positionId, uint256[] calldata childPositionIds) external payable;
     function donateLiquidityPositionIncrease(uint256 positionId, uint256 vTokenAmount, uint256[] calldata tokenIds, uint256[] calldata amounts, uint24 slippage) external payable;
+    function donateLiquidityCombinePositions(uint256 positionId, uint256[] calldata childPositionIds) external payable;
     function donateBuyNftsFromPool(uint256[] calldata tokenIds, uint256 vTokenPremiumLimit, uint24 fee, uint160 sqrtPriceLimitX96) external payable;
     function donateMintVToken(uint256[] calldata tokenIds, uint256[] calldata amounts) external payable;
 
@@ -73,7 +74,9 @@ interface IAlignmentVault {
     // >>>>>>>>>>>> [ LIQUIDITY POSITION MANAGEMENT ] <<<<<<<<<<<<
 
     function liquidityPositionCreate(uint256 ethAmount, uint256 vTokenAmount, uint256[] calldata tokenIds, uint256[] calldata amounts, int24 tickLower, int24 tickUpper, uint24 fee, uint160 sqrtPriceX96, uint24 slippage) external payable;
-    function liquidityPositionIncrease(uint256 positionId, uint256 ethAmount, uint256 vTokenAmount, uint256[] calldata tokenIds, uint256[] calldata amounts, uint24 slippage) external payable;
+    function liquidityPositionIncrease(uint256 positionId, uint256 ethAmount, uint256 vTokenAmount, uint256[] calldata tokenIds, uint256[] calldata amounts) external payable;
+    function liquidityPositionWithdrawal(uint256 positionId, uint256[] calldata tokenIds, uint256 vTokenPremiumLimit, uint128 liquidity) external payable;
+    function liquidityCombinePositions(uint256 positionId, uint256[] calldata childPositionIds) external payable;
     function liquidityPositionCollectFees(uint256[] calldata positionIds) external payable;
     function liquidityPositionCollectAllFees() external payable;
 

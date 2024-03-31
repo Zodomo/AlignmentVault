@@ -49,7 +49,7 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
     IWETH9 private constant _WETH = IWETH9(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
     INFTXVaultFactoryV3 private constant _NFTX_VAULT_FACTORY = INFTXVaultFactoryV3(0xC255335bc5aBd6928063F5788a5E420554858f01);
     INFTXInventoryStakingV3 private constant _NFTX_INVENTORY_STAKING = INFTXInventoryStakingV3(0x889f313e2a3FDC1c9a45bC6020A8a18749CD6152);
-    INonfungiblePositionManager private constant _NFP = INonfungiblePositionManager(0x26387fcA3692FCac1C1e8E4E2B22A6CF0d4b71bF);
+    INonfungiblePositionManager private constant _NPM = INonfungiblePositionManager(0x26387fcA3692FCac1C1e8E4E2B22A6CF0d4b71bF);
     INFTXRouter private constant _NFTX_POSITION_ROUTER = INFTXRouter(0x70A741A12262d4b5Ff45C0179c783a380EebE42a);
     ISwapRouter private constant _NFTX_SWAP_ROUTER = ISwapRouter(0x1703f8111B0E7A10e1d14f9073F53680d64277A3);
 
@@ -114,17 +114,17 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
         if (!_is1155) {
             IERC721(alignedNft_).setApprovalForAll(address(_NFTX_INVENTORY_STAKING), true);
             IERC721(alignedNft_).setApprovalForAll(address(_NFTX_POSITION_ROUTER), true);
-            IERC721(alignedNft_).setApprovalForAll(address(_NFP), true);
+            IERC721(alignedNft_).setApprovalForAll(address(_NPM), true);
             IERC721(alignedNft_).setApprovalForAll(vault, true);
         } else {
             IERC1155(alignedNft_).setApprovalForAll(address(_NFTX_INVENTORY_STAKING), true);
             IERC1155(alignedNft_).setApprovalForAll(address(_NFTX_POSITION_ROUTER), true);
-            IERC1155(alignedNft_).setApprovalForAll(address(_NFP), true);
+            IERC1155(alignedNft_).setApprovalForAll(address(_NPM), true);
             IERC1155(alignedNft_).setApprovalForAll(vault, true);
         }
         IERC20(vault).approve(address(_NFTX_INVENTORY_STAKING), type(uint256).max);
         IERC20(vault).approve(address(_NFTX_POSITION_ROUTER), type(uint256).max);
-        IERC20(vault).approve(address(_NFP), type(uint256).max);
+        IERC20(vault).approve(address(_NPM), type(uint256).max);
         _WETH.approve(address(_NFTX_SWAP_ROUTER), type(uint256).max);
     }
 
@@ -158,14 +158,14 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
     }
 
     function getSpecificLiquidityPositionFees(uint256 positionId) external view virtual returns (uint128 token0Fees, uint128 token1Fees) {
-        (,,,,,,,,,, token0Fees, token1Fees) = _NFP.positions(positionId);
+        (,,,,,,,,,, token0Fees, token1Fees) = _NPM.positions(positionId);
     }
 
     function getTotalLiquidityPositionFees() external view virtual returns (uint128 token0Fees, uint128 token1Fees) {
         uint256[] memory positionIds = _liquidityPositionIds.values();
         for (uint256 i; i < positionIds.length; ++i) {
             unchecked {
-                (,,,,,,,,,, uint128 _token0Fees, uint128 _token1Fees) = _NFP.positions(positionIds[i]);
+                (,,,,,,,,,, uint128 _token0Fees, uint128 _token1Fees) = _NPM.positions(positionIds[i]);
                 token0Fees += _token0Fees;
                 token1Fees += _token1Fees;
             }
@@ -218,6 +218,44 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
         }
         _NFTX_POSITION_ROUTER.increaseLiquidity{value: msg.value}(params);
         emit AV_LiquidityPositionIncreased(positionId);
+    }
+
+    function donateLiquidityCombinePositions(uint256 positionId, uint256[] calldata childPositionIds) external payable virtual onlyOwner {
+        if (!_inventoryPositionIds.contains(positionId)) revert AV_InvalidPosition();
+        uint256 ethBalance = address(this).balance;
+        uint256 vTokenBalance = IERC20(vault).balanceOf(address(this));
+        uint256[] memory none = new uint256[](0);
+        INFTXRouter.RemoveLiquidityParams memory removeParams;
+        for (uint256 i; i < childPositionIds.length; ++i) {
+            _NPM.transferFrom(msg.sender, address(this), childPositionIds[i]);
+            (,,,,,,, uint128 liquidity,,,,) = _NPM.positions(childPositionIds[i]);
+            removeParams = INFTXRouter.RemoveLiquidityParams({
+                positionId: childPositionIds[i],
+                vaultId: vaultId,
+                nftIds: none,
+                vTokenPremiumLimit: type(uint256).max,
+                liquidity: liquidity,
+                amount0Min: 0,
+                amount1Min: 0,
+                deadline: block.timestamp
+            });
+            _NFTX_POSITION_ROUTER.removeLiquidity(removeParams);
+        }
+        INFTXRouter.IncreaseLiquidityParams memory increaseParams;
+        unchecked {
+            increaseParams = INFTXRouter.IncreaseLiquidityParams({
+                positionId: positionId,
+                vaultId: vaultId,
+                vTokensAmount: IERC20(vault).balanceOf(address(this)) - vTokenBalance,
+                nftIds: none,
+                nftAmounts: none,
+                vTokenMin: 0,
+                wethMin: 0,
+                deadline: block.timestamp,
+                forceTimelock: true
+            });
+        }
+        _NFTX_POSITION_ROUTER.increaseLiquidity{value: address(this).balance - ethBalance}(increaseParams);
     }
 
     function donateBuyNftsFromPool(uint256[] calldata tokenIds, uint256 vTokenPremiumLimit, uint24 fee, uint160 sqrtPriceLimitX96) external payable virtual onlyOwner {
@@ -324,7 +362,7 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
         emit AV_LiquidityPositionCreated(positionId);
     }
 
-    function liquidityPositionIncrease(uint256 positionId, uint256 ethAmount, uint256 vTokenAmount, uint256[] calldata tokenIds, uint256[] calldata amounts, uint24 slippage) external payable virtual onlyOwner {
+    function liquidityPositionIncrease(uint256 positionId, uint256 ethAmount, uint256 vTokenAmount, uint256[] calldata tokenIds, uint256[] calldata amounts) external payable virtual onlyOwner {
         INFTXRouter.IncreaseLiquidityParams memory params;
         unchecked {
             params = INFTXRouter.IncreaseLiquidityParams({
@@ -333,8 +371,8 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
                 vTokensAmount: vTokenAmount,
                 nftIds: tokenIds,
                 nftAmounts: amounts,
-                vTokenMin: (vTokenAmount + (tokenIds.length * 10e18)) - FixedPointMathLib.fullMulDiv(vTokenAmount + (tokenIds.length * 10e18), slippage, _SLIPPAGE_DENOMINATOR),
-                wethMin: ethAmount - FixedPointMathLib.fullMulDiv(ethAmount, slippage, _SLIPPAGE_DENOMINATOR),
+                vTokenMin: 0,
+                wethMin: 0,
                 deadline: block.timestamp,
                 forceTimelock: true
             });
@@ -343,7 +381,7 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
         emit AV_LiquidityPositionIncreased(positionId);
     }
 
-    function liquidityPositionWithdrawal(uint256 positionId, uint256[] calldata tokenIds, uint256 vTokenPremiumLimit, uint128 liquidity, uint256 amount0Min, uint256 amount1Min) external payable virtual onlyOwner {
+    function liquidityPositionWithdrawal(uint256 positionId, uint256[] calldata tokenIds, uint256 vTokenPremiumLimit, uint128 liquidity) external payable virtual onlyOwner {
         if (vTokenPremiumLimit == 0) vTokenPremiumLimit = type(uint256).max;
         INFTXRouter.RemoveLiquidityParams memory params = INFTXRouter.RemoveLiquidityParams({
             positionId: positionId,
@@ -351,12 +389,48 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
             nftIds: tokenIds,
             vTokenPremiumLimit: vTokenPremiumLimit,
             liquidity: liquidity,
-            amount0Min: amount0Min,
-            amount1Min: amount1Min,
+            amount0Min: 0,
+            amount1Min: 0,
             deadline: block.timestamp
         });
         _NFTX_POSITION_ROUTER.removeLiquidity(params);
         emit AV_LiquidityPositionWithdrawal(positionId);
+    }
+
+    function liquidityCombinePositions(uint256 positionId, uint256[] calldata childPositionIds) external payable virtual onlyOwner {
+        uint256 ethBalance = address(this).balance;
+        uint256 vTokenBalance = IERC20(vault).balanceOf(address(this));
+        uint256[] memory none = new uint256[](0);
+        INFTXRouter.RemoveLiquidityParams memory removeParams;
+        for (uint256 i; i < childPositionIds.length; ++i) {
+            (,,,,,,, uint128 liquidity,,,,) = _NPM.positions(childPositionIds[i]);
+            removeParams = INFTXRouter.RemoveLiquidityParams({
+                positionId: childPositionIds[i],
+                vaultId: vaultId,
+                nftIds: none,
+                vTokenPremiumLimit: type(uint256).max,
+                liquidity: liquidity,
+                amount0Min: 0,
+                amount1Min: 0,
+                deadline: block.timestamp
+            });
+            _NFTX_POSITION_ROUTER.removeLiquidity(removeParams);
+        }
+        INFTXRouter.IncreaseLiquidityParams memory increaseParams;
+        unchecked {
+            increaseParams = INFTXRouter.IncreaseLiquidityParams({
+                positionId: positionId,
+                vaultId: vaultId,
+                vTokensAmount: IERC20(vault).balanceOf(address(this)) - vTokenBalance,
+                nftIds: none,
+                nftAmounts: none,
+                vTokenMin: 0,
+                wethMin: 0,
+                deadline: block.timestamp,
+                forceTimelock: true
+            });
+        }
+        _NFTX_POSITION_ROUTER.increaseLiquidity{value: address(this).balance - ethBalance}(increaseParams);
     }
 
     function liquidityPositionCollectFees(uint256[] calldata positionIds) external payable virtual onlyOwner {
@@ -367,7 +441,7 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
                 amount0Max: type(uint128).max,
                 amount1Max: type(uint128).max
             });
-            _NFP.collect(params);
+            _NPM.collect(params);
         }
         emit AV_LiquidityPositionsCollected(positionIds);
     }
@@ -381,7 +455,7 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
                 amount0Max: type(uint128).max,
                 amount1Max: type(uint128).max
             });
-            _NFP.collect(params);
+            _NPM.collect(params);
         }
         emit AV_LiquidityPositionsCollected(positionIds);
     }
@@ -483,7 +557,7 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
     }
 
     function rescueERC721(address token, uint256 tokenId, address recipient) external payable virtual onlyOwner {
-        if (token == alignedNft || token == address(_NFP)) revert AV_ProhibitedWithdrawal();
+        if (token == alignedNft || token == address(_NPM)) revert AV_ProhibitedWithdrawal();
         IERC721(token).transferFrom(address(this), recipient, tokenId);
     }
 
@@ -504,7 +578,7 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
     // >>>>>>>>>>>> [ RECEIVE LOGIC ] <<<<<<<<<<<<
 
     function onERC721Received(address, address, uint256, bytes memory) public virtual override(ERC721Holder, IAlignmentVault) returns (bytes4) {
-        if (msg.sender != alignedNft || msg.sender != address(_NFTX_INVENTORY_STAKING) || msg.sender != address(_NFP)) revert AV_UnalignedNft();
+        if (msg.sender != alignedNft || msg.sender != address(_NFTX_INVENTORY_STAKING) || msg.sender != address(_NPM)) revert AV_UnalignedNft();
         return this.onERC721Received.selector;
     }
 
