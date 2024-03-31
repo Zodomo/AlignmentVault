@@ -169,6 +169,84 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
         }
     }
 
+    // >>>>>>>>>>>> [ EXTERNAL DONATION MANAGEMENT ] <<<<<<<<<<<<
+
+    function donateInventoryPositionIncrease(uint256 positionId, uint256 vTokenAmount) external payable virtual onlyOwner {
+        if (!_inventoryPositionIds.contains(positionId)) revert AV_InvalidPosition();
+        IERC20(vault).transferFrom(msg.sender, address(this), vTokenAmount);
+        _NFTX_INVENTORY_STAKING.increasePosition(positionId, vTokenAmount, "", false, true);
+        emit AV_InventoryPositionIncreased(positionId, vTokenAmount);
+    }
+
+    function donateInventoryCombinePositions(uint256 positionId, uint256[] calldata childPositionIds) external payable virtual onlyOwner {
+        if (!_inventoryPositionIds.contains(positionId)) revert AV_InvalidPosition();
+        for (uint256 i; i < childPositionIds.length; ++i) {
+            _NFTX_INVENTORY_STAKING.transferFrom(msg.sender, address(this), childPositionIds[i]);
+        }
+        _NFTX_INVENTORY_STAKING.combinePositions(positionId, childPositionIds);
+        emit AV_InventoryPositionCombination(positionId, childPositionIds);
+    }
+
+    function donateLiquidityPositionIncrease(uint256 positionId, uint256 vTokenAmount, uint256[] calldata tokenIds, uint256[] calldata amounts, uint16 slippage) external payable virtual onlyOwner {
+        if (!_liquidityPositionIds.contains(positionId)) revert AV_InvalidPosition();
+        if (vTokenAmount > 0) IERC20(vault).transferFrom(msg.sender, address(this), vTokenAmount);
+        if (tokenIds.length > 0) {
+            if (!is1155) {
+                for (uint256 i; i < tokenIds.length; ++i) {
+                    IERC721(alignedNft).transferFrom(msg.sender, address(this), tokenIds[i]);
+                }
+            } else {
+                IERC1155(alignedNft).safeBatchTransferFrom(msg.sender, address(this), tokenIds, amounts, "");
+            }
+        }
+        INFTXRouter.IncreaseLiquidityParams memory params;
+        unchecked {
+            params = INFTXRouter.IncreaseLiquidityParams({
+                positionId: positionId,
+                vaultId: vaultId,
+                vTokensAmount: vTokenAmount,
+                nftIds: tokenIds,
+                nftAmounts: amounts,
+                vTokenMin: (vTokenAmount + (tokenIds.length * 10e18)) - FixedPointMathLib.fullMulDiv(vTokenAmount + (tokenIds.length * 10e18), slippage, _SLIPPAGE_DENOMINATOR),
+                wethMin: msg.value - FixedPointMathLib.fullMulDiv(msg.value, slippage, _SLIPPAGE_DENOMINATOR),
+                deadline: block.timestamp,
+                forceTimelock: true
+            });
+        }
+        _NFTX_ROUTER.increaseLiquidity{value: msg.value}(params);
+        emit AV_LiquidityPositionIncreased(positionId);
+    }
+
+    function donateBuyNftsFromPool(uint256[] calldata tokenIds, uint256 vTokenPremiumLimit, uint24 fee, uint160 sqrtPriceLimitX96) external payable virtual onlyOwner {
+        if (vTokenPremiumLimit == 0) vTokenPremiumLimit = type(uint256).max;
+        if (sqrtPriceLimitX96 == 0) sqrtPriceLimitX96 = type(uint160).max;
+        INFTXRouter.BuyNFTsParams memory params = INFTXRouter.BuyNFTsParams({
+            vaultId: vaultId,
+            nftIds: tokenIds,
+            vTokenPremiumLimit: vTokenPremiumLimit,
+            deadline: block.timestamp,
+            fee: fee,
+            sqrtPriceLimitX96: sqrtPriceLimitX96
+        });
+        uint256 balance = address(this).balance - msg.value;
+        _NFTX_ROUTER.buyNFTs{value: msg.value}(params);
+        if (address(this).balance > balance) {
+            (bool success,) = payable(msg.sender).call{value: address(this).balance - balance}("");
+            if (!success) revert AV_TransactionFailed();
+        }
+        emit AV_NftsPurchased(address(this).balance - balance, tokenIds);
+    }
+
+    function donateMintVToken(uint256[] calldata tokenIds, uint256[] calldata amounts) external payable onlyOwner {
+        uint256 balance = address(this).balance - msg.value;
+        INFTXVaultV3(vault).mint{value: msg.value}(tokenIds, amounts, msg.sender, address(this));
+        if (address(this).balance > balance) {
+            (bool success,) = payable(msg.sender).call{value: address(this).balance - balance}("");
+            if (!success) revert AV_TransactionFailed();
+        }
+        emit AV_MintVTokens(tokenIds, amounts);
+    }
+
     // >>>>>>>>>>>> [ INVENTORY POSITION MANAGEMENT ] <<<<<<<<<<<<
 
     function inventoryPositionCreateVToken(uint256 vTokenAmount) external payable virtual onlyOwner {
@@ -305,7 +383,7 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
         emit AV_LiquidityPositionsCollected(positionIds);
     }
 
-    // >>>>>>>>>>>> [ VTOKEN MANAGEMENT ] <<<<<<<<<<<<
+    // >>>>>>>>>>>> [ ALIGNED TOKEN MANAGEMENT ] <<<<<<<<<<<<
 
     function buyNftsFromPool(uint256 ethAmount, uint256[] calldata tokenIds, uint256 vTokenPremiumLimit, uint24 fee, uint160 sqrtPriceLimitX96) external payable virtual onlyOwner {
         if (vTokenPremiumLimit == 0) vTokenPremiumLimit = type(uint256).max;
