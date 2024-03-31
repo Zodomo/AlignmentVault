@@ -44,6 +44,7 @@ interface IAlignmentVault {
     event AV_LiquidityPositionCreated(uint256 indexed positionId);
     event AV_LiquidityPositionIncreased(uint256 indexed positionId);
     event AV_LiquidityPositionWithdrawal(uint256 indexed positionId);
+    event AV_LiquidityPositionCombination(uint256 indexed positionId, uint256[] indexed childPositionIds);
     event AV_LiquidityPositionsCollected(uint256[] indexed positionIds);
 
     // >>>>>>>>>>>> [ PUBLIC STORAGE ] <<<<<<<<<<<<

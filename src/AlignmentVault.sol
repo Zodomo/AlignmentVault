@@ -256,6 +256,9 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
             });
         }
         _NFTX_POSITION_ROUTER.increaseLiquidity{value: address(this).balance - ethBalance}(increaseParams);
+        uint256 wethBalance = _WETH.balanceOf(address(this));
+        if (wethBalance > 0) _WETH.withdraw(wethBalance);
+        emit AV_LiquidityPositionCombination(positionId, childPositionIds);
     }
 
     function donateBuyNftsFromPool(uint256[] calldata tokenIds, uint256 vTokenPremiumLimit, uint24 fee, uint160 sqrtPriceLimitX96) external payable virtual onlyOwner {
@@ -394,6 +397,8 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
             deadline: block.timestamp
         });
         _NFTX_POSITION_ROUTER.removeLiquidity(params);
+        uint256 wethBalance = _WETH.balanceOf(address(this));
+        if (wethBalance > 0) _WETH.withdraw(wethBalance);
         emit AV_LiquidityPositionWithdrawal(positionId);
     }
 
@@ -431,6 +436,9 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
             });
         }
         _NFTX_POSITION_ROUTER.increaseLiquidity{value: address(this).balance - ethBalance}(increaseParams);
+        uint256 wethBalance = _WETH.balanceOf(address(this));
+        if (wethBalance > 0) _WETH.withdraw(wethBalance);
+        emit AV_LiquidityPositionCombination(positionId, childPositionIds);
     }
 
     function liquidityPositionCollectFees(uint256[] calldata positionIds) external payable virtual onlyOwner {
