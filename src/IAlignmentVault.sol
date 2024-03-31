@@ -74,11 +74,11 @@ interface IAlignmentVault {
 
     // >>>>>>>>>>>> [ INVENTORY POSITION MANAGEMENT ] <<<<<<<<<<<<
 
-    function inventoryPositionCreateVToken(uint256 vTokenAmount) external payable;
-    function inventoryPositionCreateNfts(uint256[] calldata tokenIds, uint256[] calldata amounts) external payable;
+    function inventoryPositionCreateVToken(uint256 vTokenAmount) external payable returns (uint256 positionId);
+    function inventoryPositionCreateNfts(uint256[] calldata tokenIds, uint256[] calldata amounts) external payable returns (uint256 positionId);
     function inventoryPositionIncrease(uint256 positionId, uint256 vTokenAmount) external payable;
     function inventoryPositionWithdrawal(uint256 positionId_, uint256 vTokenAmount, uint256[] calldata tokenIds, uint256 vTokenPremiumLimit) external payable;
-    function inventoryCombinePositions(uint256 positionId, uint256[] calldata childPositionIds) external payable;
+    function inventoryPositionCombine(uint256 positionId, uint256[] calldata childPositionIds) external payable;
     function inventoryPositionCollectFees(uint256[] calldata positionIds) external payable;
     function inventoryPositionCollectAllFees() external payable;
 
@@ -87,14 +87,14 @@ interface IAlignmentVault {
     function liquidityPositionCreate(uint256 ethAmount, uint256 vTokenAmount, uint256[] calldata tokenIds, uint256[] calldata amounts, int24 tickLower, int24 tickUpper, uint24 fee, uint160 sqrtPriceX96, uint24 slippage) external payable;
     function liquidityPositionIncrease(uint256 positionId, uint256 ethAmount, uint256 vTokenAmount, uint256[] calldata tokenIds, uint256[] calldata amounts) external payable;
     function liquidityPositionWithdrawal(uint256 positionId, uint256[] calldata tokenIds, uint256 vTokenPremiumLimit, uint128 liquidity) external payable;
-    function liquidityCombinePositions(uint256 positionId, uint256[] calldata childPositionIds) external payable;
+    function liquidityPositionCombine(uint256 positionId, uint256[] calldata childPositionIds) external payable;
     function liquidityPositionCollectFees(uint256[] calldata positionIds) external payable;
     function liquidityPositionCollectAllFees() external payable;
 
     // >>>>>>>>>>>> [ ALIGNED TOKEN MANAGEMENT ] <<<<<<<<<<<<
 
     function buyNftsFromPool(uint256 ethAmount, uint256[] calldata tokenIds, uint256 vTokenPremiumLimit, uint24 fee, uint160 sqrtPriceLimitX96) external payable;
-    function mintVToken(uint256 ethAmount, uint256[] calldata tokenIds, uint256[] calldata amounts) external payable;
+    function mintVToken(uint256[] calldata tokenIds, uint256[] calldata amounts) external payable;
     function buyVToken(uint256 ethAmount, uint24 fee, uint24 slippage, uint160 sqrtPriceLimitX96) external payable;
     function buyVTokenExact(uint256 ethAmount, uint256 vTokenAmount, uint24 fee, uint160 sqrtPriceLimitX96) external payable;
     function sellVToken(uint256 vTokenAmount, uint24 fee, uint24 slippage, uint160 sqrtPriceLimitX96) external payable;
