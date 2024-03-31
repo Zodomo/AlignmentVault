@@ -29,8 +29,12 @@ interface IInitialize {
  * @custom:miyamaker https://miyamaker.com
  */
 contract AlignmentVaultFactory is Ownable, IAlignmentVaultFactory {
+    // >>>>>>>>>>>> [ STORAGE VARIABLES ] <<<<<<<<<<<<
+
     mapping(address alignmentVault => address deployer) public vaultDeployers;
     address public implementation;
+
+    // >>>>>>>>>>>> [ CONSTRUCTOR ] <<<<<<<<<<<<
 
     constructor(address owner_, address implementation_) payable {
         _initializeOwner(owner_);
@@ -38,16 +42,7 @@ contract AlignmentVaultFactory is Ownable, IAlignmentVaultFactory {
         emit AVF_ImplementationSet(implementation_);
     }
 
-    /**
-     * @notice Updates the implementation address used for new clones.
-     * @dev Does not affect previously deployed clones.
-     * @param newImplementation The new implementation address for clones.
-     */
-    function updateImplementation(address newImplementation) external payable virtual onlyOwner {
-        if (newImplementation == implementation) return;
-        implementation = newImplementation;
-        emit AVF_ImplementationSet(newImplementation);
-    }
+    // >>>>>>>>>>>> [ DEPLOYMENT FUNCTIONS ] <<<<<<<<<<<<
 
     /**
      * @notice Deploys a new AlignmentVault and fully initializes it.
@@ -99,6 +94,19 @@ contract AlignmentVaultFactory is Ownable, IAlignmentVaultFactory {
      */
     function predictDeterministicAddress(bytes32 salt) external view virtual returns (address addr) {
         return LibClone.predictDeterministicAddress(implementation, salt, address(this));
+    }
+
+    // >>>>>>>>>>>> [ MANAGEMENT FUNCTIONS ] <<<<<<<<<<<<
+
+    /**
+     * @notice Updates the implementation address used for new clones.
+     * @dev Does not affect previously deployed clones.
+     * @param newImplementation The new implementation address for clones.
+     */
+    function updateImplementation(address newImplementation) external payable virtual onlyOwner {
+        if (newImplementation == implementation) return;
+        implementation = newImplementation;
+        emit AVF_ImplementationSet(newImplementation);
     }
 
     /**

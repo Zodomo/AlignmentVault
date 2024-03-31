@@ -1,8 +1,18 @@
 // SPDX-License-Identifier: AGPL-3.0
 pragma solidity ^0.8.23;
 
+/**
+ * @title IAlignmentVault
+ * @notice This allows anything to send ETH to a vault for the purpose of permanently deepening the floor liquidity of a target NFT collection.
+ * While the liquidity is locked forever, the yield can be claimed indefinitely.
+ * @dev You must initialize this contract once deployed! There is a factory for this, use it!
+ * @author Zodomo.eth (Farcaster/Telegram/Discord/Github: @zodomo, X: @0xZodomo, Email: zodomo@proton.me)
+ * @custom:github https://github.com/Zodomo/AlignmentVault
+ * @custom:miyamaker https://miyamaker.com
+ */
 interface IAlignmentVault {
     // >>>>>>>>>>>> [ GENERAL ERRORS ] <<<<<<<<<<<<
+    
     error AV_UnalignedNft();
     error AV_InvalidPosition();
     error AV_TransactionFailed();
