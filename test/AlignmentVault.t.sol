@@ -32,6 +32,9 @@ contract AlignmentVaultTest is Test {
     uint256 public vaultId;
     address public alignedNft;
 
+    uint256[] public none = new uint256[](0);
+    int24 public constant MIN_TICK = -887272;
+    int24 public constant MAX_TICK = 887272;
     address public constant MILADY = 0x5Af0D9827E0c53E4799BB226655A1de152A425a5;
     uint256 public constant VAULT_ID = 5;
 

@@ -87,7 +87,6 @@ contract InventoryPositionsTest is AlignmentVaultTest {
         tokenIds[0] = 333;
         uint256[] memory amounts = new uint256[](1);
         amounts[0] = 1;
-        uint256[] memory none = new uint256[](0);
 
         av.mintVToken(tokenIds, amounts);
         uint256 positionId = av.inventoryPositionCreateVToken(1 ether);
@@ -158,7 +157,6 @@ contract InventoryPositionsTest is AlignmentVaultTest {
         tokenIds[0] = 333;
         uint256[] memory amounts = new uint256[](1);
         amounts[0] = 1;
-        uint256[] memory none = new uint256[](0);
 
         uint256 positionId = av.inventoryPositionCreateNfts(tokenIds, amounts);
         vm.warp(block.timestamp + 3 days + 1);
