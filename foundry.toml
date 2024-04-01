@@ -1,7 +1,15 @@
 [profile.default]
+# Specifies the source directory for the project
 src = "src"
+
+# Specifies the output directory for compiled artifacts
 out = "out"
+
+# Specifies the directories to search for dependencies
 libs = ["lib"]
+
+# Specifies the version of the Solidity compiler to be used
 solc = "0.8.23"
 
-# See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
+# For more configuration options, refer to the following link:
+# https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
