@@ -1,18 +1,25 @@
+// SPDX-License-Identifier: MIT
 pragma solidity >=0.5.0;
 
+// Importing necessary interfaces
 import '../v2-core/contracts/interfaces/IUniswapV2Pair.sol';
 
+// Library for interacting with Uniswap V2 pairs
 library UniswapV2Library {
-    // returns sorted token addresses, used to handle return values from pairs sorted in this order
+    // Function to sort token addresses
+    // Used to handle return values from pairs sorted in a specific order
     function sortTokens(address tokenA, address tokenB) internal pure returns (address token0, address token1) {
-        require(tokenA != tokenB, 'UniswapV2Library: IDENTICAL_ADDRESSES');
+        require(tokenA != tokenB, 'UniswapV2Library: IDENTICAL_ADDRESSES'); // Ensure tokens are not identical
+        // Sort tokens lexicographically
         (token0, token1) = tokenA < tokenB ? (tokenA, tokenB) : (tokenB, tokenA);
-        require(token0 != address(0), 'UniswapV2Library: ZERO_ADDRESS');
+        require(token0 != address(0), 'UniswapV2Library: ZERO_ADDRESS'); // Ensure token0 address is not zero
     }
 
-    // calculates the CREATE2 address for a pair without making any external calls
+    // Function to calculate the CREATE2 address for a pair without making any external calls
     function pairFor(address factory, address tokenA, address tokenB) internal pure returns (address pair) {
+        // Sort tokens
         (address token0, address token1) = sortTokens(tokenA, tokenB);
+        // Calculate pair address using CREATE2
         pair = address(uint160(uint256(keccak256(abi.encodePacked(
                 hex'ff',
                 factory,
@@ -21,10 +28,12 @@ library UniswapV2Library {
             )))));
     }
 
-    // fetches and sorts the reserves for a pair
+    // Function to fetch and sort the reserves for a pair
     function getReserves(address factory, address tokenA, address tokenB) internal view returns (uint reserveA, uint reserveB) {
         (address token0,) = sortTokens(tokenA, tokenB);
+        // Get reserves from the pair
         (uint reserve0, uint reserve1,) = IUniswapV2Pair(pairFor(factory, tokenA, tokenB)).getReserves();
+        // Sort reserves based on token order
         (reserveA, reserveB) = tokenA == token0 ? (reserve0, reserve1) : (reserve1, reserve0);
     }
 }
