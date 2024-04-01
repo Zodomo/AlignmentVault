@@ -17,7 +17,7 @@ Run `yarn test` to execute the test suite.
 
 ## Usage
 
-Install this in another project via `yarn add @uniswap/lib`
+To include this library in another project, use `yarn add @uniswap/lib`.
 
 Then import the contracts via:
 
@@ -25,3 +25,4 @@ Then import the contracts via:
 import '@uniswap/lib/contracts/libraries/Babylonian.sol';
 
 ```
+This library provides utilities for performing mathematical calculations and other operations efficiently and securely in Solidity contracts. By importing and using these libraries, developers can benefit from improved gas efficiency and reduced risk of vulnerabilities in their decentralized finance (DeFi) applications built on the Uniswap protocol
