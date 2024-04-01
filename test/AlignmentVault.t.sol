@@ -9,7 +9,7 @@ import {FixedPointMathLib} from "../lib/solady/src/utils/FixedPointMathLib.sol";
 import {IWETH9} from "../lib/nftx-protocol-v3/src/uniswap/v3-periphery/interfaces/external/IWETH9.sol";
 import {IERC20} from "../lib/openzeppelin-contracts-v5/contracts/interfaces/IERC20.sol";
 import {IERC721} from "../lib/openzeppelin-contracts-v5/contracts/interfaces/IERC721.sol";
-import {IERC721Enumerable} from "../lib/openzeppelin-contracts/contracts/interfaces/IERC721Enumerable.sol";
+import {IERC721Enumerable} from "../lib/openzeppelin-contracts-v5/contracts/interfaces/IERC721Enumerable.sol";
 import {IERC1155} from "../lib/openzeppelin-contracts-v5/contracts/interfaces/IERC1155.sol";
 import {INFTXVaultFactoryV3} from "../lib/nftx-protocol-v3/src/interfaces/INFTXVaultFactoryV3.sol";
 import {INFTXVaultV3} from "../lib/nftx-protocol-v3/src/interfaces/INFTXVaultV3.sol";
@@ -35,6 +35,8 @@ contract AlignmentVaultTest is Test {
     uint256[] public none = new uint256[](0);
     int24 public constant MIN_TICK = -887272;
     int24 public constant MAX_TICK = 887272;
+    uint24 public constant STANDARD_FEE = 3000;
+    uint24 public constant FIVE_PERCENT = 50000;
     address public constant MILADY = 0x5Af0D9827E0c53E4799BB226655A1de152A425a5;
     uint256 public constant VAULT_ID = 5;
 

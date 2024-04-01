@@ -1,1 +1,2 @@
-@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/
+@openzeppelin/=lib/nftx-protocol-v3/lib/openzeppelin-contracts/
+@openzeppelin/contracts/=lib/nftx-protocol-v3/lib/openzeppelin-contracts/contracts/

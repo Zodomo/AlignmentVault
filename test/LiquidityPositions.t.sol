@@ -10,4 +10,8 @@ contract LiquidityPositionsTest is AlignmentVaultTest {
         transferMilady(address(av), 333);
         transferMilady(address(av), 420);
     }
+
+    function testLiquidityPositionCreateFullRangeEth() public {
+        av.liquidityPositionCreate(1 ether, 0, none, none, -12600, 10320, 0);
+    }
 }
