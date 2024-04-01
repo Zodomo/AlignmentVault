@@ -17,7 +17,7 @@ Run `yarn test` to execute the test suite.
 
 ## Usage
 
-To include this library in another project, use yarn add @uniswap/lib.
+To include this library in another project, use `yarn add @uniswap/lib`.
 
 Then import the contracts via:
 
