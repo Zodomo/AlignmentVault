@@ -49,13 +49,14 @@ interface IAlignmentVault {
 
     // >>>>>>>>>>>> [ PUBLIC STORAGE ] <<<<<<<<<<<<
 
-    function vaultId() external view returns (uint256);
+    function vaultId() external view returns (uint96);
     function vault() external view returns (address);
     function alignedNft() external view returns (address);
     function is1155() external view returns (bool);
 
     // >>>>>>>>>>>> [ VIEW FUNCTIONS ] <<<<<<<<<<<<
 
+    function getUniswapPoolValues() external view returns (address pool, uint160 sqrtPriceX96, int24 tick);
     function getInventoryPositionIds() external view returns (uint256[] memory positionIds);
     function getLiquidityPositionIds() external view returns (uint256[] memory positionIds);
     function getSpecificInventoryPositionFees(uint256 positionId) external view returns (uint256 balance);
@@ -84,8 +85,8 @@ interface IAlignmentVault {
 
     // >>>>>>>>>>>> [ LIQUIDITY POSITION MANAGEMENT ] <<<<<<<<<<<<
 
-    function liquidityPositionCreate(uint256 ethAmount, uint256 vTokenAmount, uint256[] calldata tokenIds, uint256[] calldata amounts, int24 tickLower, int24 tickUpper, uint160 sqrtPriceX96) external payable returns (uint256 positionId);
-    function liquidityPositionIncrease(uint256 positionId, uint256 ethAmount, uint256 vTokenAmount, uint256[] calldata tokenIds, uint256[] calldata amounts) external payable;
+    function liquidityPositionCreate(uint256 ethAmount, uint256 vTokenAmount, uint256[] calldata tokenIds, uint256[] calldata amounts, uint16 slippage, int24 tickLower, int24 tickUpper, uint160 sqrtPriceX96) external payable returns (uint256 positionId);
+    function liquidityPositionIncrease(uint256 positionId, uint256 ethAmount, uint256 vTokenAmount, uint256[] calldata tokenIds, uint256[] calldata amounts, uint16 slippage) external payable;
     function liquidityPositionWithdrawal(uint256 positionId, uint256[] calldata tokenIds, uint256 vTokenPremiumLimit, uint128 liquidity) external payable;
     function liquidityPositionCombine(uint256 positionId, uint256[] calldata childPositionIds) external payable;
     function liquidityPositionCollectFees(uint256[] calldata positionIds) external payable;

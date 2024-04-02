@@ -11,7 +11,17 @@ contract LiquidityPositionsTest is AlignmentVaultTest {
         transferMilady(address(av), 420);
     }
 
-    function testLiquidityPositionCreateFullRangeEth() public {
-        av.liquidityPositionCreate(1 ether, 0, none, none, -12600, 10320, 0);
+    function testLiquidityPositionCreateEth() public {
+        av.liquidityPositionCreate(1 ether, 0, none, none, 10000, -12240, 10920, 0);
+    }
+
+    function testLiquidityPositionCreateNfts() public {
+        uint256[] memory tokenIds = new uint256[](2);
+        tokenIds[0] = 333;
+        tokenIds[1] = 420;
+        uint256[] memory amounts = new uint256[](2);
+        amounts[0] = 1;
+        amounts[1] = 1;
+        av.liquidityPositionCreate(0, 0, tokenIds, amounts, 10000, -6000, 10920, 0);
     }
 }

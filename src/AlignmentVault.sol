@@ -63,11 +63,9 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
 
     // >>>>>>>>>>>> [ PUBLIC STORAGE ] <<<<<<<<<<<<
 
-    uint256 public vaultId;
-    int24 public tickSpacing;
+    uint96 public vaultId;
     address public vault;
     address public alignedNft;
-    address public pool;
     bool public is1155;
 
     // >>>>>>>>>>>> [ CONSTRUCTOR / INITIALIZER FUNCTIONS ] <<<<<<<<<<<<
@@ -77,7 +75,7 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
     function initialize(
         address owner_,
         address alignedNft_,
-        uint256 vaultId_
+        uint96 vaultId_
     ) external payable virtual initializer {
         _initializeOwner(owner_);
         alignedNft = alignedNft_;
@@ -91,9 +89,6 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
                 }
                 vaultId = vaultId_;
                 vault = vaultAddr;
-                address _pool = _NFTX_POSITION_ROUTER.getPool(vaultAddr, _POOL_FEE);
-                pool = _pool;
-                tickSpacing = IUniswapV3Pool(_pool).tickSpacing(); 
                 emit AV_VaultInitialized(vaultAddr, vaultId_);
             } catch {
                 revert AV_NFTX_InvalidVaultId();
@@ -110,12 +105,9 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
                         _is1155 = true;
                         is1155 = true;
                     }
-                    vaultId_ = INFTXVaultV3(vaults[i]).vaultId();
+                    vaultId_ = uint96(INFTXVaultV3(vaults[i]).vaultId());
                     vaultId = vaultId_;
                     vault = vaults[i];
-                    address _pool = _NFTX_POSITION_ROUTER.getPool(vaults[i], _POOL_FEE);
-                    pool = _pool;
-                    tickSpacing = IUniswapV3Pool(_pool).tickSpacing(); 
                     emit AV_VaultInitialized(vaults[i], vaultId_);
                     break;
                 }
@@ -145,7 +137,101 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
 
     function renounceOwnership() public payable virtual override(Ownable) onlyOwner {}
 
+    // >>>>>>>>>>>> [ PRIVATE FUNCTIONS ] <<<<<<<<<<<<
+
+    function _countTokens(uint256[] calldata tokenIds, uint256[] calldata amounts) private pure returns (uint256 totalCount) {
+        for (uint256 i; i < tokenIds.length; ++i) {
+            unchecked {
+                totalCount += amounts[i];
+            }
+        }
+    }
+
+    function _getPool() private view returns (address pool) {
+        pool = _NFTX_POSITION_ROUTER.getPool(vault, _POOL_FEE);
+    }
+
+    function _buildAddLiquidityParams(
+        uint256 ethAmount,
+        uint256 vTokenAmount,
+        uint256[] memory tokenIds,
+        uint256[] memory amounts,
+        uint24 slippage,
+        int24 tickLower,
+        int24 tickUpper,
+        uint160 sqrtPriceX96
+    ) internal view returns (INFTXRouter.AddLiquidityParams memory params) {
+        int24 tickSpacing = IUniswapV3Pool(_getPool()).tickSpacing();
+        (, int24 tick,,,,,) = IUniswapV3Pool(_getPool()).slot0();
+        console2.log(tick);
+        unchecked {
+            params = INFTXRouter.AddLiquidityParams({
+                vaultId: vaultId,
+                vTokensAmount: vTokenAmount,
+                nftIds: tokenIds,
+                nftAmounts: amounts,
+                tickLower: int24(FixedPointMathLib.rawSDiv(tickLower, tickSpacing)) * tickSpacing,
+                tickUpper: int24(FixedPointMathLib.rawSDiv(tickUpper, tickSpacing)) * tickSpacing,
+                fee: _POOL_FEE,
+                sqrtPriceX96: sqrtPriceX96,
+                vTokenMin: vTokenAmount - FixedPointMathLib.fullMulDiv(vTokenAmount, slippage, _SLIPPAGE_DENOMINATOR),
+                wethMin: ethAmount - FixedPointMathLib.fullMulDiv(ethAmount, slippage, _SLIPPAGE_DENOMINATOR),
+                deadline: block.timestamp,
+                forceTimelock: true,
+                recipient: address(this)
+            });
+        }
+    }
+
+    function _buildIncreaseLiquidityParams(
+        uint256 positionId,
+        uint256 ethAmount,
+        uint256 vTokenAmount,
+        uint256[] memory tokenIds,
+        uint256[] memory amounts,
+        uint24 slippage
+    ) internal view returns (INFTXRouter.IncreaseLiquidityParams memory params) {
+        unchecked {
+            params = INFTXRouter.IncreaseLiquidityParams({
+                positionId: positionId,
+                vaultId: vaultId,
+                vTokensAmount: vTokenAmount,
+                nftIds: tokenIds,
+                nftAmounts: amounts,
+                vTokenMin: vTokenAmount - FixedPointMathLib.fullMulDiv(vTokenAmount, slippage, _SLIPPAGE_DENOMINATOR),
+                wethMin: ethAmount - FixedPointMathLib.fullMulDiv(ethAmount, slippage, _SLIPPAGE_DENOMINATOR),
+                deadline: block.timestamp,
+                forceTimelock: true
+            });
+        }
+    }
+
+    function _buildRemoveLiquidityParams(
+        uint256 positionId,
+        uint256[] memory tokenIds,
+        uint256 vTokenPremiumLimit,
+        uint128 liquidity
+    ) internal view returns (INFTXRouter.RemoveLiquidityParams memory params) {
+        unchecked {
+            params = INFTXRouter.RemoveLiquidityParams({
+                positionId: positionId,
+                vaultId: vaultId,
+                nftIds: tokenIds,
+                vTokenPremiumLimit: vTokenPremiumLimit,
+                liquidity: liquidity,
+                amount0Min: 0,
+                amount1Min: 0,
+                deadline: block.timestamp
+            });
+        }
+    }
+
     // >>>>>>>>>>>> [ VIEW FUNCTIONS ] <<<<<<<<<<<<
+
+    function getUniswapPoolValues() external view returns (address pool, uint160 sqrtPriceX96, int24 tick) {
+        pool = _getPool();
+        (sqrtPriceX96, tick, , , , , ) = IUniswapV3Pool(pool).slot0();
+    }
 
     function getInventoryPositionIds() external view virtual returns (uint256[] memory positionIds) {
         positionIds = _inventoryPositionIds.values();
@@ -208,12 +294,7 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
     }
 
     function donateLiquidityPositionIncrease(uint256 positionId, uint256 vTokenAmount, uint256[] calldata tokenIds, uint256[] calldata amounts, uint24 slippage) external payable virtual onlyOwner {
-        uint256 tokenCount;
-        for (uint256 i; i < tokenIds.length; ++i) {
-            unchecked {
-                tokenCount += amounts[i];
-            }
-        }
+        uint256 tokenCount = _countTokens(tokenIds, amounts);
         if (!_liquidityPositionIds.contains(positionId)) revert AV_InvalidPosition();
         if (vTokenAmount > 0) IERC20(vault).transferFrom(msg.sender, address(this), vTokenAmount);
         if (tokenIds.length > 0) {
@@ -330,15 +411,9 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
     }
 
     function inventoryPositionCreateNfts(uint256[] calldata tokenIds, uint256[] calldata amounts) external payable virtual onlyOwner returns (uint256 positionId) {
-        uint256 tokenCount;
-        for (uint256 i; i < tokenIds.length; ++i) {
-            unchecked {
-                tokenCount += amounts[i];
-            }
-        }
         positionId = _NFTX_INVENTORY_STAKING.depositWithNFT(vaultId, tokenIds, amounts, address(this));
         _inventoryPositionIds.add(positionId);
-        emit AV_InventoryPositionCreated(positionId, tokenCount * 1 ether);
+        emit AV_InventoryPositionCreated(positionId, _countTokens(tokenIds, amounts) * 1 ether);
     }
 
     // Only works on inventory positions created with vTokens
@@ -375,70 +450,39 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
     // TODO: Test
     // >>>>>>>>>>>> [ LIQUIDITY POSITION MANAGEMENT ] <<<<<<<<<<<<
 
-    function liquidityPositionCreate(uint256 ethAmount, uint256 vTokenAmount, uint256[] calldata tokenIds, uint256[] calldata amounts, int24 tickLower, int24 tickUpper, uint160 sqrtPriceX96) external payable virtual onlyOwner returns (uint256 positionId) {
-        uint256 tokenCount;
-        for (uint256 i; i < tokenIds.length; ++i) {
-            unchecked {
-                tokenCount += amounts[i];
-            }
-        }
-        (uint160 _sqrtPriceX96, , , , , , ) = IUniswapV3Pool(pool).slot0();
+    function liquidityPositionCreate(uint256 ethAmount, uint256 vTokenAmount, uint256[] calldata tokenIds, uint256[] calldata amounts, uint16 slippage, int24 tickLower, int24 tickUpper, uint160 sqrtPriceX96) external payable virtual onlyOwner returns (uint256 positionId) {
+        (uint160 _sqrtPriceX96,,,,,,) = IUniswapV3Pool(_getPool()).slot0();
         if (_sqrtPriceX96 == 0) _sqrtPriceX96 = sqrtPriceX96;
-        INFTXRouter.AddLiquidityParams memory params;
-        unchecked {
-            params = INFTXRouter.AddLiquidityParams({
-                vaultId: vaultId,
-                vTokensAmount: vTokenAmount,
-                nftIds: tokenIds,
-                nftAmounts: amounts,
-                tickLower: int24(FixedPointMathLib.rawSDiv(tickLower, tickSpacing)) * tickSpacing,
-                tickUpper: int24(FixedPointMathLib.rawSDiv(tickUpper, tickSpacing)) * tickSpacing,
-                fee: _POOL_FEE,
-                sqrtPriceX96: _sqrtPriceX96,
-                vTokenMin: (vTokenAmount + (tokenCount * 1 ether)) - FixedPointMathLib.fullMulDiv(vTokenAmount + (tokenCount * 1 ether), _ONE_PERCENT, _SLIPPAGE_DENOMINATOR),
-                wethMin: ethAmount - FixedPointMathLib.fullMulDiv(ethAmount, _ONE_PERCENT, _SLIPPAGE_DENOMINATOR),
-                deadline: block.timestamp,
-                forceTimelock: true,
-                recipient: address(this)
-            });
-        }
-        positionId = _NFTX_POSITION_ROUTER.addLiquidity{value: ethAmount}(params);
+        positionId = _NFTX_POSITION_ROUTER.addLiquidity{value: ethAmount}(_buildAddLiquidityParams(
+            ethAmount,
+            vTokenAmount,
+            tokenIds,
+            amounts,
+            slippage,
+            tickLower,
+            tickUpper,
+            sqrtPriceX96
+            
+        ));
         _liquidityPositionIds.add(positionId);
         emit AV_LiquidityPositionCreated(positionId);
     }
 
-    function liquidityPositionIncrease(uint256 positionId, uint256 ethAmount, uint256 vTokenAmount, uint256[] calldata tokenIds, uint256[] calldata amounts) external payable virtual onlyOwner {
-        INFTXRouter.IncreaseLiquidityParams memory params;
-        unchecked {
-            params = INFTXRouter.IncreaseLiquidityParams({
-                positionId: positionId,
-                vaultId: vaultId,
-                vTokensAmount: vTokenAmount,
-                nftIds: tokenIds,
-                nftAmounts: amounts,
-                vTokenMin: 0,
-                wethMin: 0,
-                deadline: block.timestamp,
-                forceTimelock: true
-            });
-        }
-        _NFTX_POSITION_ROUTER.increaseLiquidity{value: ethAmount}(params);
+    function liquidityPositionIncrease(uint256 positionId, uint256 ethAmount, uint256 vTokenAmount, uint256[] calldata tokenIds, uint256[] calldata amounts, uint16 slippage) external payable virtual onlyOwner {
+        _NFTX_POSITION_ROUTER.increaseLiquidity{value: ethAmount}(_buildIncreaseLiquidityParams(
+            positionId,
+            ethAmount,
+            vTokenAmount,
+            tokenIds,
+            amounts,
+            slippage
+        ));
         emit AV_LiquidityPositionIncreased(positionId);
     }
 
     function liquidityPositionWithdrawal(uint256 positionId, uint256[] calldata tokenIds, uint256 vTokenPremiumLimit, uint128 liquidity) external payable virtual onlyOwner {
         if (vTokenPremiumLimit == 0) vTokenPremiumLimit = type(uint256).max;
-        INFTXRouter.RemoveLiquidityParams memory params = INFTXRouter.RemoveLiquidityParams({
-            positionId: positionId,
-            vaultId: vaultId,
-            nftIds: tokenIds,
-            vTokenPremiumLimit: vTokenPremiumLimit,
-            liquidity: liquidity,
-            amount0Min: 0,
-            amount1Min: 0,
-            deadline: block.timestamp
-        });
-        _NFTX_POSITION_ROUTER.removeLiquidity(params);
+        _NFTX_POSITION_ROUTER.removeLiquidity(_buildRemoveLiquidityParams(positionId, tokenIds, vTokenPremiumLimit, liquidity));
         uint256 wethBalance = _WETH.balanceOf(address(this));
         if (wethBalance > 0) _WETH.withdraw(wethBalance);
         emit AV_LiquidityPositionWithdrawal(positionId);
@@ -448,36 +492,18 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
         uint256 ethBalance = address(this).balance;
         uint256 vTokenBalance = IERC20(vault).balanceOf(address(this));
         uint256[] memory none = new uint256[](0);
-        INFTXRouter.RemoveLiquidityParams memory removeParams;
         for (uint256 i; i < childPositionIds.length; ++i) {
             (,,,,,,, uint128 liquidity,,,,) = _NPM.positions(childPositionIds[i]);
-            removeParams = INFTXRouter.RemoveLiquidityParams({
-                positionId: childPositionIds[i],
-                vaultId: vaultId,
-                nftIds: none,
-                vTokenPremiumLimit: type(uint256).max,
-                liquidity: liquidity,
-                amount0Min: 0,
-                amount1Min: 0,
-                deadline: block.timestamp
-            });
-            _NFTX_POSITION_ROUTER.removeLiquidity(removeParams);
+            _NFTX_POSITION_ROUTER.removeLiquidity(_buildRemoveLiquidityParams(childPositionIds[i], none, type(uint256).max, liquidity));
         }
-        INFTXRouter.IncreaseLiquidityParams memory increaseParams;
-        unchecked {
-            increaseParams = INFTXRouter.IncreaseLiquidityParams({
-                positionId: positionId,
-                vaultId: vaultId,
-                vTokensAmount: IERC20(vault).balanceOf(address(this)) - vTokenBalance,
-                nftIds: none,
-                nftAmounts: none,
-                vTokenMin: 0,
-                wethMin: 0,
-                deadline: block.timestamp,
-                forceTimelock: true
-            });
-        }
-        _NFTX_POSITION_ROUTER.increaseLiquidity{value: address(this).balance - ethBalance}(increaseParams);
+         _NFTX_POSITION_ROUTER.increaseLiquidity{value: address(this).balance - ethBalance}(_buildIncreaseLiquidityParams(
+            positionId,
+            0,
+            IERC20(vault).balanceOf(address(this)) - vTokenBalance,
+            none,
+            none,
+            1000000
+        ));
         uint256 wethBalance = _WETH.balanceOf(address(this));
         if (wethBalance > 0) _WETH.withdraw(wethBalance);
         emit AV_LiquidityPositionCombination(positionId, childPositionIds);
@@ -530,13 +556,7 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
     }
 
     function mintVToken(uint256[] calldata tokenIds, uint256[] calldata amounts) external payable onlyOwner {
-        uint256 tokenCount;
-        for (uint256 i; i < tokenIds.length; ++i) {
-            unchecked {
-                tokenCount += amounts[i];
-            }
-        }
-        uint256 ethRequired = FixedPointMathLib.fullMulDivUp(INFTXVaultV3(vault).vTokenToETH(tokenCount * 1 ether), 30000, 1000000);
+        uint256 ethRequired = FixedPointMathLib.fullMulDivUp(INFTXVaultV3(vault).vTokenToETH(_countTokens(tokenIds, amounts) * 1 ether), 30000, 1000000);
         INFTXVaultV3(vault).mint{value: ethRequired}(tokenIds, amounts, address(this), address(this));
         emit AV_MintVTokens(tokenIds, amounts);
     }
@@ -637,7 +657,6 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
     // >>>>>>>>>>>> [ RECEIVE LOGIC ] <<<<<<<<<<<<
 
     function onERC721Received(address, address, uint256, bytes memory) public virtual override(ERC721Holder, IAlignmentVault) returns (bytes4) {
-        console2.log(msg.sender);
         if (msg.sender != alignedNft && msg.sender != address(_NFTX_INVENTORY_STAKING) && msg.sender != address(_NPM)) revert AV_UnalignedNft();
         return this.onERC721Received.selector;
     }
