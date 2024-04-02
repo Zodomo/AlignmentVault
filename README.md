@@ -17,13 +17,16 @@
 <img alt="Stars" src="https://img.shields.io/github/forks/Zodomo/AlignmentVault?style=social" />
 
 
-
-
-<br />
-<div align="center">
-<h1 align="center">AlignmentVault</h1>
-</div>
-
+                .-----------------------------------------------------------------------------.
+                |            _ _                                  ___      __         _ _     |
+                |      /\   | (_)                                | \ \    / /        | | |    |
+                |     /  \  | |_  __ _ _ __  _ __ ___   ___ _ __ | |\ \  / /_ _ _   _| | |_   |
+                |    / /\ \ | | |/ _` | '_ \| '_ ` _ \ / _ \ '_ \| __\ \/ / _` | | | | | __|  |
+                |   / ____ \| | | (_| | | | | | | | | |  __/ | | | |_ \  / (_| | |_| | | |_   |
+                |  /_/    \_\_|_|\__, |_| |_|_| |_| |_|\___|_| |_|\__| \/ \__,_|\__,_|_|\__|  |
+                |                 __/ |                                                       |
+                |                |___/                                                        |
+                '-----------------------------------------------------------------------------'
 
 
 # Table of Contents
@@ -183,13 +186,7 @@ This README serves as a general overview and documentation of the **`AlignmentVa
 
 Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
 
-If you have a suggestion that would make this better, please fork the repo and create a pull request. You can also simply open an issue with the tag "enhancement".
-Don't forget to give the project a star! Thanks again!
+You can get one for writing tests, bug fixing, optimizing, adding cool ass ASCII art, updating the README (completely out of date), anything productive. My own testing is coming along nicely, but figured I'd invite the community to participate too and get some names in the Contributors list on GitHub. Please make sure you switch to and PR against the nftxv3-redesign branch!
 
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
