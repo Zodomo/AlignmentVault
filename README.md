@@ -13,8 +13,15 @@
 <a href="https://github.com/Zodomo/AlignmentVault/graphs/contributors">
     <img alt="Contributors" src="https://img.shields.io/github/contributors/Zodomo/AlignmentVault?style=flat" />
 </a>
-<img alt="Stars" src="https://img.shields.io/github/stars/Zodomo/AlignmentVault?style=social" />
-<img alt="Stars" src="https://img.shields.io/github/forks/Zodomo/AlignmentVault?style=social" />
+<a href="">
+    <img alt="Stars" src="https://img.shields.io/github/stars/Zodomo/AlignmentVault" />
+</a>
+<a href="">
+    <img alt="Forks" src="https://img.shields.io/github/forks/Zodomo/AlignmentVault" />
+</a>
+
+<br />
+<br />
 
 
                 .-----------------------------------------------------------------------------.
