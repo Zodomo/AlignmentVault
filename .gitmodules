@@ -10,3 +10,6 @@
 [submodule "lib/nftx-protocol-v3"]
 	path = lib/nftx-protocol-v3
 	url = https://github.com/Zodomo/nftx-protocol-v3
+[submodule "lib/delegate-registry"]
+	path = lib/delegate-registry
+	url = https://github.com/delegatexyz/delegate-registry

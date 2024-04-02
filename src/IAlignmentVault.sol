@@ -30,6 +30,7 @@ interface IAlignmentVault {
     event AV_VaultInitialized(address indexed vault, uint256 indexed vaultId);
     event AV_NftsPurchased(uint256 indexed ethAmount, uint256[] indexed tokenIds);
     event AV_MintVTokens(uint256[] indexed tokenIds, uint256[] indexed amounts);
+    event AV_DelegateSet(address indexed oldDelegate, address indexed newDelegate);
 
     // >>>>>>>>>>>> [ INVENTORY MANAGEMENT EVENTS ] <<<<<<<<<<<<
 

@@ -24,6 +24,7 @@ import {INonfungiblePositionManager} from "../lib/nftx-protocol-v3/src/uniswap/v
 import {INFTXRouter} from "../lib/nftx-protocol-v3/src/interfaces/INFTXRouter.sol";
 import {ISwapRouter} from "../lib/nftx-protocol-v3/src/uniswap/v3-periphery/interfaces/ISwapRouter.sol";
 import {IUniswapV3Pool} from "../lib/nftx-protocol-v3/src/uniswap/v3-core/interfaces/IUniswapV3Pool.sol";
+import {IDelegateRegistry} from "../lib/delegate-registry/src/IDelegateRegistry.sol";
 
 // Temporary
 import {console2} from "../lib/forge-std/src/console2.sol";
@@ -55,6 +56,7 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
     INonfungiblePositionManager private constant _NPM = INonfungiblePositionManager(0x26387fcA3692FCac1C1e8E4E2B22A6CF0d4b71bF);
     INFTXRouter private constant _NFTX_POSITION_ROUTER = INFTXRouter(0x70A741A12262d4b5Ff45C0179c783a380EebE42a);
     ISwapRouter private constant _NFTX_SWAP_ROUTER = ISwapRouter(0x1703f8111B0E7A10e1d14f9073F53680d64277A3);
+    IDelegateRegistry private constant _DELEGATE_REGISTRY = IDelegateRegistry(0x00000000000000447e69651d841bD8D104Bed493);
 
     // >>>>>>>>>>>> [ PRIVATE STORAGE ] <<<<<<<<<<<<
 
@@ -65,6 +67,7 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
 
     uint96 public vaultId;
     address public vault;
+    address public delegate;
     address public alignedNft;
     bool public is1155;
 
@@ -135,7 +138,16 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
         _disableInitializers();
     }
 
+    // >>>>>>>>>>>> [ MANAGEMENT FUNCTIONS ] <<<<<<<<<<<<
+
     function renounceOwnership() public payable virtual override(Ownable) onlyOwner {}
+
+    function setDelegate(address newDelegate) external payable virtual {
+        address _delegate = delegate;
+        if (_delegate != address(0)) _DELEGATE_REGISTRY.delegateAll(_delegate, "", false);
+        _DELEGATE_REGISTRY.delegateAll(newDelegate, "", true);
+        emit AV_DelegateSet(_delegate, newDelegate);
+    }
 
     // >>>>>>>>>>>> [ PRIVATE FUNCTIONS ] <<<<<<<<<<<<
 
