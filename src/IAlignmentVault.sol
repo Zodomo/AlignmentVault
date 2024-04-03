@@ -41,6 +41,7 @@ interface IAlignmentVault {
     event AV_NftsPurchased(uint256 indexed ethAmount, uint256[] indexed tokenIds);
     // Event emitted when vTokens are minted.
     event AV_MintVTokens(uint256[] indexed tokenIds, uint256[] indexed amounts);
+    event AV_DelegateSet(address indexed oldDelegate, address indexed newDelegate);
 
     // >>>>>>>>>>>> [ INVENTORY MANAGEMENT EVENTS ] <<<<<<<<<<<<
 
@@ -69,9 +70,8 @@ interface IAlignmentVault {
     event AV_LiquidityPositionsCollected(uint256[] indexed positionIds);
 
     // >>>>>>>>>>>> [ PUBLIC STORAGE ] <<<<<<<<<<<<
-
     // Returns the ID of the vault.
-    function vaultId() external view returns (uint256);
+    function vaultId() external view returns (uint96);
     // Returns the address of the vault.
     function vault() external view returns (address);
     // Returns the address of the aligned NFT.
@@ -82,6 +82,7 @@ interface IAlignmentVault {
     // >>>>>>>>>>>> [ VIEW FUNCTIONS ] <<<<<<<<<<<<
 
     // Returns an array of inventory position IDs.
+    function getUniswapPoolValues() external view returns (address pool, uint160 sqrtPriceX96, int24 tick);
     function getInventoryPositionIds() external view returns (uint256[] memory positionIds);
     // Returns an array of liquidity position IDs.
     function getLiquidityPositionIds() external view returns (uint256[] memory positionIds);

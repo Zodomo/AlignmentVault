@@ -40,7 +40,7 @@ contract AlignmentVaultTest is Test {
     uint24 public constant STANDARD_FEE = 3000;
     uint24 public constant FIVE_PERCENT = 50000;
     address public constant MILADY = 0x5Af0D9827E0c53E4799BB226655A1de152A425a5;
-    uint256 public constant VAULT_ID = 5;
+    uint96 public constant VAULT_ID = 5;
 
     // Function to set up test environment
     function setUp() public virtual {
@@ -63,7 +63,7 @@ contract AlignmentVaultTest is Test {
     }
 
     // Function to initialize the contract with specified parameters
-    function targetInitialize(address alignedNft_, uint256 vaultId_) public {
+    function targetInitialize(address alignedNft_, uint96 vaultId_) public {
         av = new AlignmentVault();
         vault = NFTX_VAULT_FACTORY.vault(vaultId_);
         vaultId = vaultId_;
