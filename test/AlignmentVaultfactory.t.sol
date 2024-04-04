@@ -40,7 +40,7 @@ contract AlignmentVaultFactoryTest is Test {
     }
 
     /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´*/
-    //                TEST DEPLOY ALIGNMENT VAULT
+    //                HAPP PATHS
     /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´*/
     function testDeployAlignmentVault() public prank(deployer) {
         avf.deploy(MILADY, VAULT_ID);
