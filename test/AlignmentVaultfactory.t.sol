@@ -53,33 +53,43 @@ contract AlignmentVaultFactoryTest is Test {
     function testGetInitCodeHash() public prank(attacker){
         avf.initCodeHash();
     }
+
     function testPredictDeterministicAddress() public prank(attacker){
         avf.predictDeterministicAddress(bytes32("salt"));
     }
+
     function testPredictedAddressesMatch() public prank(attacker){
         (address da) = avf.deployDeterministic(MILADY, VAULT_ID, bytes32("salt"));
         (address ad) = avf.predictDeterministicAddress(bytes32("salt"));
 
         assertEq(da, ad);
     }
+
     function testUpdateAVImplementationByDeployer() public prank(deployer){
+        av_new = new AlignmentVault();
+        avf.updateImplementation(address(av_new));
     }
+
     function testUpdateAVImplementationByUnauth() public prank(attacker){
         av_new = new AlignmentVault();
         vm.expectRevert();
         avf.updateImplementation(address(av_new));
     }
+
     function testWithdrawEthByDeployer() public prank(deployer){
         avf.withdrawEth(address(deployer));
     }
+
     function testWithdrawEthByDeployerToDeadAddress() public prank(deployer){
         //@audit-issue admin could mistakely burn eth
         avf.withdrawEth(address(0));
     }
+
     function testWithdrawEthByAttacker() public prank(attacker){
         vm.expectRevert();
         avf.withdrawEth(address(attacker));
     }
+
     function testWithdrawErc721() public {}
     function testWithdrawErc1155() public {}
     function testWithdrawErc1155Batch() public {}
