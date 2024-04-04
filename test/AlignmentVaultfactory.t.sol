@@ -8,7 +8,9 @@ import {AlignmentVault} from "./../src/AlignmentVault.sol";
 contract AlignmentVaultFactoryTest is Test {
     AlignmentVaultFactory avf;
     AlignmentVault av;
+    AlignmentVault av_new;
     address deployer;
+    address attacker;
     uint128 public constant MINT = 1 ether;
 
     address public vault;
@@ -19,9 +21,9 @@ contract AlignmentVaultFactoryTest is Test {
     uint256 public constant VAULT_ID = 5;
 
     function setUp() public {
-        (uint256 forkId) = vm.createSelectFork("mainnet", 15_969_633);
-        emit log_named_uint("currently on", forkId);
+        vm.createSelectFork("mainnet");
         deployer = makeAddr("deployer");
+        attacker = makeAddr("alice");
         deal(deployer, MINT);
 
         av = new AlignmentVault();
@@ -37,7 +39,48 @@ contract AlignmentVaultFactoryTest is Test {
         vm.stopPrank();
     }
 
+    /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´*/
+    //                TEST DEPLOY ALIGNMENT VAULT
+    /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´*/
     function testDeployAlignmentVault() public prank(deployer) {
         avf.deploy(MILADY, VAULT_ID);
     }
+
+    function testDeployDeterministic() public prank(deployer) {
+        avf.deployDeterministic(MILADY, VAULT_ID, bytes32("salt"));
+    }
+
+    function testGetInitCodeHash() public prank(attacker){
+        avf.initCodeHash();
+    }
+    function testPredictDeterministicAddress() public prank(attacker){
+        avf.predictDeterministicAddress(bytes32("salt"));
+    }
+    function testPredictedAddressesMatch() public prank(attacker){
+        (address da) = avf.deployDeterministic(MILADY, VAULT_ID, bytes32("salt"));
+        (address ad) = avf.predictDeterministicAddress(bytes32("salt"));
+
+        assertEq(da, ad);
+    }
+    function testUpdateAVImplementationByDeployer() public prank(deployer){
+    }
+    function testUpdateAVImplementationByUnauth() public prank(attacker){
+        av_new = new AlignmentVault();
+        vm.expectRevert();
+        avf.updateImplementation(address(av_new));
+    }
+    function testWithdrawEthByDeployer() public prank(deployer){
+        avf.withdrawEth(address(deployer));
+    }
+    function testWithdrawEthByDeployerToDeadAddress() public prank(deployer){
+        //@audit-issue admin could mistakely burn eth
+        avf.withdrawEth(address(0));
+    }
+    function testWithdrawEthByAttacker() public prank(attacker){
+        vm.expectRevert();
+        avf.withdrawEth(address(attacker));
+    }
+    function testWithdrawErc721() public {}
+    function testWithdrawErc1155() public {}
+    function testWithdrawErc1155Batch() public {}
 }
