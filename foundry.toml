@@ -4,4 +4,4 @@ out = "out"
 libs = ["lib"]
 solc = "0.8.23"
 
-rpc_endpoints = { mainnet = "https://rpc.ankr.com/eth" }
+rpc_endpoints = { mainnet = "https://rpc.ankr.com/eth", anvil = "http://127.0.0.1:8545" }
