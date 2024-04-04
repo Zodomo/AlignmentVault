@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0
 pragma solidity ^0.8.23;
 
-import "./AlignmentVault.t.sol";
+import {AlignmentVaultTest, IAlignmentVault, IERC721Enumerable, IERC20, IERC721} from "./AlignmentVault.t.sol";
 
 contract InventoryPositionsTest is AlignmentVaultTest {
     function setUp() public override {
@@ -20,7 +20,7 @@ contract InventoryPositionsTest is AlignmentVaultTest {
 
         mintVToken(tokenIds, amounts);
         IERC20(vault).transfer(address(av), 1 ether);
-    
+
         vm.expectEmit(address(av));
         emit IAlignmentVault.AV_InventoryPositionCreated(expectedPositionId, 1 ether);
         uint256 positionId = av.inventoryPositionCreateVToken(1 ether);
