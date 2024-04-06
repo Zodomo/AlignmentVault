@@ -12,6 +12,7 @@ import {IERC721} from "../lib/openzeppelin-contracts-v5/contracts/interfaces/IER
 import {IERC1155} from "../lib/openzeppelin-contracts-v5/contracts/interfaces/IERC1155.sol";
 
 import {IAlignmentVault} from "../src/IAlignmentVault.sol";
+import {IWETH9} from "../lib/nftx-protocol-v3/src/uniswap/v3-periphery/interfaces/external/IWETH9.sol";
 
 /**
  * @title AlignmentVaultFactory
@@ -24,6 +25,7 @@ import {IAlignmentVault} from "../src/IAlignmentVault.sol";
 contract AlignmentVaultFactory is Ownable, IAlignmentVaultFactory {
     // >>>>>>>>>>>> [ STORAGE VARIABLES ] <<<<<<<<<<<<
 
+    IWETH9 private constant _WETH = IWETH9(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
     mapping(address alignmentVault => address deployer) public vaultDeployers;
     address public implementation;
 
@@ -106,8 +108,13 @@ contract AlignmentVaultFactory is Ownable, IAlignmentVaultFactory {
      * @notice Used to withdraw any ETH sent to the factory
      */
     function withdrawEth(address recipient) external payable virtual onlyOwner {
-        (bool success,) = payable(recipient).call{value: address(this).balance}("");
-        if (!success) revert AVF_WithdrawalFailed();
+        uint256 addressBal = address(this).balance;
+        // the "WETH fallback" technique: if the call to transfer ETH failed, one can wrap the value in WETH. For example, from ZORA v3
+        (bool success,) = payable(recipient).call{value: addressBal}("");
+        if (!success) {
+            _WETH.deposit{value: addressBal}();
+            IERC20(address(_WETH)).transfer(recipient, addressBal);
+        }
     }
 
     /**
