@@ -5,6 +5,8 @@ import {Test, console2} from "../lib/forge-std/src/Test.sol";
 import {AlignmentVaultFactory} from "./../src/AlignmentVaultFactory.sol";
 import {AlignmentVault} from "./../src/AlignmentVault.sol";
 
+import {IAlignmentVault} from "../src/IAlignmentVault.sol";
+
 contract AlignmentVaultFactoryTest is Test {
     AlignmentVaultFactory avf;
     AlignmentVault av;
@@ -43,49 +45,66 @@ contract AlignmentVaultFactoryTest is Test {
     //                HAPP PATHS
     /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´*/
     function testDeployAlignmentVault() public prank(deployer) {
-        avf.deploy(MILADY, VAULT_ID);
+        (address dplymnt) = avf.deploy(MILADY, VAULT_ID);
+        console2.log("the vault deployment is", dplymnt);
+    }
+
+    function testVaultInitializesProperly() public prank(deployer) {
+        // deployer deploys
+        (address cr) = avf.deploy(MILADY, VAULT_ID);
+        assertEq(MILADY, IAlignmentVault(cr).alignedNft());
+        assertEq(VAULT_ID, IAlignmentVault(cr).vaultId());
+
+        //try calling functions on the alignment vault directly
+        console2.log("the vault deployment is", cr);
+        console2.log("the aligned nft is: ", IAlignmentVault(cr).alignedNft());
+        console2.log("the aligned vault id is: ", IAlignmentVault(cr).vaultId());
+        console2.log("the pool is: ", IAlignmentVault(cr).pool());
     }
 
     function testDeployDeterministic() public prank(deployer) {
-        avf.deployDeterministic(MILADY, VAULT_ID, bytes32("salt"));
+        (address dplyment) = avf.deployDeterministic(MILADY, VAULT_ID, bytes32("salt"));
+        console2.log("determined address @", dplyment);
     }
 
-    function testGetInitCodeHash() public prank(attacker){
-        avf.initCodeHash();
+    function testGetInitCodeHash() public prank(attacker) returns (bytes32 res) {
+        (res) = avf.initCodeHash();
+        return res;
     }
 
-    function testPredictDeterministicAddress() public prank(attacker){
-        avf.predictDeterministicAddress(bytes32("salt"));
+    function testPredictDeterministicAddress() public prank(attacker) returns (address dplymt) {
+        (dplymt) = avf.predictDeterministicAddress(bytes32("salt"));
+        return dplymt;
     }
 
-    function testPredictedAddressesMatch() public prank(attacker){
+    function testPredictedAddressesMatch() public prank(attacker) {
         (address da) = avf.deployDeterministic(MILADY, VAULT_ID, bytes32("salt"));
         (address ad) = avf.predictDeterministicAddress(bytes32("salt"));
 
         assertEq(da, ad);
     }
 
-    function testUpdateAVImplementationByDeployer() public prank(deployer){
+    function testUpdateAVImplementationByDeployer() public prank(deployer) {
         av_new = new AlignmentVault();
         avf.updateImplementation(address(av_new));
     }
 
-    function testUpdateAVImplementationByUnauth() public prank(attacker){
+    function testUpdateAVImplementationByUnauth() public prank(attacker) {
         av_new = new AlignmentVault();
         vm.expectRevert();
         avf.updateImplementation(address(av_new));
     }
 
-    function testWithdrawEthByDeployer() public prank(deployer){
+    function testWithdrawEthByDeployer() public prank(deployer) {
         avf.withdrawEth(address(deployer));
     }
 
-    function testWithdrawEthByDeployerToDeadAddress() public prank(deployer){
+    function testWithdrawEthByDeployerToDeadAddress() public prank(deployer) {
         //@audit-issue admin could mistakely burn eth
         avf.withdrawEth(address(0));
     }
 
-    function testWithdrawEthByAttacker() public prank(attacker){
+    function testWithdrawEthByAttacker() public prank(attacker) {
         vm.expectRevert();
         avf.withdrawEth(address(attacker));
     }
