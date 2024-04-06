@@ -6,11 +6,19 @@ import {AlignmentVaultFactory} from "./../src/AlignmentVaultFactory.sol";
 import {AlignmentVault} from "./../src/AlignmentVault.sol";
 
 import {IAlignmentVault} from "../src/IAlignmentVault.sol";
+import {IAlignmentVaultFactory} from "../src/IAlignmentVaultFactory.sol";
+
+import {IERC20} from "../lib/openzeppelin-contracts-v5/contracts/interfaces/IERC20.sol";
+
+contract NonReceiver {
+// @audit this could represent a state where the eth transfer reverts
+}
 
 contract AlignmentVaultFactoryTest is Test {
     AlignmentVaultFactory avf;
     AlignmentVault av;
     AlignmentVault av_new;
+    NonReceiver nonrcvr;
     address deployer;
     address attacker;
     uint128 public constant MINT = 1 ether;
@@ -20,6 +28,7 @@ contract AlignmentVaultFactoryTest is Test {
     address public alignedNft;
 
     address public constant MILADY = 0x5Af0D9827E0c53E4799BB226655A1de152A425a5;
+    address public constant WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
     uint256 public constant VAULT_ID = 5;
 
     function setUp() public {
@@ -30,6 +39,7 @@ contract AlignmentVaultFactoryTest is Test {
 
         av = new AlignmentVault();
         vm.label(address(av), "alignment vault");
+        vm.label(address(WETH), "Wrapped Eth");
 
         avf = new AlignmentVaultFactory(deployer, address(av));
         vm.label(address(avf), "alignment factory ");
@@ -42,7 +52,7 @@ contract AlignmentVaultFactoryTest is Test {
     }
 
     /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´*/
-    //                HAPP PATHS
+    //                HAPPY PATHS
     /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´*/
     function testDeployAlignmentVault() public prank(deployer) {
         (address dplymnt) = avf.deploy(MILADY, VAULT_ID);
@@ -109,7 +119,10 @@ contract AlignmentVaultFactoryTest is Test {
         avf.withdrawEth(address(attacker));
     }
 
-    function testWithdrawErc721() public {}
-    function testWithdrawErc1155() public {}
-    function testWithdrawErc1155Batch() public {}
+    function testWithdrawEthToReverting() public prank(deployer) {
+        nonrcvr = new NonReceiver();
+        avf.withdrawEth(address(nonrcvr));
+
+        console2.log("non receiver WETH balance: ", IERC20(WETH).balanceOf(address(nonrcvr)));
+    }
 }
