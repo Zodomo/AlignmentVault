@@ -70,8 +70,6 @@ contract AlignmentVaultTest is Test {
         vm.deal(address(av), 10 ether);
 
         vm.startPrank(deployer);
-        av.initialize(address(deployer), MILADY, VAULT_ID);
-        av.disableInitializers();
         vault = av.vault();
         vaultId = VAULT_ID;
         alignedNft = MILADY;
@@ -92,7 +90,6 @@ contract AlignmentVaultTest is Test {
     }
 
     function targetInitialize(address alignedNft_, uint256 vaultId_) public {
-        // av = new AlignmentVault();
         console2.log("alignment vault: ", address(av));
         vault = NFTX_VAULT_FACTORY.vault(vaultId_);
         vaultId = vaultId_;
@@ -127,6 +124,7 @@ contract AlignmentVaultTest is Test {
 
         vm.expectEmit(address(av));
         emit IAlignmentVault.AV_VaultInitialized(vault, vaultId);
+        //@audit what does it mean when vault id is zero?
         av.initialize(address(this), alignedNft_, 0);
         av.disableInitializers();
         vm.deal(address(av), 10 ether);
@@ -162,4 +160,48 @@ contract AlignmentVaultTest is Test {
         assertEq(av.vaultId(), VAULT_ID);
         assertEq(address(av.alignedNft()), MILADY);
     }
+
+    /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´*/
+    //                  RECEIVE LOGIC
+    /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´*/
+
+    function testRescueERC20() public {}
+    function testRescueERC1155() public {}
+    function testRescueERC721() public {}
+    function testRescueERC1155Batch() public {}
+
+    /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´*/
+    //                  MISCELLANEOUS TOKEN MANAGEMENT
+    /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´*/
+
+    /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´*/
+    //                  ALIGNED TOKEN MANAGEMENT
+    /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´*/
+
+    function testBuyNftsFromPool() public {}
+    function testMintVToken() public {}
+    function testBuyVToken() public {}
+    function testBuyVTokenExact() public {}
+    function testSellVToken() public {}
+    function testSellVTokenExact() public {}
+    function testUnwrapEth() public {}
+
+    /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´*/
+    //                  LIQUIDITY POSITION MANAGEMENT
+    /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´*/
+
+    function testliquidityPositionCreatename() public {}
+    function testliquidityPositionIncrease() public {}
+
+    /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´*/
+    //                  INVENTORY POSITION MANAGEMENT
+    /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´*/
+
+    /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´*/
+    //                  EXTERNAL DONATION MANAGEMENT
+    /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´*/
+
+    /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´*/
+    //                  VIEW FUNCTIONS
+    /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´*/
 }
