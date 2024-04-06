@@ -22,21 +22,21 @@ import {ISwapRouter} from "../lib/nftx-protocol-v3/src/uniswap/v3-periphery/inte
 contract AlignmentVaultTest is Test {
     uint256 private constant NFTX_STANDARD_FEE = 30000000000000000;
     IWETH9 public constant WETH = IWETH9(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
-    //@remind  is upgradable
-    //@remind pay attention to this integration
+    //@audit  is upgradable
+    //@audit pay attention to this integration
     INFTXVaultFactoryV3 public constant NFTX_VAULT_FACTORY =
         INFTXVaultFactoryV3(0xC255335bc5aBd6928063F5788a5E420554858f01);
-    //@remind  is upgradable
-    //@remind Allows users to stake vTokens to earn fees in vTokens and WETH. The position is minted as xNFT.
+    //@audit  is upgradable
+    //@audit Allows users to stake vTokens to earn fees in vTokens and WETH. The position is minted as xNFT.
     INFTXInventoryStakingV3 public constant NFTX_INVENTORY_STAKING =
         INFTXInventoryStakingV3(0x889f313e2a3FDC1c9a45bC6020A8a18749CD6152);
 
-    //@remind Wraps Uniswap V3 positions in the ERC721 non-fungible token interface
+    //@audit Wraps Uniswap V3 positions in the ERC721 non-fungible token interface
     INonfungiblePositionManager public constant NPM =
         INonfungiblePositionManager(0x26387fcA3692FCac1C1e8E4E2B22A6CF0d4b71bF);
-    //@remind  Router to facilitate vault tokens minting/burning + addition/removal of concentrated liquidity
+    //@audit  Router to facilitate vault tokens minting/burning + addition/removal of concentrated liquidity
     INFTXRouter public constant NFTX_POSITION_ROUTER = INFTXRouter(0x70A741A12262d4b5Ff45C0179c783a380EebE42a);
-    //@remind Router for stateless execution of swaps against Uniswap V3
+    //@audit Router for stateless execution of swaps against Uniswap V3
     ISwapRouter public constant NFTX_SWAP_ROUTER = ISwapRouter(0x1703f8111B0E7A10e1d14f9073F53680d64277A3);
 
     AlignmentVault public av;
@@ -192,9 +192,24 @@ contract AlignmentVaultTest is Test {
     //                  INVENTORY POSITION MANAGEMENT
     /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´*/
 
+    function testInventoryPositionCreateVToken() public {}
+    function testInventoryPositionCreateNfts() public {}
+    function testInventoryPositionIncrease() public {}
+    function testInventoryPositionWithdrawal() public {}
+    function testInventoryPositionCombine() public {}
+    function testInventoryPositionCollectFees() public {}
+    function testInventoryPositionCollectAllFees() public {}
+
     /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´*/
     //                  EXTERNAL DONATION MANAGEMENT
     /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´*/
+
+    function testDonateInventoryPositionIncrease() public {}
+    function testDonateInventoryCombinePositions() public {}
+    function testDonateLiquidityPositionIncrease() public {}
+    function testDonateLiquidityCombinePositions() public {}
+    function testDonateBuyNftsFromPool() public {}
+    function testDonateMintVToken() public {}
 
     /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´*/
     //                  VIEW FUNCTIONS
