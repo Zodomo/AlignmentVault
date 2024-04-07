@@ -10,29 +10,48 @@ pragma solidity ^0.8.23;
  * @custom:miyamaker https://miyamaker.com
  */
 interface IAlignmentVaultFactory {
-    // >>>>>>>>>>>> [ ERRORS ] <<<<<<<<<<<<
-
+    // Errors
     error AVF_WithdrawalFailed();
 
-    // >>>>>>>>>>>> [ EVENTS ] <<<<<<<<<<<<
-
+    // Events
     event AVF_ImplementationSet(address indexed implementation);
     event AVF_Deployed(address indexed deployer, address indexed deployment);
 
-    // >>>>>>>>>>>> [ DEPLOYMENT FUNCTIONS ] <<<<<<<<<<<<
-
-    function deploy(address alignedNft, uint256 vaultId) external payable returns (address deployment);
-    function deployDeterministic(address alignedNft, uint256 vaultId, bytes32 salt) external payable returns (address deployment);
+    // Deployment Functions
+    function deploy(
+        address alignedNft,
+        uint256 vaultId
+    ) external payable returns (address deployment);
+    function deployDeterministic(
+        address alignedNft,
+        uint256 vaultId,
+        bytes32 salt
+    ) external payable returns (address deployment);
 
     function initCodeHash() external view returns (bytes32 codeHash);
-    function predictDeterministicAddress(bytes32 salt) external view returns (address addr);
+    function predictDeterministicAddress(
+        bytes32 salt
+    ) external view returns (address addr);
 
-    // >>>>>>>>>>>> [ MANAGEMENT FUNCTIONS ] <<<<<<<<<<<<
-
+    // Management Functions
     function updateImplementation(address newImplementation) external payable;
     function withdrawEth(address recipient) external payable;
     function withdrawERC20(address token, address recipient) external payable;
-    function withdrawERC721(address token, uint256 tokenId, address recipient) external payable;
-    function withdrawERC1155(address token, uint256 tokenId, uint256 amount, address recipient) external payable;
-    function withdrawERC1155Batch(address token, uint256[] calldata tokenIds, uint256[] calldata amounts, address recipient) external payable;
+    function withdrawERC721(
+        address token,
+        uint256 tokenId,
+        address recipient
+    ) external payable;
+    function withdrawERC1155(
+        address token,
+        uint256 tokenId,
+        uint256 amount,
+        address recipient
+    ) external payable;
+    function withdrawERC1155Batch(
+        address token,
+        uint256[] calldata tokenIds,
+        uint256[] calldata amounts,
+        address recipient
+    ) external payable;
 }
