@@ -24,33 +24,63 @@ interface IInitialize {
  * @title AlignmentVaultFactory
  * @notice This can be used by any EOA or contract to deploy an AlignmentVault owned by the deployer.
  * @dev deploy() will perform a normal deployment. deployDeterministic() allows you to mine a deployment address.
- * @author Zodomo.eth (X: @0xZodomo, Telegram: @zodomo, GitHub: Zodomo, Email: zodomo@proton.me)
+ * @author Zodomo.eth
  * @custom:github https://github.com/Zodomo/AlignmentVault
  * @custom:miyamaker https://miyamaker.com
  */
 contract AlignmentVaultFactory is Ownable, IAlignmentVaultFactory {
-    // >>>>>>>>>>>> [ STORAGE VARIABLES ] <<<<<<<<<<<<
+    // Events
+    event ImplementationUpdated(address indexed newImplementation);
+    event ETHWithdrawn(address indexed recipient, uint256 amount);
+    event ERC20Withdrawn(
+        address indexed token,
+        address indexed recipient,
+        uint256 amount
+    );
+    event ERC721Withdrawn(
+        address indexed token,
+        address indexed recipient,
+        uint256 tokenId
+    );
+    event ERC1155Withdrawn(
+        address indexed token,
+        address indexed recipient,
+        uint256 tokenId,
+        uint256 amount
+    );
+    event ERC1155BatchWithdrawn(
+        address indexed token,
+        address indexed recipient,
+        uint256[] tokenIds,
+        uint256[] amounts
+    );
 
-    mapping(address alignmentVault => address deployer) public vaultDeployers;
+    // Storage Variables
+    mapping(address => address) public vaultDeployers;
     address public implementation;
 
-    // >>>>>>>>>>>> [ CONSTRUCTOR ] <<<<<<<<<<<<
-
+    // Constructor
     constructor(address owner_, address implementation_) payable {
         _initializeOwner(owner_);
         implementation = implementation_;
-        emit AVF_ImplementationSet(implementation_);
+        emit ImplementationUpdated(implementation_);
     }
 
-    // >>>>>>>>>>>> [ DEPLOYMENT FUNCTIONS ] <<<<<<<<<<<<
+    // Access control modifier
+    modifier onlyAdmin() {
+        require(
+            msg.sender == owner() || msg.sender == address(this),
+            "Only owner or factory can call this function"
+        );
+        _;
+    }
 
-    /**
-     * @notice Deploys a new AlignmentVault and fully initializes it.
-     * @param alignedNft Address of the ERC721/1155 token associated with the vault.
-     * @param vaultId NFTX Vault ID associated with alignedNft
-     * @return deployment Address of the newly deployed AlignmentVault.
-     */
-    function deploy(address alignedNft, uint256 vaultId) external payable virtual returns (address deployment) {
+    // Deployment Functions
+
+    function deploy(
+        address alignedNft,
+        uint256 vaultId
+    ) external payable virtual override returns (address deployment) {
         deployment = LibClone.clone(implementation);
         vaultDeployers[deployment] = msg.sender;
         IInitialize(deployment).initialize(msg.sender, alignedNft, vaultId);
@@ -58,19 +88,11 @@ contract AlignmentVaultFactory is Ownable, IAlignmentVaultFactory {
         emit AVF_Deployed(msg.sender, deployment);
     }
 
-    /**
-     * @notice Deploys a new AlignmentVault to a deterministic address based on the provided salt.
-     * @param alignedNft Address of the ERC721/1155 token associated with the vault.
-     * @param vaultId NFTX Vault ID associated with alignedNft
-     * @param salt A unique salt to determine the address.
-     * @return deployment Address of the newly deployed AlignmentVault.
-     */
-    function deployDeterministic(address alignedNft, uint256 vaultId, bytes32 salt)
-        external
-        payable
-        virtual
-        returns (address deployment)
-    {
+    function deployDeterministic(
+        address alignedNft,
+        uint256 vaultId,
+        bytes32 salt
+    ) external payable virtual override returns (address deployment) {
         deployment = LibClone.cloneDeterministic(implementation, salt);
         vaultDeployers[deployment] = msg.sender;
         IInitialize(deployment).initialize(msg.sender, alignedNft, vaultId);
@@ -78,70 +100,94 @@ contract AlignmentVaultFactory is Ownable, IAlignmentVaultFactory {
         emit AVF_Deployed(msg.sender, deployment);
     }
 
-    /**
-     * @notice Returns the initialization code hash of the clone of the implementation.
-     * @dev This is used primarily for tools like create2crunch to find vanity addresses.
-     * @return codeHash The initialization code hash of the clone.
-     */
-    function initCodeHash() external view virtual returns (bytes32 codeHash) {
+    function initCodeHash()
+        external
+        view
+        virtual
+        override
+        returns (bytes32 codeHash)
+    {
         return LibClone.initCodeHash(implementation);
     }
 
-    /**
-     * @notice Predicts the address of the deterministic clone with the given salt.
-     * @param salt The unique salt used to determine the address.
-     * @return addr Address of the deterministic clone.
-     */
-    function predictDeterministicAddress(bytes32 salt) external view virtual returns (address addr) {
-        return LibClone.predictDeterministicAddress(implementation, salt, address(this));
+    function predictDeterministicAddress(
+        bytes32 salt
+    ) external view virtual override returns (address addr) {
+        return
+            LibClone.predictDeterministicAddress(
+                implementation,
+                salt,
+                address(this)
+            );
     }
 
-    // >>>>>>>>>>>> [ MANAGEMENT FUNCTIONS ] <<<<<<<<<<<<
+    // Management Functions
 
-    /**
-     * @notice Updates the implementation address used for new clones.
-     * @dev Does not affect previously deployed clones.
-     * @param newImplementation The new implementation address for clones.
-     */
-    function updateImplementation(address newImplementation) external payable virtual onlyOwner {
+    function updateImplementation(
+        address newImplementation
+    ) external payable virtual override onlyAdmin {
         if (newImplementation == implementation) return;
         implementation = newImplementation;
-        emit AVF_ImplementationSet(newImplementation);
+        emit ImplementationUpdated(newImplementation);
     }
 
-    /**
-     * @notice Used to withdraw any ETH sent to the factory
-     */
-    function withdrawEth(address recipient) external payable virtual onlyOwner {
-        (bool success,) = payable(recipient).call{value: address(this).balance}("");
-        if (!success) revert AVF_WithdrawalFailed();
+    function withdrawEth(
+        address recipient
+    ) external payable virtual override onlyAdmin {
+        uint256 balance = address(this).balance;
+        require(balance > 0, "No ETH to withdraw");
+        payable(recipient).transfer(balance);
+        emit ETHWithdrawn(recipient, balance);
     }
 
-    /**
-     * @notice Used to withdraw any ERC20 tokens sent to the factory
-     */
-    function withdrawERC20(address token, address recipient) external payable virtual onlyOwner {
-        IERC20(token).transfer(recipient, IERC20(token).balanceOf(address(this)));
+    function withdrawERC20(
+        address token,
+        address recipient
+    ) external payable virtual override onlyAdmin {
+        uint256 balance = IERC20(token).balanceOf(address(this));
+        require(balance > 0, "No ERC20 balance to withdraw");
+        IERC20(token).transfer(recipient, balance);
+        emit ERC20Withdrawn(token, recipient, balance);
     }
 
-    /**
-     * @notice Used to withdraw any ERC721 tokens sent to the factory
-     */
-    function withdrawERC721(address token, uint256 tokenId, address recipient) external payable virtual onlyOwner {
+    function withdrawERC721(
+        address token,
+        uint256 tokenId,
+        address recipient
+    ) external payable virtual override onlyAdmin {
         IERC721(token).transferFrom(address(this), recipient, tokenId);
+        emit ERC721Withdrawn(token, recipient, tokenId);
     }
 
-    /**
-     * @notice Used to withdraw any ERC1155 tokens sent to the factory
-     */
-    function withdrawERC1155(address token, uint256 tokenId, uint256 amount, address recipient) external payable virtual onlyOwner {
-        IERC1155(token).safeTransferFrom(address(this), recipient, tokenId, amount, "");
+    function withdrawERC1155(
+        address token,
+        uint256 tokenId,
+        uint256 amount,
+        address recipient
+    ) external payable virtual override onlyAdmin {
+        IERC1155(token).safeTransferFrom(
+            address(this),
+            recipient,
+            tokenId,
+            amount,
+            ""
+        );
+        emit ERC1155Withdrawn(token, recipient, tokenId, amount);
     }
 
-    /**
-     * @notice Used to batch withdraw any ERC1155 tokens sent to the factory
-     */
-    function withdrawERC1155Batch(address token, uint256[] calldata tokenIds, uint256[] calldata amounts, address recipient) external payable virtual onlyOwner {
-        IERC1155(token).safeBatchTransferFrom(address(this), recipient, tokenIds, amounts, "");
+    function withdrawERC1155Batch(
+        address token,
+        uint256[] calldata tokenIds,
+        uint256[] calldata amounts,
+        address recipient
+    ) external payable virtual override onlyAdmin {
+        IERC1155(token).safeBatchTransferFrom(
+            address(this),
+            recipient,
+            tokenIds,
+            amounts,
+            ""
+        );
+        emit ERC1155BatchWithdrawn(token, recipient, tokenIds, amounts);
     }
 }
