@@ -1,2 +1,6 @@
-@openzeppelin/=lib/nftx-protocol-v3/lib/openzeppelin-contracts/
-@openzeppelin/contracts/=lib/nftx-protocol-v3/lib/openzeppelin-contracts/contracts/
+@openzeppelin/contracts/=lib/openzeppelin-contracts-v5/contracts/
+ds-test/=lib/openzeppelin-contracts-v5/lib/forge-std/lib/ds-test/src/
+erc4626-tests/=lib/openzeppelin-contracts-v5/lib/erc4626-tests/
+forge-std/=lib/openzeppelin-contracts-v5/lib/forge-std/src/
+openzeppelin-contracts-v5/=lib/openzeppelin-contracts-v5/
+solady/=lib/solady/src/
