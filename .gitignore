@@ -13,6 +13,6 @@ docs/
 # Dotenv file
 .env
 
-.vscode
+.vscode/
 
 
