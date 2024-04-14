@@ -6,7 +6,7 @@ import {MockERC20} from "../lib/solady/test/utils/mocks/MockERC20.sol";
 import {MockERC721} from "../lib/solady/test/utils/mocks/MockERC721.sol";
 //import {MockERC1155} from "../lib/solady/test/utils/mocks/MockERC1155.sol";
 
-contract TokenRescueTest is AlignmentVaultTest {
+contract MiscTokenMgmtTest is AlignmentVaultTest {
     MockERC20 public erc20;
     MockERC721 public erc721;
     //MockERC1155 public erc1155;
