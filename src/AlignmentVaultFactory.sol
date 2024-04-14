@@ -12,11 +12,7 @@ import {IERC721} from "../lib/openzeppelin-contracts-v5/contracts/interfaces/IER
 import {IERC1155} from "../lib/openzeppelin-contracts-v5/contracts/interfaces/IERC1155.sol";
 
 interface IInitialize {
-    function initialize(
-        address _owner,
-        address _alignedNft,
-        uint256 _vaultId
-    ) external payable;
+    function initialize(address _owner, address _alignedNft, uint256 _vaultId) external payable;
     function disableInitializers() external payable;
 }
 
@@ -134,14 +130,24 @@ contract AlignmentVaultFactory is Ownable, IAlignmentVaultFactory {
     /**
      * @notice Used to withdraw any ERC1155 tokens sent to the factory
      */
-    function withdrawERC1155(address token, uint256 tokenId, uint256 amount, address recipient) external payable virtual onlyOwner {
+    function withdrawERC1155(address token, uint256 tokenId, uint256 amount, address recipient)
+        external
+        payable
+        virtual
+        onlyOwner
+    {
         IERC1155(token).safeTransferFrom(address(this), recipient, tokenId, amount, "");
     }
 
     /**
      * @notice Used to batch withdraw any ERC1155 tokens sent to the factory
      */
-    function withdrawERC1155Batch(address token, uint256[] calldata tokenIds, uint256[] calldata amounts, address recipient) external payable virtual onlyOwner {
+    function withdrawERC1155Batch(
+        address token,
+        uint256[] calldata tokenIds,
+        uint256[] calldata amounts,
+        address recipient
+    ) external payable virtual onlyOwner {
         IERC1155(token).safeBatchTransferFrom(address(this), recipient, tokenIds, amounts, "");
     }
 }

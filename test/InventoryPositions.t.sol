@@ -20,7 +20,7 @@ contract InventoryPositionsTest is AlignmentVaultTest {
 
         mintVToken(tokenIds, amounts);
         IERC20(vault).transfer(address(av), 1 ether);
-    
+
         vm.expectEmit(address(av));
         emit IAlignmentVault.AV_InventoryPositionCreated(expectedPositionId, 1 ether);
         uint256 positionId = av.inventoryPositionCreateVToken(1 ether);
