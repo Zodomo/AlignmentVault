@@ -11,7 +11,12 @@ pragma solidity ^0.8.23;
  * @custom:miyamaker https://miyamaker.com
  */
 interface IAlignmentVault {
+
     // General Errors
+
+    // >>>>>>>>>>>> [ GENERAL ERRORS ] <<<<<<<<<<<<
+
+
     error AV_UnalignedNft();
     error AV_InvalidPosition();
     error AV_TransactionFailed();
@@ -70,6 +75,7 @@ interface IAlignmentVault {
     function alignedNft() external view returns (address);
     function is1155() external view returns (bool);
 
+
     // View Functions
     function getUniswapPoolValues()
         external
@@ -97,6 +103,20 @@ interface IAlignmentVault {
         external
         view
         returns (uint128 token0Fees, uint128 token1Fees);
+
+    // >>>>>>>>>>>> [ VIEW FUNCTIONS ] <<<<<<<<<<<<
+
+    function getUniswapPoolValues() external view returns (address pool, uint160 sqrtPriceX96, int24 tick);
+    function getInventoryPositionIds() external view returns (uint256[] memory positionIds);
+    function getLiquidityPositionIds() external view returns (uint256[] memory positionIds);
+    function getSpecificInventoryPositionFees(uint256 positionId) external view returns (uint256 balance);
+    function getTotalInventoryPositionFees() external view returns (uint256 balance);
+    function getSpecificLiquidityPositionFees(uint256 positionId)
+        external
+        view
+        returns (uint128 token0Fees, uint128 token1Fees);
+    function getTotalLiquidityPositionFees() external view returns (uint128 token0Fees, uint128 token1Fees);
+
 
     // External Donation Management
     function donateInventoryPositionIncrease(
@@ -129,24 +149,59 @@ interface IAlignmentVault {
         uint256[] calldata amounts
     ) external payable;
 
+
     // Inventory Position Management
     function inventoryPositionCreateVToken(
         uint256 vTokenAmount
     ) external payable returns (uint256 positionId);
+
+    function donateInventoryPositionIncrease(uint256 positionId, uint256 vTokenAmount) external payable;
+    function donateInventoryCombinePositions(
+        uint256 positionId,
+        uint256[] calldata childPositionIds
+    ) external payable;
+    function donateLiquidityPositionIncrease(
+        uint256 positionId,
+        uint256 vTokenAmount,
+        uint256[] calldata tokenIds,
+        uint256[] calldata amounts,
+        uint24 slippage
+    ) external payable;
+    function donateLiquidityCombinePositions(
+        uint256 positionId,
+        uint256[] calldata childPositionIds
+    ) external payable;
+    function donateBuyNftsFromPool(
+        uint256[] calldata tokenIds,
+        uint256 vTokenPremiumLimit,
+        uint24 fee,
+        uint160 sqrtPriceLimitX96
+    ) external payable;
+    function donateMintVToken(uint256[] calldata tokenIds, uint256[] calldata amounts) external payable;
+
+    // >>>>>>>>>>>> [ INVENTORY POSITION MANAGEMENT ] <<<<<<<<<<<<
+
+    function inventoryPositionCreateVToken(uint256 vTokenAmount) external payable returns (uint256 positionId);
+
     function inventoryPositionCreateNfts(
         uint256[] calldata tokenIds,
         uint256[] calldata amounts
     ) external payable returns (uint256 positionId);
+
     function inventoryPositionIncrease(
         uint256 positionId,
         uint256 vTokenAmount
     ) external payable;
+
+    function inventoryPositionIncrease(uint256 positionId, uint256 vTokenAmount) external payable;
+
     function inventoryPositionWithdrawal(
         uint256 positionId_,
         uint256 vTokenAmount,
         uint256[] calldata tokenIds,
         uint256 vTokenPremiumLimit
     ) external payable;
+
     function inventoryPositionCombine(
         uint256 positionId,
         uint256[] calldata childPositionIds
@@ -157,6 +212,14 @@ interface IAlignmentVault {
     function inventoryPositionCollectAllFees() external payable;
 
     // Liquidity Position Management
+
+    function inventoryPositionCombine(uint256 positionId, uint256[] calldata childPositionIds) external payable;
+    function inventoryPositionCollectFees(uint256[] calldata positionIds) external payable;
+    function inventoryPositionCollectAllFees() external payable;
+
+    // >>>>>>>>>>>> [ LIQUIDITY POSITION MANAGEMENT ] <<<<<<<<<<<<
+
+
     function liquidityPositionCreate(
         uint256 ethAmount,
         uint256 vTokenAmount,
@@ -181,6 +244,7 @@ interface IAlignmentVault {
         uint256 vTokenPremiumLimit,
         uint128 liquidity
     ) external payable;
+
     function liquidityPositionCombine(
         uint256 positionId,
         uint256[] calldata childPositionIds
@@ -188,6 +252,10 @@ interface IAlignmentVault {
     function liquidityPositionCollectFees(
         uint256[] calldata positionIds
     ) external payable;
+
+    function liquidityPositionCombine(uint256 positionId, uint256[] calldata childPositionIds) external payable;
+    function liquidityPositionCollectFees(uint256[] calldata positionIds) external payable;
+
     function liquidityPositionCollectAllFees() external payable;
 
     // Aligned Token Management
@@ -227,6 +295,7 @@ interface IAlignmentVault {
         uint160 sqrtPriceLimitX96
     ) external payable;
 
+
     // Miscellaneous Token Management
     function rescueERC20(
         address token,
@@ -244,6 +313,41 @@ interface IAlignmentVault {
         uint256 amount,
         address recipient
     ) external payable;
+
+    function buyNftsFromPool(
+        uint256 ethAmount,
+        uint256[] calldata tokenIds,
+        uint256 vTokenPremiumLimit,
+        uint24 fee,
+        uint160 sqrtPriceLimitX96
+    ) external payable;
+    function mintVToken(uint256[] calldata tokenIds, uint256[] calldata amounts) external payable;
+    function buyVToken(uint256 ethAmount, uint24 fee, uint24 slippage, uint160 sqrtPriceLimitX96) external payable;
+    function buyVTokenExact(
+        uint256 ethAmount,
+        uint256 vTokenAmount,
+        uint24 fee,
+        uint160 sqrtPriceLimitX96
+    ) external payable;
+    function sellVToken(
+        uint256 vTokenAmount,
+        uint24 fee,
+        uint24 slippage,
+        uint160 sqrtPriceLimitX96
+    ) external payable;
+    function sellVTokenExact(
+        uint256 vTokenAmount,
+        uint256 ethAmount,
+        uint24 fee,
+        uint160 sqrtPriceLimitX96
+    ) external payable;
+
+    // >>>>>>>>>>>> [ MISCELLANEOUS TOKEN MANAGEMENT ] <<<<<<<<<<<<
+
+    function rescueERC20(address token, uint256 amount, address recipient) external payable;
+    function rescueERC721(address token, uint256 tokenId, address recipient) external payable;
+    function rescueERC1155(address token, uint256 tokenId, uint256 amount, address recipient) external payable;
+
     function rescueERC1155Batch(
         address token,
         uint256[] calldata tokenIds,
@@ -251,6 +355,7 @@ interface IAlignmentVault {
         address recipient
     ) external payable;
     function unwrapEth() external payable;
+
 
     // Receive Logic
     function onERC721Received(
@@ -266,6 +371,12 @@ interface IAlignmentVault {
         uint256,
         bytes memory
     ) external returns (bytes4);
+
+    // >>>>>>>>>>>> [ RECEIVE LOGIC ] <<<<<<<<<<<<
+
+    function onERC721Received(address, address, uint256, bytes memory) external returns (bytes4);
+    function onERC1155Received(address, address, uint256, uint256, bytes memory) external returns (bytes4);
+
     function onERC1155BatchReceived(
         address,
         address,
@@ -273,4 +384,8 @@ interface IAlignmentVault {
         uint256[] memory,
         bytes memory
     ) external returns (bytes4);
+
+
+    function disableInitializers() external payable;
+    function initialize(address owner_, address alignedNft_, uint96 vaultId_) external payable;
 }

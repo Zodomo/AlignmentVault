@@ -17,6 +17,7 @@ interface IAlignmentVaultFactory {
     event AVF_ImplementationSet(address indexed implementation);
     event AVF_Deployed(address indexed deployer, address indexed deployment);
 
+
     // Deployment Functions
     function deploy(
         address alignedNft,
@@ -27,6 +28,15 @@ interface IAlignmentVaultFactory {
         uint256 vaultId,
         bytes32 salt
     ) external payable returns (address deployment);
+    
+    // >>>>>>>>>>>> [ DEPLOYMENT FUNCTIONS ] <<<<<<<<<<<<
+
+    function deploy(address alignedNft, uint256 vaultId) external payable returns (address deployment);
+    function deployDeterministic(address alignedNft, uint256 vaultId, bytes32 salt)
+        external
+        payable
+        returns (address deployment);
+
 
     function initCodeHash() external view returns (bytes32 codeHash);
     function predictDeterministicAddress(
@@ -37,6 +47,7 @@ interface IAlignmentVaultFactory {
     function updateImplementation(address newImplementation) external payable;
     function withdrawEth(address recipient) external payable;
     function withdrawERC20(address token, address recipient) external payable;
+
     function withdrawERC721(
         address token,
         uint256 tokenId,
@@ -48,6 +59,10 @@ interface IAlignmentVaultFactory {
         uint256 amount,
         address recipient
     ) external payable;
+
+    function withdrawERC721(address token, uint256 tokenId, address recipient) external payable;
+    function withdrawERC1155(address token, uint256 tokenId, uint256 amount, address recipient) external payable;
+
     function withdrawERC1155Batch(
         address token,
         uint256[] calldata tokenIds,
