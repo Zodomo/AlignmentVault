@@ -50,7 +50,7 @@ contract AlignmentVaultFactory is Ownable, IAlignmentVaultFactory {
         deployment = LibClone.clone(implementation);
         vaultDeployers[deployment] = msg.sender;
         IInitialize(deployment).initialize(msg.sender, alignedNft, vaultId);
-        IInitialize(deployment).disableInitializers();
+        //IInitialize(deployment).disableInitializers();
         emit AVF_Deployed(msg.sender, deployment);
     }
 
@@ -70,7 +70,7 @@ contract AlignmentVaultFactory is Ownable, IAlignmentVaultFactory {
         deployment = LibClone.cloneDeterministic(implementation, salt);
         vaultDeployers[deployment] = msg.sender;
         IInitialize(deployment).initialize(msg.sender, alignedNft, vaultId);
-        IInitialize(deployment).disableInitializers();
+        //IInitialize(deployment).disableInitializers();
         emit AVF_Deployed(msg.sender, deployment);
     }
 

@@ -29,7 +29,7 @@ contract AlignmentVaultFactoryTest is Test {
 
     address public constant MILADY = 0x5Af0D9827E0c53E4799BB226655A1de152A425a5;
     address public constant WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
-    uint256 public constant VAULT_ID = 5;
+    uint96 public constant VAULT_ID = 5;
 
     function setUp() public {
         vm.createSelectFork("mainnet");
@@ -121,8 +121,7 @@ contract AlignmentVaultFactoryTest is Test {
 
     function testWithdrawEthToReverting() public prank(deployer) {
         nonrcvr = new NonReceiver();
+        vm.expectRevert();
         avf.withdrawEth(address(nonrcvr));
-
-        console2.log("non receiver WETH balance: ", IERC20(WETH).balanceOf(address(nonrcvr)));
     }
 }

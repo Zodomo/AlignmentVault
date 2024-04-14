@@ -5,7 +5,7 @@ pragma solidity ^0.8.23;
 
 // Inheritance and Libraries
 import {Ownable} from "../lib/solady/src/auth/Ownable.sol";
-import {Initializable} from "../lib/openzeppelin-contracts-v5/contracts/proxy/utils/Initializable.sol";
+//import {Initializable} from "../lib/openzeppelin-contracts-v5/contracts/proxy/utils/Initializable.sol";
 import {ERC721Holder} from "../lib/openzeppelin-contracts-v5/contracts/token/ERC721/utils/ERC721Holder.sol";
 import {ERC1155Holder} from "../lib/openzeppelin-contracts-v5/contracts/token/ERC1155/utils/ERC1155Holder.sol";
 import {IAlignmentVault} from "./IAlignmentVault.sol";
@@ -39,8 +39,10 @@ import {console2} from "../lib/forge-std/src/console2.sol";
  * @custom:github https://github.com/Zodomo/AlignmentVault
  * @custom:miyamaker https://miyamaker.com
  */
-contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, IAlignmentVault {
+contract AlignmentVault is Ownable, ERC721Holder, ERC1155Holder, IAlignmentVault {
     using EnumerableSet for EnumerableSet.UintSet;
+
+    event Initialized();
 
     // >>>>>>>>>>>> [ CONSTANTS ] <<<<<<<<<<<<
 
@@ -75,10 +77,16 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
     address public delegate;
     address public alignedNft;
     bool public is1155;
+    bool public initialized;
 
     // >>>>>>>>>>>> [ CONSTRUCTOR / INITIALIZER FUNCTIONS ] <<<<<<<<<<<<
 
     constructor() payable {}
+
+    modifier initializer() {
+        if (initialized) revert AlreadyInitialized();
+        _;
+    }
 
     function initialize(address owner_, address alignedNft_, uint96 vaultId_) external payable virtual initializer {
         _initializeOwner(owner_);
@@ -135,11 +143,13 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
         IERC20(vault).approve(address(_NFTX_POSITION_ROUTER), type(uint256).max);
         IERC20(vault).approve(address(_NPM), type(uint256).max);
         _WETH.approve(address(_NFTX_SWAP_ROUTER), type(uint256).max);
+        initialized = true;
+        emit Initialized();
     }
 
-    function disableInitializers() external payable virtual {
+    /*function disableInitializers() external payable virtual {
         _disableInitializers();
-    }
+    }*/
 
     // >>>>>>>>>>>> [ MANAGEMENT FUNCTIONS ] <<<<<<<<<<<<
 

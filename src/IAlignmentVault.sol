@@ -197,6 +197,6 @@ interface IAlignmentVault {
         bytes memory
     ) external returns (bytes4);
 
-    function disableInitializers() external payable;
+    //function disableInitializers() external payable;
     function initialize(address owner_, address alignedNft_, uint96 vaultId_) external payable;
 }
