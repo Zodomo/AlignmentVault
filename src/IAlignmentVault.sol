@@ -86,13 +86,6 @@ interface IAlignmentVault {
         uint256 positionId,
         uint256[] calldata childPositionIds
     ) external payable;
-    function donateBuyNftsFromPool(
-        uint256[] calldata tokenIds,
-        uint256 vTokenPremiumLimit,
-        uint24 fee,
-        uint160 sqrtPriceLimitX96
-    ) external payable;
-    function donateMintVToken(uint256[] calldata tokenIds, uint256[] calldata amounts) external payable;
 
     // >>>>>>>>>>>> [ INVENTORY POSITION MANAGEMENT ] <<<<<<<<<<<<
 
