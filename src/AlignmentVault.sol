@@ -142,6 +142,7 @@ contract AlignmentVault is Ownable, ERC721Holder, ERC1155Holder, IAlignmentVault
         IERC20(vault).approve(address(_NFTX_INVENTORY), type(uint256).max);
         IERC20(vault).approve(address(_NFTX_POSITION_ROUTER), type(uint256).max);
         IERC20(vault).approve(address(_NFTX_LIQUIDITY), type(uint256).max);
+        IERC20(vault).approve(address(_NFTX_SWAP_ROUTER), type(uint256).max);
         _WETH.approve(address(_NFTX_SWAP_ROUTER), type(uint256).max);
         initialized = true;
         emit Initialized();
@@ -628,9 +629,9 @@ contract AlignmentVault is Ownable, ERC721Holder, ERC1155Holder, IAlignmentVault
         emit AV_LiquidityPositionsCollected(positionIds);
     }
 
-    // TODO: Test
     // >>>>>>>>>>>> [ ALIGNED TOKEN MANAGEMENT ] <<<<<<<<<<<<
 
+    // TODO: Test
     function buyNftsFromPool(
         uint256 ethAmount,
         uint256[] calldata tokenIds,
@@ -655,19 +656,19 @@ contract AlignmentVault is Ownable, ERC721Holder, ERC1155Holder, IAlignmentVault
 
     function mintVToken(uint256[] calldata tokenIds, uint256[] calldata amounts) external payable onlyOwner {
         uint256 ethRequired = FixedPointMathLib.fullMulDivUp(
-            INFTXVaultV3(vault).vTokenToETH(_countTokens(tokenIds, amounts) * 1 ether), 30000, 1000000
+            INFTXVaultV3(vault).vTokenToETH(_countTokens(tokenIds, amounts) * 1 ether), 30000, _SLIPPAGE_DENOMINATOR
         );
         INFTXVaultV3(vault).mint{value: ethRequired}(tokenIds, amounts, address(this), address(this));
         emit AV_MintVTokens(tokenIds, amounts);
     }
 
-    function buyVToken(uint256 ethAmount, uint24 fee, uint24 slippage, uint160 sqrtPriceLimitX96)
+    function buyVToken(uint256 ethAmount, uint24 fee)
         external
         payable
         onlyOwner
     {
-        if (sqrtPriceLimitX96 == 0) sqrtPriceLimitX96 = type(uint160).max;
-        _WETH.deposit{value: ethAmount}();
+        uint256 wethBalance = _WETH.balanceOf(address(this));
+        if (ethAmount > wethBalance) _WETH.deposit{value: ethAmount - wethBalance}();
         ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({
             tokenIn: address(_WETH),
             tokenOut: vault,
@@ -675,40 +676,39 @@ contract AlignmentVault is Ownable, ERC721Holder, ERC1155Holder, IAlignmentVault
             recipient: address(this),
             deadline: block.timestamp,
             amountIn: ethAmount,
-            amountOutMinimum: FixedPointMathLib.fullMulDiv(ethAmount, slippage, _SLIPPAGE_DENOMINATOR),
-            sqrtPriceLimitX96: sqrtPriceLimitX96
+            amountOutMinimum: 0,
+            sqrtPriceLimitX96: 0
         });
         _NFTX_SWAP_ROUTER.exactInputSingle(params);
         _WETH.withdraw(_WETH.balanceOf(address(this)));
     }
 
-    function buyVTokenExact(uint256 ethAmount, uint256 vTokenAmount, uint24 fee, uint160 sqrtPriceLimitX96)
+    function buyVTokenExact(uint256 ethAmount, uint256 vTokenAmountExact, uint24 fee)
         external
         payable
         onlyOwner
     {
-        if (sqrtPriceLimitX96 == 0) sqrtPriceLimitX96 = type(uint160).max;
-        _WETH.deposit{value: ethAmount}();
+        uint256 wethBalance = _WETH.balanceOf(address(this));
+        if (ethAmount > wethBalance) _WETH.deposit{value: ethAmount - wethBalance}();
         ISwapRouter.ExactOutputSingleParams memory params = ISwapRouter.ExactOutputSingleParams({
             tokenIn: address(_WETH),
             tokenOut: vault,
             fee: fee,
             recipient: address(this),
             deadline: block.timestamp,
-            amountOut: vTokenAmount,
+            amountOut: vTokenAmountExact,
             amountInMaximum: ethAmount,
-            sqrtPriceLimitX96: sqrtPriceLimitX96
+            sqrtPriceLimitX96: 0
         });
         _NFTX_SWAP_ROUTER.exactOutputSingle(params);
         _WETH.withdraw(_WETH.balanceOf(address(this)));
     }
 
-    function sellVToken(uint256 vTokenAmount, uint24 fee, uint24 slippage, uint160 sqrtPriceLimitX96)
+    function sellVToken(uint256 vTokenAmount, uint24 fee)
         external
         payable
         onlyOwner
     {
-        if (sqrtPriceLimitX96 == 0) sqrtPriceLimitX96 = type(uint160).max;
         ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({
             tokenIn: vault,
             tokenOut: address(_WETH),
@@ -716,28 +716,27 @@ contract AlignmentVault is Ownable, ERC721Holder, ERC1155Holder, IAlignmentVault
             recipient: address(this),
             deadline: block.timestamp,
             amountIn: vTokenAmount,
-            amountOutMinimum: FixedPointMathLib.fullMulDiv(vTokenAmount, slippage, _SLIPPAGE_DENOMINATOR),
-            sqrtPriceLimitX96: sqrtPriceLimitX96
+            amountOutMinimum: 0,
+            sqrtPriceLimitX96: 0
         });
         _NFTX_SWAP_ROUTER.exactInputSingle(params);
         _WETH.withdraw(_WETH.balanceOf(address(this)));
     }
 
-    function sellVTokenExact(uint256 vTokenAmount, uint256 ethAmount, uint24 fee, uint160 sqrtPriceLimitX96)
+    function sellVTokenExact(uint256 vTokenAmount, uint256 ethAmountExact, uint24 fee)
         external
         payable
         onlyOwner
     {
-        if (sqrtPriceLimitX96 == 0) sqrtPriceLimitX96 = type(uint160).max;
         ISwapRouter.ExactOutputSingleParams memory params = ISwapRouter.ExactOutputSingleParams({
             tokenIn: vault,
             tokenOut: address(_WETH),
             fee: fee,
             recipient: address(this),
             deadline: block.timestamp,
-            amountOut: ethAmount,
+            amountOut: ethAmountExact,
             amountInMaximum: vTokenAmount,
-            sqrtPriceLimitX96: sqrtPriceLimitX96
+            sqrtPriceLimitX96: 0
         });
         _NFTX_SWAP_ROUTER.exactOutputSingle(params);
         _WETH.withdraw(_WETH.balanceOf(address(this)));
