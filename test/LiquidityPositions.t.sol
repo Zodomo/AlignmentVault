@@ -12,7 +12,7 @@ contract LiquidityPositionsTest is AlignmentVaultTest {
     }
 
     function testLiquidityPositionCreateEth() public {
-        av.liquidityPositionCreate(1 ether, 0, none, none, 10000, -12240, 10920, 0);
+        av.liquidityPositionCreate(1 ether, 0, none, none, 10_000, -12_240, 10_920, 0);
     }
 
     function testLiquidityPositionCreateNfts() public {
@@ -22,6 +22,6 @@ contract LiquidityPositionsTest is AlignmentVaultTest {
         uint256[] memory amounts = new uint256[](2);
         amounts[0] = 1;
         amounts[1] = 1;
-        av.liquidityPositionCreate(0, 0, tokenIds, amounts, 10000, -6000, 10920, 0);
+        av.liquidityPositionCreate(0, 0, tokenIds, amounts, 10_000, -6000, 10_920, 0);
     }
 }

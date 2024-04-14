@@ -61,12 +61,11 @@ contract AlignmentVaultFactory is Ownable, IAlignmentVaultFactory {
      * @param salt A unique salt to determine the address.
      * @return deployment Address of the newly deployed AlignmentVault.
      */
-    function deployDeterministic(address alignedNft, uint256 vaultId, bytes32 salt)
-        external
-        payable
-        virtual
-        returns (address deployment)
-    {
+    function deployDeterministic(
+        address alignedNft,
+        uint256 vaultId,
+        bytes32 salt
+    ) external payable virtual returns (address deployment) {
         deployment = LibClone.cloneDeterministic(implementation, salt);
         vaultDeployers[deployment] = msg.sender;
         IInitialize(deployment).initialize(msg.sender, alignedNft, vaultId);
@@ -130,12 +129,12 @@ contract AlignmentVaultFactory is Ownable, IAlignmentVaultFactory {
     /**
      * @notice Used to withdraw any ERC1155 tokens sent to the factory
      */
-    function withdrawERC1155(address token, uint256 tokenId, uint256 amount, address recipient)
-        external
-        payable
-        virtual
-        onlyOwner
-    {
+    function withdrawERC1155(
+        address token,
+        uint256 tokenId,
+        uint256 amount,
+        address recipient
+    ) external payable virtual onlyOwner {
         IERC1155(token).safeTransferFrom(address(this), recipient, tokenId, amount, "");
     }
 

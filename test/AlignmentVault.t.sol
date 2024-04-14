@@ -20,7 +20,7 @@ import {INFTXRouter} from "../lib/nftx-protocol-v3/src/interfaces/INFTXRouter.so
 import {ISwapRouter} from "../lib/nftx-protocol-v3/src/uniswap/v3-periphery/interfaces/ISwapRouter.sol";
 
 contract AlignmentVaultTest is Test {
-    uint256 private constant NFTX_STANDARD_FEE = 30000000000000000;
+    uint256 private constant NFTX_STANDARD_FEE = 30_000_000_000_000_000;
     IWETH9 public constant WETH = IWETH9(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
     //@audit  is upgradable
     //@audit pay attention to this integration
@@ -45,10 +45,10 @@ contract AlignmentVaultTest is Test {
     address public alignedNft;
 
     uint256[] public none = new uint256[](0);
-    int24 public constant MIN_TICK = -887272;
-    int24 public constant MAX_TICK = 887272;
+    int24 public constant MIN_TICK = -887_272;
+    int24 public constant MAX_TICK = 887_272;
     uint24 public constant STANDARD_FEE = 3000;
-    uint24 public constant FIVE_PERCENT = 50000;
+    uint24 public constant FIVE_PERCENT = 50_000;
     address public constant MILADY = 0x5Af0D9827E0c53E4799BB226655A1de152A425a5;
     uint96 public constant VAULT_ID = 5;
 
@@ -98,7 +98,12 @@ contract AlignmentVaultTest is Test {
         IERC721(MILADY).transferFrom(target, recipient, tokenId);
     }
 
-    function mintVToken(uint256[] memory tokenIds, uint256[] memory amounts, address depositor, address to) public payable {
+    function mintVToken(
+        uint256[] memory tokenIds,
+        uint256[] memory amounts,
+        address depositor,
+        address to
+    ) public payable {
         uint256 tokenCount;
         for (uint256 i; i < tokenIds.length; ++i) {
             unchecked {
@@ -106,7 +111,7 @@ contract AlignmentVaultTest is Test {
             }
         }
         uint256 ethRequired =
-            FixedPointMathLib.fullMulDivUp(INFTXVaultV3(vault).vTokenToETH(tokenCount * 1 ether), 30000, 1000000);
+            FixedPointMathLib.fullMulDivUp(INFTXVaultV3(vault).vTokenToETH(tokenCount * 1 ether), 30_000, 1_000_000);
         INFTXVaultV3(vault).mint{value: ethRequired}(tokenIds, amounts, to, depositor);
     }
 

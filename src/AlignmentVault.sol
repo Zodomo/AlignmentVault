@@ -46,9 +46,9 @@ contract AlignmentVault is Ownable, ERC721Holder, ERC1155Holder, IAlignmentVault
 
     // >>>>>>>>>>>> [ CONSTANTS ] <<<<<<<<<<<<
 
-    uint256 private constant _NFTX_STANDARD_FEE = 30000000000000000;
-    uint256 private constant _SLIPPAGE_DENOMINATOR = 1000000;
-    uint256 private constant _ONE_PERCENT = 10000;
+    uint256 private constant _NFTX_STANDARD_FEE = 30_000_000_000_000_000;
+    uint256 private constant _SLIPPAGE_DENOMINATOR = 1_000_000;
+    uint256 private constant _ONE_PERCENT = 10_000;
     uint24 private constant _POOL_FEE = 3000;
 
     // >>>>>>>>>>>> [ CONTRACT INTERFACES ] <<<<<<<<<<<<
@@ -165,11 +165,10 @@ contract AlignmentVault is Ownable, ERC721Holder, ERC1155Holder, IAlignmentVault
 
     // >>>>>>>>>>>> [ PRIVATE FUNCTIONS ] <<<<<<<<<<<<
 
-    function _countTokens(uint256[] calldata tokenIds, uint256[] calldata amounts)
-        private
-        pure
-        returns (uint256 totalCount)
-    {
+    function _countTokens(
+        uint256[] calldata tokenIds,
+        uint256[] calldata amounts
+    ) private pure returns (uint256 totalCount) {
         for (uint256 i; i < tokenIds.length; ++i) {
             unchecked {
                 totalCount += amounts[i];
@@ -312,24 +311,20 @@ contract AlignmentVault is Ownable, ERC721Holder, ERC1155Holder, IAlignmentVault
     // TODO: Test
     // >>>>>>>>>>>> [ EXTERNAL DONATION MANAGEMENT ] <<<<<<<<<<<<
 
-    function donateInventoryPositionIncrease(uint256 positionId, uint256 vTokenAmount)
-        external
-        payable
-        virtual
-        onlyOwner
-    {
+    function donateInventoryPositionIncrease(
+        uint256 positionId,
+        uint256 vTokenAmount
+    ) external payable virtual onlyOwner {
         if (!_inventoryPositionIds.contains(positionId)) revert AV_InvalidPosition();
         IERC20(vault).transferFrom(msg.sender, address(this), vTokenAmount);
         _NFTX_INVENTORY.increasePosition(positionId, vTokenAmount, "", false, true);
         emit AV_InventoryPositionIncreased(positionId, vTokenAmount);
     }
 
-    function donateInventoryCombinePositions(uint256 positionId, uint256[] calldata childPositionIds)
-        external
-        payable
-        virtual
-        onlyOwner
-    {
+    function donateInventoryCombinePositions(
+        uint256 positionId,
+        uint256[] calldata childPositionIds
+    ) external payable virtual onlyOwner {
         if (!_inventoryPositionIds.contains(positionId)) revert AV_InvalidPosition();
         for (uint256 i; i < childPositionIds.length; ++i) {
             _NFTX_INVENTORY.transferFrom(msg.sender, address(this), childPositionIds[i]);
@@ -376,12 +371,10 @@ contract AlignmentVault is Ownable, ERC721Holder, ERC1155Holder, IAlignmentVault
         emit AV_LiquidityPositionIncreased(positionId);
     }
 
-    function donateLiquidityCombinePositions(uint256 positionId, uint256[] calldata childPositionIds)
-        external
-        payable
-        virtual
-        onlyOwner
-    {
+    function donateLiquidityCombinePositions(
+        uint256 positionId,
+        uint256[] calldata childPositionIds
+    ) external payable virtual onlyOwner {
         if (!_inventoryPositionIds.contains(positionId)) revert AV_InvalidPosition();
         uint256 ethBalance = address(this).balance;
         uint256 vTokenBalance = IERC20(vault).balanceOf(address(this));
@@ -471,13 +464,10 @@ contract AlignmentVault is Ownable, ERC721Holder, ERC1155Holder, IAlignmentVault
         emit AV_InventoryPositionCreated(positionId, vTokenAmount);
     }
 
-    function inventoryPositionCreateNfts(uint256[] calldata tokenIds, uint256[] calldata amounts)
-        external
-        payable
-        virtual
-        onlyOwner
-        returns (uint256 positionId)
-    {
+    function inventoryPositionCreateNfts(
+        uint256[] calldata tokenIds,
+        uint256[] calldata amounts
+    ) external payable virtual onlyOwner returns (uint256 positionId) {
         positionId = _NFTX_INVENTORY.depositWithNFT(vaultId, tokenIds, amounts, address(this));
         _inventoryPositionIds.add(positionId);
         emit AV_InventoryPositionCreated(positionId, _countTokens(tokenIds, amounts) * 1 ether);
@@ -501,12 +491,10 @@ contract AlignmentVault is Ownable, ERC721Holder, ERC1155Holder, IAlignmentVault
         emit AV_InventoryPositionWithdrawal(positionId, vTokenAmount);
     }
 
-    function inventoryPositionCombine(uint256 positionId, uint256[] calldata childPositionIds)
-        external
-        payable
-        virtual
-        onlyOwner
-    {
+    function inventoryPositionCombine(
+        uint256 positionId,
+        uint256[] calldata childPositionIds
+    ) external payable virtual onlyOwner {
         _NFTX_INVENTORY.combinePositions(positionId, childPositionIds);
         emit AV_InventoryPositionCombination(positionId, childPositionIds);
     }
@@ -577,12 +565,10 @@ contract AlignmentVault is Ownable, ERC721Holder, ERC1155Holder, IAlignmentVault
         emit AV_LiquidityPositionWithdrawal(positionId);
     }
 
-    function liquidityPositionCombine(uint256 positionId, uint256[] calldata childPositionIds)
-        external
-        payable
-        virtual
-        onlyOwner
-    {
+    function liquidityPositionCombine(
+        uint256 positionId,
+        uint256[] calldata childPositionIds
+    ) external payable virtual onlyOwner {
         uint256 ethBalance = address(this).balance;
         uint256 vTokenBalance = IERC20(vault).balanceOf(address(this));
         uint256[] memory none = new uint256[](0);
@@ -594,7 +580,7 @@ contract AlignmentVault is Ownable, ERC721Holder, ERC1155Holder, IAlignmentVault
         }
         _NFTX_POSITION_ROUTER.increaseLiquidity{value: address(this).balance - ethBalance}(
             _buildIncreaseLiquidityParams(
-                positionId, 0, IERC20(vault).balanceOf(address(this)) - vTokenBalance, none, none, 1000000
+                positionId, 0, IERC20(vault).balanceOf(address(this)) - vTokenBalance, none, none, 1_000_000
             )
         );
         uint256 wethBalance = _WETH.balanceOf(address(this));
@@ -656,17 +642,13 @@ contract AlignmentVault is Ownable, ERC721Holder, ERC1155Holder, IAlignmentVault
 
     function mintVToken(uint256[] calldata tokenIds, uint256[] calldata amounts) external payable onlyOwner {
         uint256 ethRequired = FixedPointMathLib.fullMulDivUp(
-            INFTXVaultV3(vault).vTokenToETH(_countTokens(tokenIds, amounts) * 1 ether), 30000, _SLIPPAGE_DENOMINATOR
+            INFTXVaultV3(vault).vTokenToETH(_countTokens(tokenIds, amounts) * 1 ether), 30_000, _SLIPPAGE_DENOMINATOR
         );
         INFTXVaultV3(vault).mint{value: ethRequired}(tokenIds, amounts, address(this), address(this));
         emit AV_MintVTokens(tokenIds, amounts);
     }
 
-    function buyVToken(uint256 ethAmount, uint24 fee)
-        external
-        payable
-        onlyOwner
-    {
+    function buyVToken(uint256 ethAmount, uint24 fee) external payable onlyOwner {
         uint256 wethBalance = _WETH.balanceOf(address(this));
         if (ethAmount > wethBalance) _WETH.deposit{value: ethAmount - wethBalance}();
         ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({
@@ -683,11 +665,7 @@ contract AlignmentVault is Ownable, ERC721Holder, ERC1155Holder, IAlignmentVault
         _WETH.withdraw(_WETH.balanceOf(address(this)));
     }
 
-    function buyVTokenExact(uint256 ethAmount, uint256 vTokenAmountExact, uint24 fee)
-        external
-        payable
-        onlyOwner
-    {
+    function buyVTokenExact(uint256 ethAmount, uint256 vTokenAmountExact, uint24 fee) external payable onlyOwner {
         uint256 wethBalance = _WETH.balanceOf(address(this));
         if (ethAmount > wethBalance) _WETH.deposit{value: ethAmount - wethBalance}();
         ISwapRouter.ExactOutputSingleParams memory params = ISwapRouter.ExactOutputSingleParams({
@@ -704,11 +682,7 @@ contract AlignmentVault is Ownable, ERC721Holder, ERC1155Holder, IAlignmentVault
         _WETH.withdraw(_WETH.balanceOf(address(this)));
     }
 
-    function sellVToken(uint256 vTokenAmount, uint24 fee)
-        external
-        payable
-        onlyOwner
-    {
+    function sellVToken(uint256 vTokenAmount, uint24 fee) external payable onlyOwner {
         ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({
             tokenIn: vault,
             tokenOut: address(_WETH),
@@ -723,11 +697,7 @@ contract AlignmentVault is Ownable, ERC721Holder, ERC1155Holder, IAlignmentVault
         _WETH.withdraw(_WETH.balanceOf(address(this)));
     }
 
-    function sellVTokenExact(uint256 vTokenAmount, uint256 ethAmountExact, uint24 fee)
-        external
-        payable
-        onlyOwner
-    {
+    function sellVTokenExact(uint256 vTokenAmount, uint256 ethAmountExact, uint24 fee) external payable onlyOwner {
         ISwapRouter.ExactOutputSingleParams memory params = ISwapRouter.ExactOutputSingleParams({
             tokenIn: vault,
             tokenOut: address(_WETH),
@@ -750,16 +720,18 @@ contract AlignmentVault is Ownable, ERC721Holder, ERC1155Holder, IAlignmentVault
     }
 
     function rescueERC721(address token, uint256 tokenId, address recipient) external payable virtual onlyOwner {
-        if (token == alignedNft || token == address(_NFTX_INVENTORY) || token == address(_NFTX_LIQUIDITY)) revert AV_ProhibitedWithdrawal();
+        if (token == alignedNft || token == address(_NFTX_INVENTORY) || token == address(_NFTX_LIQUIDITY)) {
+            revert AV_ProhibitedWithdrawal();
+        }
         IERC721(token).transferFrom(address(this), recipient, tokenId);
     }
 
-    function rescueERC1155(address token, uint256 tokenId, uint256 amount, address recipient)
-        external
-        payable
-        virtual
-        onlyOwner
-    {
+    function rescueERC1155(
+        address token,
+        uint256 tokenId,
+        uint256 amount,
+        address recipient
+    ) external payable virtual onlyOwner {
         if (token == alignedNft) revert AV_ProhibitedWithdrawal();
         IERC1155(token).safeTransferFrom(address(this), recipient, tokenId, amount, "");
     }
@@ -780,34 +752,38 @@ contract AlignmentVault is Ownable, ERC721Holder, ERC1155Holder, IAlignmentVault
 
     // >>>>>>>>>>>> [ RECEIVE LOGIC ] <<<<<<<<<<<<
 
-    function onERC721Received(address, address, uint256, bytes memory)
-        public
-        virtual
-        override(ERC721Holder, IAlignmentVault)
-        returns (bytes4)
-    {
-        if (msg.sender != alignedNft && msg.sender != address(_NFTX_INVENTORY) && msg.sender != address(_NFTX_LIQUIDITY)) {
+    function onERC721Received(
+        address,
+        address,
+        uint256,
+        bytes memory
+    ) public virtual override(ERC721Holder, IAlignmentVault) returns (bytes4) {
+        if (
+            msg.sender != alignedNft && msg.sender != address(_NFTX_INVENTORY) && msg.sender != address(_NFTX_LIQUIDITY)
+        ) {
             revert AV_UnalignedNft();
         }
         return this.onERC721Received.selector;
     }
 
-    function onERC1155Received(address, address, uint256, uint256, bytes memory)
-        public
-        virtual
-        override(ERC1155Holder, IAlignmentVault)
-        returns (bytes4)
-    {
+    function onERC1155Received(
+        address,
+        address,
+        uint256,
+        uint256,
+        bytes memory
+    ) public virtual override(ERC1155Holder, IAlignmentVault) returns (bytes4) {
         if (msg.sender != alignedNft) revert AV_UnalignedNft();
         return this.onERC1155Received.selector;
     }
 
-    function onERC1155BatchReceived(address, address, uint256[] memory, uint256[] memory, bytes memory)
-        public
-        virtual
-        override(ERC1155Holder, IAlignmentVault)
-        returns (bytes4)
-    {
+    function onERC1155BatchReceived(
+        address,
+        address,
+        uint256[] memory,
+        uint256[] memory,
+        bytes memory
+    ) public virtual override(ERC1155Holder, IAlignmentVault) returns (bytes4) {
         if (msg.sender != alignedNft) revert AV_UnalignedNft();
         return this.onERC1155BatchReceived.selector;
     }
