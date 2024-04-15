@@ -21,10 +21,10 @@ interface IAlignmentVaultFactory {
 
     // >>>>>>>>>>>> [ DEPLOYMENT FUNCTIONS ] <<<<<<<<<<<<
 
-    function deploy(address alignedNft, uint256 vaultId) external payable returns (address deployment);
+    function deploy(address alignedNft, uint96 vaultId) external payable returns (address deployment);
     function deployDeterministic(
         address alignedNft,
-        uint256 vaultId,
+        uint96 vaultId,
         bytes32 salt
     ) external payable returns (address deployment);
 
