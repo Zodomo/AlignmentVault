@@ -14,6 +14,7 @@ interface IAlignmentVault {
     // >>>>>>>>>>>> [ GENERAL ERRORS ] <<<<<<<<<<<<
 
     error AV_UnalignedNft();
+    error AV_BadPriceRange();
     error AV_InvalidPosition();
     error AV_TransactionFailed();
     error AV_ProhibitedWithdrawal();
@@ -112,10 +113,8 @@ interface IAlignmentVault {
         uint256 vTokenAmount,
         uint256[] calldata tokenIds,
         uint256[] calldata amounts,
-        uint16 slippage,
-        int24 tickLower,
-        int24 tickUpper,
-        uint160 sqrtPriceX96
+        uint32 lowerPricePercentage,
+        uint32 upperPricePercentage
     ) external payable returns (uint256 positionId);
     function liquidityPositionIncrease(
         uint256 positionId,
