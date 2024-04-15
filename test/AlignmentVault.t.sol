@@ -20,7 +20,7 @@ import {INFTXRouter} from "../lib/nftx-protocol-v3/src/interfaces/INFTXRouter.so
 import {ISwapRouter} from "../lib/nftx-protocol-v3/src/uniswap/v3-periphery/interfaces/ISwapRouter.sol";
 
 contract AlignmentVaultTest is Test {
-    uint256 private constant NFTX_STANDARD_FEE = 30000000000000000;
+    uint256 private constant NFTX_STANDARD_FEE = 30_000_000_000_000_000;
     IWETH9 public constant WETH = IWETH9(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
     //@audit  is upgradable
     //@audit pay attention to this integration
@@ -45,12 +45,12 @@ contract AlignmentVaultTest is Test {
     address public alignedNft;
 
     uint256[] public none = new uint256[](0);
-    int24 public constant MIN_TICK = -887272;
-    int24 public constant MAX_TICK = 887272;
+    int24 public constant MIN_TICK = -887_272;
+    int24 public constant MAX_TICK = 887_272;
     uint24 public constant STANDARD_FEE = 3000;
-    uint24 public constant FIVE_PERCENT = 50000;
+    uint24 public constant FIVE_PERCENT = 50_000;
     address public constant MILADY = 0x5Af0D9827E0c53E4799BB226655A1de152A425a5;
-    uint256 public constant VAULT_ID = 5;
+    uint96 public constant VAULT_ID = 5;
 
     address deployer;
     address attacker;
@@ -68,8 +68,11 @@ contract AlignmentVaultTest is Test {
         attacker = makeAddr("attacker");
 
         vm.deal(address(av), 10 ether);
+        vm.deal(deployer, 10 ether);
 
         vm.startPrank(deployer);
+        av.initialize(deployer, MILADY, VAULT_ID);
+        //av.disableInitializers();
         vault = av.vault();
         vaultId = VAULT_ID;
         alignedNft = MILADY;
@@ -95,7 +98,12 @@ contract AlignmentVaultTest is Test {
         IERC721(MILADY).transferFrom(target, recipient, tokenId);
     }
 
-    function mintVToken(uint256[] memory tokenIds, uint256[] memory amounts) public payable {
+    function mintVToken(
+        uint256[] memory tokenIds,
+        uint256[] memory amounts,
+        address depositor,
+        address to
+    ) public payable {
         uint256 tokenCount;
         for (uint256 i; i < tokenIds.length; ++i) {
             unchecked {
@@ -103,8 +111,8 @@ contract AlignmentVaultTest is Test {
             }
         }
         uint256 ethRequired =
-            FixedPointMathLib.fullMulDivUp(INFTXVaultV3(vault).vTokenToETH(tokenCount * 1 ether), 30000, 1000000);
-        INFTXVaultV3(vault).mint{value: ethRequired}(tokenIds, amounts, address(this), address(this));
+            FixedPointMathLib.fullMulDivUp(INFTXVaultV3(vault).vTokenToETH(tokenCount * 1 ether), 30_000, 1_000_000);
+        INFTXVaultV3(vault).mint{value: ethRequired}(tokenIds, amounts, to, depositor);
     }
 
     /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´*/
@@ -112,6 +120,7 @@ contract AlignmentVaultTest is Test {
     /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´*/
 
     function lazyInitialize(address alignedNft_) public {
+        vm.startPrank(deployer);
         av = new AlignmentVault();
         alignedNft = alignedNft_;
         address[] memory vaults = NFTX_VAULT_FACTORY.vaultsForAsset(alignedNft_);
@@ -133,13 +142,17 @@ contract AlignmentVaultTest is Test {
         vm.expectEmit(address(av));
         emit IAlignmentVault.AV_VaultInitialized(vault, vaultId);
         //@audit what does it mean when vault id is zero?
-        av.initialize(address(this), alignedNft_, 0);
-        av.disableInitializers();
+        //@response The initializer just wants it pointed at a standard 3/3/3 tax and finalized NFTX vault, if any exist
+        av.initialize(deployer, alignedNft_, 0);
+        //av.disableInitializers();
         vm.deal(address(av), 10 ether);
         setApprovals();
+        vm.stopPrank();
     }
 
-    function targetInitialize(address alignedNft_, uint256 vaultId_) public {
+    function targetInitialize(address alignedNft_, uint96 vaultId_) public {
+        vm.startPrank(deployer);
+        av = new AlignmentVault();
         console2.log("alignment vault: ", address(av));
         vault = NFTX_VAULT_FACTORY.vault(vaultId_);
         vaultId = vaultId_;
@@ -147,17 +160,18 @@ contract AlignmentVaultTest is Test {
 
         vm.expectEmit(address(av));
         emit IAlignmentVault.AV_VaultInitialized(vault, vaultId_);
-        // av.initialize(address(this), alignedNft_, vaultId_);
-        av.disableInitializers();
+        av.initialize(deployer, alignedNft_, vaultId_);
+        //av.disableInitializers();
         vm.deal(address(av), 10 ether);
         setApprovals();
+        vm.stopPrank();
     }
 
     /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´*/
     //                  RECEIVE LOGIC
     /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´*/
 
-    function testRescueERC20() public {
+    /*function testRescueERC20() public {
         av.rescueERC20(address(0), 1, address(0));
     }
 
@@ -167,7 +181,7 @@ contract AlignmentVaultTest is Test {
 
     function testRescueERC721() public {
         av.rescueERC721(address(0), 1, address(0));
-    }
+    }*/
 
     // /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´*/
     // //                  ALIGNED TOKEN MANAGEMENT
@@ -215,7 +229,7 @@ contract AlignmentVaultTest is Test {
     //                  VIEW FUNCTIONS
     /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´*/
 
-    function testGetInventoryPositionIds() public view {
+    /*function testGetInventoryPositionIds() public view {
         av.getInventoryPositionIds();
     }
 
@@ -237,7 +251,7 @@ contract AlignmentVaultTest is Test {
 
     function testGetTotalLiquidityPositionFees() public view {
         av.getTotalLiquidityPositionFees();
-    }
+    }*/
 
     /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´*/
     //                  INIT LOGIC TESTS

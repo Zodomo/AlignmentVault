@@ -1,7 +1,7 @@
 @mocks/=lib/nftx-protocol-v3/src/mocks/
 @openzeppelin-upgradeable/=lib/nftx-protocol-v3/lib/openzeppelin-contracts-upgradeable/
 @openzeppelin/=lib/nftx-protocol-v3/lib/openzeppelin-contracts/
-@openzeppelin/contracts/=lib/openzeppelin-contracts-v5/contracts/
+@openzeppelin/contracts/=lib/nftx-protocol-v3/lib/openzeppelin-contracts/contracts/
 @permit2/=lib/nftx-protocol-v3/lib/permit2/src/
 @src/=lib/nftx-protocol-v3/src/
 @test/=lib/nftx-protocol-v3/test/

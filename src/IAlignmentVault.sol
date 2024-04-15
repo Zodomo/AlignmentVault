@@ -3,7 +3,7 @@ pragma solidity ^0.8.23;
 
 /**
  * @title IAlignmentVault
- * @notice This allows anything to send ETH to a vault for the purpose of permanently deepening the floor liquidity of a target NFT collection.
+ * @notice This interface allows anything to send ETH to a vault for the purpose of permanently deepening the floor liquidity of a target NFT collection.
  * While the liquidity is locked forever, the yield can be claimed indefinitely.
  * @dev You must initialize this contract once deployed! There is a factory for this, use it!
  * @author Zodomo.eth (Farcaster/Telegram/Discord/Github: @zodomo, X: @0xZodomo, Email: zodomo@proton.me)
@@ -18,6 +18,7 @@ interface IAlignmentVault {
 
 
     error AV_UnalignedNft();
+    error AV_BadPriceRange();
     error AV_InvalidPosition();
     error AV_TransactionFailed();
     error AV_ProhibitedWithdrawal();
@@ -171,13 +172,6 @@ interface IAlignmentVault {
         uint256 positionId,
         uint256[] calldata childPositionIds
     ) external payable;
-    function donateBuyNftsFromPool(
-        uint256[] calldata tokenIds,
-        uint256 vTokenPremiumLimit,
-        uint24 fee,
-        uint160 sqrtPriceLimitX96
-    ) external payable;
-    function donateMintVToken(uint256[] calldata tokenIds, uint256[] calldata amounts) external payable;
 
     // >>>>>>>>>>>> [ INVENTORY POSITION MANAGEMENT ] <<<<<<<<<<<<
 
@@ -197,7 +191,9 @@ interface IAlignmentVault {
 
     function inventoryPositionWithdrawal(
         uint256 positionId_,
-        uint256 vTokenAmount,
+        uint256 vToken
+
+Amount,
         uint256[] calldata tokenIds,
         uint256 vTokenPremiumLimit
     ) external payable;
@@ -225,10 +221,8 @@ interface IAlignmentVault {
         uint256 vTokenAmount,
         uint256[] calldata tokenIds,
         uint256[] calldata amounts,
-        uint16 slippage,
-        int24 tickLower,
-        int24 tickUpper,
-        uint160 sqrtPriceX96
+        uint32 lowerPricePercentage,
+        uint32 upperPricePercentage
     ) external payable returns (uint256 positionId);
     function liquidityPositionIncrease(
         uint256 positionId,
@@ -322,25 +316,10 @@ interface IAlignmentVault {
         uint160 sqrtPriceLimitX96
     ) external payable;
     function mintVToken(uint256[] calldata tokenIds, uint256[] calldata amounts) external payable;
-    function buyVToken(uint256 ethAmount, uint24 fee, uint24 slippage, uint160 sqrtPriceLimitX96) external payable;
-    function buyVTokenExact(
-        uint256 ethAmount,
-        uint256 vTokenAmount,
-        uint24 fee,
-        uint160 sqrtPriceLimitX96
-    ) external payable;
-    function sellVToken(
-        uint256 vTokenAmount,
-        uint24 fee,
-        uint24 slippage,
-        uint160 sqrtPriceLimitX96
-    ) external payable;
-    function sellVTokenExact(
-        uint256 vTokenAmount,
-        uint256 ethAmount,
-        uint24 fee,
-        uint160 sqrtPriceLimitX96
-    ) external payable;
+    function buyVToken(uint256 ethAmount, uint24 fee) external payable;
+    function buyVTokenExact(uint256 ethAmount, uint256 vTokenAmountExact, uint24 fee) external payable;
+    function sellVToken(uint256 vTokenAmount, uint24 fee) external payable;
+    function sellVTokenExact(uint256 vTokenAmount, uint256 ethAmountExact, uint24 fee) external payable;
 
     // >>>>>>>>>>>> [ MISCELLANEOUS TOKEN MANAGEMENT ] <<<<<<<<<<<<
 
@@ -385,7 +364,6 @@ interface IAlignmentVault {
         bytes memory
     ) external returns (bytes4);
 
-
-    function disableInitializers() external payable;
+    //function disableInitializers() external payable;
     function initialize(address owner_, address alignedNft_, uint96 vaultId_) external payable;
 }

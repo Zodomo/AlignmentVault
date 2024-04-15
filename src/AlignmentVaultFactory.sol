@@ -80,7 +80,7 @@ contract AlignmentVaultFactory is Ownable, IAlignmentVaultFactory {
         deployment = LibClone.clone(implementation);
         vaultDeployers[deployment] = msg.sender;
         IInitialize(deployment).initialize(msg.sender, alignedNft, vaultId);
-        IInitialize(deployment).disableInitializers();
+        //IInitialize(deployment).disableInitializers();
         emit AVF_Deployed(msg.sender, deployment);
     }
 
@@ -88,11 +88,11 @@ contract AlignmentVaultFactory is Ownable, IAlignmentVaultFactory {
         address alignedNft,
         uint256 vaultId,
         bytes32 salt
-    ) external payable virtual override returns (address deployment) {
+    ) external payable virtual returns (address deployment) {
         deployment = LibClone.cloneDeterministic(implementation, salt);
         vaultDeployers[deployment] = msg.sender;
         IInitialize(deployment).initialize(msg.sender, alignedNft, vaultId);
-        IInitialize(deployment).disableInitializers();
+        //IInitialize(deployment).disableInitializers();
         emit AVF_Deployed(msg.sender, deployment);
     }
 
@@ -173,21 +173,14 @@ contract AlignmentVaultFactory is Ownable, IAlignmentVaultFactory {
     }
 
 
-    /**
-     * @notice Used to withdraw any ERC1155 tokens sent to the factory
-     */
-    function withdrawERC1155(address token, uint256 tokenId, uint256 amount, address recipient)
-        external
-        payable
-        virtual
-        onlyOwner
-    {
+    function withdrawERC1155(
+        address token,
+        uint256 tokenId,
+        uint256 amount,
+        address recipient
+    ) external payable virtual onlyOwner {
         IERC1155(token).safeTransferFrom(address(this), recipient, tokenId, amount, "");
     }
-
-    /**
-     * @notice Used to batch withdraw any ERC1155 tokens sent to the factory
-     */
 
     function withdrawERC1155Batch(
         address token,
@@ -204,6 +197,13 @@ contract AlignmentVaultFactory is Ownable, IAlignmentVaultFactory {
             ""
         );
         emit ERC1155BatchWithdrawn(token, recipient, tokenIds, amounts);
+    }
+
+    function withdrawERC1155Batch(
+        address token,
+        uint256[] calldata tokenIds,
+        uint256[] calldata amounts,
+        address recipient
 
     ) external payable virtual onlyOwner {
         IERC1155(token).safeBatchTransferFrom(address(this), recipient, tokenIds, amounts, "");

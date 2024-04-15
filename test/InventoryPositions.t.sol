@@ -6,19 +6,19 @@ import "./AlignmentVault.t.sol";
 contract InventoryPositionsTest is AlignmentVaultTest {
     function setUp() public override {
         super.setUp();
-        transferMilady(address(this), 69);
+        transferMilady(deployer, 69);
         transferMilady(address(av), 333);
         transferMilady(address(av), 420);
     }
 
-    function testInventoryPositionCreateVToken() public {
+    function testInventoryPositionCreateVToken() public prank(deployer) {
         uint256[] memory tokenIds = new uint256[](1);
         tokenIds[0] = 69;
         uint256[] memory amounts = new uint256[](1);
         amounts[0] = 1;
         uint256 expectedPositionId = IERC721Enumerable(address(NFTX_INVENTORY_STAKING)).totalSupply() + 1;
 
-        mintVToken(tokenIds, amounts);
+        mintVToken(tokenIds, amounts, deployer, deployer);
         IERC20(vault).transfer(address(av), 1 ether);
 
         vm.expectEmit(address(av));
@@ -35,7 +35,7 @@ contract InventoryPositionsTest is AlignmentVaultTest {
         assertEq(positionIds[0], positionId, "inventory position ID unaccounted for");
     }
 
-    function testInventoryPositionCreateNfts() public {
+    function testInventoryPositionCreateNfts() public prank(deployer) {
         uint256[] memory tokenIds = new uint256[](2);
         tokenIds[0] = 333;
         tokenIds[1] = 420;
@@ -59,7 +59,7 @@ contract InventoryPositionsTest is AlignmentVaultTest {
     }
 
     // Cannot increase an inventory position created with NFTs
-    function testInventoryPositionIncrease() public {
+    function testInventoryPositionIncrease() public prank(deployer) {
         uint256[] memory tokenIds = new uint256[](2);
         tokenIds[0] = 333;
         tokenIds[1] = 420;
@@ -82,7 +82,7 @@ contract InventoryPositionsTest is AlignmentVaultTest {
         assertEq(positionIds[0], positionId, "inventory position ID unaccounted for");
     }
 
-    function testInventoryVTokenPositionVTokenWithdrawal() public {
+    function testInventoryVTokenPositionVTokenWithdrawal() public prank(deployer) {
         uint256[] memory tokenIds = new uint256[](1);
         tokenIds[0] = 333;
         uint256[] memory amounts = new uint256[](1);
@@ -104,7 +104,7 @@ contract InventoryPositionsTest is AlignmentVaultTest {
         assertEq(positionIds[0], positionId, "inventory position ID unaccounted for");
     }
 
-    function testInventoryVTokenPositionNftWithdrawal() public {
+    function testInventoryVTokenPositionNftWithdrawal() public prank(deployer) {
         uint256[] memory tokenIds = new uint256[](1);
         tokenIds[0] = 333;
         uint256[] memory amounts = new uint256[](1);
@@ -126,7 +126,7 @@ contract InventoryPositionsTest is AlignmentVaultTest {
         assertEq(positionIds[0], positionId, "inventory position ID unaccounted for");
     }
 
-    function testInventoryVTokenPositionBothWithdrawal() public {
+    function testInventoryVTokenPositionBothWithdrawal() public prank(deployer) {
         uint256[] memory tokenIds = new uint256[](2);
         tokenIds[0] = 333;
         tokenIds[1] = 420;
@@ -152,7 +152,7 @@ contract InventoryPositionsTest is AlignmentVaultTest {
         assertEq(positionIds[0], positionId, "inventory position ID unaccounted for");
     }
 
-    function testInventoryNftPositionVTokenWithdrawal() public {
+    function testInventoryNftPositionVTokenWithdrawal() public prank(deployer) {
         uint256[] memory tokenIds = new uint256[](1);
         tokenIds[0] = 333;
         uint256[] memory amounts = new uint256[](1);
@@ -173,7 +173,7 @@ contract InventoryPositionsTest is AlignmentVaultTest {
         assertEq(positionIds[0], positionId, "inventory position ID unaccounted for");
     }
 
-    function testInventoryNftPositionNftWithdrawal() public {
+    function testInventoryNftPositionNftWithdrawal() public prank(deployer) {
         uint256[] memory tokenIds = new uint256[](1);
         tokenIds[0] = 333;
         uint256[] memory amounts = new uint256[](1);
@@ -194,7 +194,7 @@ contract InventoryPositionsTest is AlignmentVaultTest {
         assertEq(positionIds[0], positionId, "inventory position ID unaccounted for");
     }
 
-    function testInventoryNftPositionBothWithdrawal() public {
+    function testInventoryNftPositionBothWithdrawal() public prank(deployer) {
         uint256[] memory tokenIds = new uint256[](2);
         tokenIds[0] = 333;
         tokenIds[1] = 420;
@@ -219,7 +219,7 @@ contract InventoryPositionsTest is AlignmentVaultTest {
         assertEq(positionIds[0], positionId, "inventory position ID unaccounted for");
     }
 
-    function testInventoryVTokenPositionCombineVTokenPosition() public {
+    function testInventoryVTokenPositionCombineVTokenPosition() public prank(deployer) {
         uint256[] memory tokenIds = new uint256[](2);
         tokenIds[0] = 333;
         tokenIds[1] = 420;
@@ -251,7 +251,7 @@ contract InventoryPositionsTest is AlignmentVaultTest {
         assertEq(av.getInventoryPositionIds(), positionIds, "inventory position IDs unaccounted for");
     }
 
-    function testInventoryVTokenPositionCombineNftPosition() public {
+    function testInventoryVTokenPositionCombineNftPosition() public prank(deployer) {
         uint256[] memory tokenIds = new uint256[](1);
         tokenIds[0] = 333;
         uint256[] memory amounts = new uint256[](1);
@@ -282,7 +282,7 @@ contract InventoryPositionsTest is AlignmentVaultTest {
         assertEq(av.getInventoryPositionIds(), positionIds, "inventory position IDs unaccounted for");
     }
 
-    function testInventoryNftPositionCombineVTokenPosition() public {
+    function testInventoryNftPositionCombineVTokenPosition() public prank(deployer) {
         uint256[] memory tokenIds = new uint256[](1);
         tokenIds[0] = 333;
         uint256[] memory amounts = new uint256[](1);
@@ -313,7 +313,7 @@ contract InventoryPositionsTest is AlignmentVaultTest {
         assertEq(av.getInventoryPositionIds(), positionIds, "inventory position IDs unaccounted for");
     }
 
-    function testInventoryNftPositionCombineNftPosition() public {
+    function testInventoryNftPositionCombineNftPosition() public prank(deployer) {
         uint256[] memory tokenIds = new uint256[](1);
         tokenIds[0] = 333;
         uint256[] memory amounts = new uint256[](1);
