@@ -11,7 +11,6 @@ import {ERC1155Holder} from "../lib/openzeppelin-contracts-v5/contracts/token/ER
 import {IAlignmentVault} from "./IAlignmentVault.sol";
 import {EnumerableSet} from "../lib/openzeppelin-contracts-v5/contracts/utils/structs/EnumerableSet.sol";
 import {FixedPointMathLib} from "../lib/solady/src/utils/FixedPointMathLib.sol";
-import {TickMath} from "../lib/nftx-protocol-v3/src/uniswap/v3-core/libraries/TickMath.sol";
 
 // Interfaces
 import {IWETH9} from "../lib/nftx-protocol-v3/src/uniswap/v3-periphery/interfaces/external/IWETH9.sol";
@@ -181,22 +180,17 @@ contract AlignmentVault is Ownable, ERC721Holder, ERC1155Holder, IAlignmentVault
         pool = _NFTX_POSITION_ROUTER.getPool(vault, _POOL_FEE);
     }
 
-    function _calculatePriceRangeX96(uint256 currentPriceX96, uint256 lowerPricePercentage, uint256 upperPricePercentage) private pure returns (uint256 lowerPriceX96, uint256 upperPriceX96) {
-        lowerPriceX96 = FixedPointMathLib.fullMulDiv(currentPriceX96, lowerPricePercentage, _DENOMINATOR);
-        upperPriceX96 = FixedPointMathLib.fullMulDiv(currentPriceX96, upperPricePercentage, _DENOMINATOR);
-    }
-
     function _buildAddLiquidityParams(
-        uint256 ethAmount,
         uint256 vTokenAmount,
         uint256[] memory tokenIds,
         uint256[] memory amounts,
         int24 tickLower,
         int24 tickUpper,
+        uint256 ethMin,
+        uint256 vTokenMin,
         uint160 sqrtPriceX96
     ) internal view returns (INFTXRouter.AddLiquidityParams memory params) {
         int24 tickSpacing = IUniswapV3Pool(_getPool()).tickSpacing();
-        (, int24 tick,,,,,) = IUniswapV3Pool(_getPool()).slot0();
         params = INFTXRouter.AddLiquidityParams({
             vaultId: vaultId,
             vTokensAmount: vTokenAmount,
@@ -206,8 +200,8 @@ contract AlignmentVault is Ownable, ERC721Holder, ERC1155Holder, IAlignmentVault
             tickUpper: int24(FixedPointMathLib.rawSDiv(tickUpper, tickSpacing)) * tickSpacing,
             fee: _POOL_FEE,
             sqrtPriceX96: sqrtPriceX96,
-            vTokenMin: 0,
-            wethMin: 0,
+            vTokenMin: vTokenMin,
+            wethMin: ethMin,
             deadline: block.timestamp,
             forceTimelock: true,
             recipient: address(this)
@@ -216,11 +210,11 @@ contract AlignmentVault is Ownable, ERC721Holder, ERC1155Holder, IAlignmentVault
 
     function _buildIncreaseLiquidityParams(
         uint256 positionId,
-        uint256 ethAmount,
         uint256 vTokenAmount,
         uint256[] memory tokenIds,
         uint256[] memory amounts,
-        uint24 slippage
+        uint256 ethMin,
+        uint256 vTokenMin
     ) internal view returns (INFTXRouter.IncreaseLiquidityParams memory params) {
         unchecked {
             params = INFTXRouter.IncreaseLiquidityParams({
@@ -229,8 +223,8 @@ contract AlignmentVault is Ownable, ERC721Holder, ERC1155Holder, IAlignmentVault
                 vTokensAmount: vTokenAmount,
                 nftIds: tokenIds,
                 nftAmounts: amounts,
-                vTokenMin: vTokenAmount - FixedPointMathLib.fullMulDiv(vTokenAmount, slippage, _DENOMINATOR),
-                wethMin: ethAmount - FixedPointMathLib.fullMulDiv(ethAmount, slippage, _DENOMINATOR),
+                vTokenMin: vTokenMin,
+                wethMin: ethMin,
                 deadline: block.timestamp,
                 forceTimelock: true
             });
@@ -339,8 +333,7 @@ contract AlignmentVault is Ownable, ERC721Holder, ERC1155Holder, IAlignmentVault
         uint256 positionId,
         uint256 vTokenAmount,
         uint256[] calldata tokenIds,
-        uint256[] calldata amounts,
-        uint24 slippage
+        uint256[] calldata amounts
     ) external payable virtual onlyOwner {
         // NOTE: Is tokenCount necessary?
         //uint256 tokenCount = _countTokens(tokenIds, amounts);
@@ -356,7 +349,7 @@ contract AlignmentVault is Ownable, ERC721Holder, ERC1155Holder, IAlignmentVault
             }
         }
         INFTXRouter.IncreaseLiquidityParams memory params =
-            _buildIncreaseLiquidityParams(positionId, msg.value, vTokenAmount, tokenIds, amounts, slippage);
+            _buildIncreaseLiquidityParams(positionId, vTokenAmount, tokenIds, amounts, 0, 0);
         _NFTX_POSITION_ROUTER.increaseLiquidity{value: msg.value}(params);
         emit AV_LiquidityPositionIncreased(positionId);
     }
@@ -377,7 +370,7 @@ contract AlignmentVault is Ownable, ERC721Holder, ERC1155Holder, IAlignmentVault
             _NFTX_POSITION_ROUTER.removeLiquidity(removeParams);
         }
         INFTXRouter.IncreaseLiquidityParams memory increaseParams = _buildIncreaseLiquidityParams(
-            positionId, 0, IERC20(vault).balanceOf(address(this)) - vTokenBalance, none, none, 50_000
+            positionId, IERC20(vault).balanceOf(address(this)) - vTokenBalance, none, none, 0, 0
         );
         _NFTX_POSITION_ROUTER.increaseLiquidity{value: address(this).balance - ethBalance}(increaseParams);
         _WETH.withdraw(_WETH.balanceOf(address(this)));
@@ -454,14 +447,17 @@ contract AlignmentVault is Ownable, ERC721Holder, ERC1155Holder, IAlignmentVault
         uint256 vTokenAmount,
         uint256[] calldata tokenIds,
         uint256[] calldata amounts,
-        uint32 lowerPricePercentage,
-        uint32 upperPricePercentage
+        int24 tickLower,
+        int24 tickUpper,
+        uint160 sqrtPriceX96,
+        uint256 ethMin,
+        uint256 vTokenMin
     ) external payable virtual onlyOwner returns (uint256 positionId) {
-        (uint160 sqrtPriceX96,,,,,,) = IUniswapV3Pool(_getPool()).slot0();
-        (uint256 lowerPriceX96, uint256 upperPriceX96) = _calculatePriceRangeX96(sqrtPriceX96, lowerPricePercentage, upperPricePercentage);
+        (uint160 _sqrtPriceX96,,,,,,) = IUniswapV3Pool(_getPool()).slot0();
+        if (sqrtPriceX96 == 0) sqrtPriceX96 = _sqrtPriceX96;
         positionId = _NFTX_POSITION_ROUTER.addLiquidity{value: ethAmount}(
             _buildAddLiquidityParams(
-                ethAmount, vTokenAmount, tokenIds, amounts, TickMath.getTickAtSqrtRatio(uint160(lowerPriceX96)), TickMath.getTickAtSqrtRatio(uint160(upperPriceX96)), sqrtPriceX96
+                vTokenAmount, tokenIds, amounts, tickLower, tickUpper, ethMin, vTokenMin, sqrtPriceX96
             )
         );
         _liquidityPositionIds.add(positionId);
@@ -474,10 +470,11 @@ contract AlignmentVault is Ownable, ERC721Holder, ERC1155Holder, IAlignmentVault
         uint256 vTokenAmount,
         uint256[] calldata tokenIds,
         uint256[] calldata amounts,
-        uint16 slippage
+        uint256 ethMin,
+        uint256 vTokenMin
     ) external payable virtual onlyOwner {
         _NFTX_POSITION_ROUTER.increaseLiquidity{value: ethAmount}(
-            _buildIncreaseLiquidityParams(positionId, ethAmount, vTokenAmount, tokenIds, amounts, slippage)
+            _buildIncreaseLiquidityParams(positionId, vTokenAmount, tokenIds, amounts, ethMin, vTokenMin)
         );
         emit AV_LiquidityPositionIncreased(positionId);
     }
@@ -511,7 +508,7 @@ contract AlignmentVault is Ownable, ERC721Holder, ERC1155Holder, IAlignmentVault
         }
         _NFTX_POSITION_ROUTER.increaseLiquidity{value: address(this).balance - ethBalance}(
             _buildIncreaseLiquidityParams(
-                positionId, 0, IERC20(vault).balanceOf(address(this)) - vTokenBalance, none, none, 1_000_000
+                positionId, IERC20(vault).balanceOf(address(this)) - vTokenBalance, none, none, 0, 0
             )
         );
         _WETH.withdraw(_WETH.balanceOf(address(this)));

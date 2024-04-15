@@ -80,8 +80,7 @@ interface IAlignmentVault {
         uint256 positionId,
         uint256 vTokenAmount,
         uint256[] calldata tokenIds,
-        uint256[] calldata amounts,
-        uint24 slippage
+        uint256[] calldata amounts
     ) external payable;
     function donateLiquidityCombinePositions(
         uint256 positionId,
@@ -113,8 +112,11 @@ interface IAlignmentVault {
         uint256 vTokenAmount,
         uint256[] calldata tokenIds,
         uint256[] calldata amounts,
-        uint32 lowerPricePercentage,
-        uint32 upperPricePercentage
+        int24 tickLower,
+        int24 tickUpper,
+        uint160 sqrtPriceX96,
+        uint256 ethMin,
+        uint256 vTokenMin
     ) external payable returns (uint256 positionId);
     function liquidityPositionIncrease(
         uint256 positionId,
@@ -122,7 +124,8 @@ interface IAlignmentVault {
         uint256 vTokenAmount,
         uint256[] calldata tokenIds,
         uint256[] calldata amounts,
-        uint16 slippage
+        uint256 ethMin,
+        uint256 vTokenMin
     ) external payable;
     function liquidityPositionWithdrawal(
         uint256 positionId,
