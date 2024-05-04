@@ -4,7 +4,9 @@ out = "out"
 libs = ["lib"]
 solc = "0.8.23"
 
-rpc_endpoints = { mainnet = "https://mainnet.infura.io/v3/1b6ae1086a604b008013c14b54592c46" }
+[rpc_endpoints]
+mainnet = "${ETHEREUM_RPC_URL}"
+sepolia = "${SEPOLIA_RPC_URL}"
 
 # See more config options https://github.com/gakonst/foundry/tree/master/config
 

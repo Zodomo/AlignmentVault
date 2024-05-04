@@ -72,7 +72,7 @@ contract AlignmentVaultTest is Test {
 
         vm.startPrank(deployer);
         av.initialize(deployer, MILADY, VAULT_ID);
-        //av.disableInitializers();
+        av.disableInitializers();
         vault = av.vault();
         vaultId = VAULT_ID;
         alignedNft = MILADY;
@@ -144,7 +144,7 @@ contract AlignmentVaultTest is Test {
         //@audit what does it mean when vault id is zero?
         //@response The initializer just wants it pointed at a standard 3/3/3 tax and finalized NFTX vault, if any exist
         av.initialize(deployer, alignedNft_, 0);
-        //av.disableInitializers();
+        av.disableInitializers();
         vm.deal(address(av), 10 ether);
         setApprovals();
         vm.stopPrank();
@@ -161,7 +161,7 @@ contract AlignmentVaultTest is Test {
         vm.expectEmit(address(av));
         emit IAlignmentVault.AV_VaultInitialized(vault, vaultId_);
         av.initialize(deployer, alignedNft_, vaultId_);
-        //av.disableInitializers();
+        av.disableInitializers();
         vm.deal(address(av), 10 ether);
         setApprovals();
         vm.stopPrank();

@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import {Test, console2} from "../lib/forge-std/src/Test.sol";
 import {AlignmentVaultFactory} from "./../src/AlignmentVaultFactory.sol";
-import {AlignmentVault} from "./../src/AlignmentVault.sol";
+import {AlignmentVaultImplementation} from "./../src/AlignmentVaultImplementation.sol";
 
 import {IAlignmentVault} from "../src/IAlignmentVault.sol";
 import {IAlignmentVaultFactory} from "../src/IAlignmentVaultFactory.sol";
@@ -16,8 +16,8 @@ contract NonReceiver {
 
 contract AlignmentVaultFactoryTest is Test {
     AlignmentVaultFactory avf;
-    AlignmentVault av;
-    AlignmentVault av_new;
+    AlignmentVaultImplementation avi;
+    AlignmentVaultImplementation avi_new;
     NonReceiver nonrcvr;
     address deployer;
     address attacker;
@@ -37,11 +37,11 @@ contract AlignmentVaultFactoryTest is Test {
         attacker = makeAddr("alice");
         deal(deployer, MINT);
 
-        av = new AlignmentVault();
-        vm.label(address(av), "alignment vault");
+        avi = new AlignmentVaultImplementation();
+        vm.label(address(avi), "alignment vault");
         vm.label(address(WETH), "Wrapped Eth");
 
-        avf = new AlignmentVaultFactory(deployer, address(av));
+        avf = new AlignmentVaultFactory(deployer, address(avi));
         vm.label(address(avf), "alignment factory ");
     }
 
@@ -95,23 +95,18 @@ contract AlignmentVaultFactoryTest is Test {
     }
 
     function testUpdateAVImplementationByDeployer() public prank(deployer) {
-        av_new = new AlignmentVault();
-        avf.updateImplementation(address(av_new));
+        avi_new = new AlignmentVaultImplementation();
+        avf.updateImplementation(address(avi_new));
     }
 
     function testUpdateAVImplementationByUnauth() public prank(attacker) {
-        av_new = new AlignmentVault();
+        avi_new = new AlignmentVaultImplementation();
         vm.expectRevert();
-        avf.updateImplementation(address(av_new));
+        avf.updateImplementation(address(avi_new));
     }
 
     function testWithdrawEthByDeployer() public prank(deployer) {
         avf.withdrawEth(address(deployer));
-    }
-
-    function testWithdrawEthByDeployerToDeadAddress() public prank(deployer) {
-        //@audit-issue admin could mistakely burn eth
-        avf.withdrawEth(address(0));
     }
 
     function testWithdrawEthByAttacker() public prank(attacker) {

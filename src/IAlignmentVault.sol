@@ -53,8 +53,18 @@ interface IAlignmentVault {
 
     function vaultId() external view returns (uint96);
     function vault() external view returns (address);
+    function delegate() external view returns (address);
     function alignedNft() external view returns (address);
     function is1155() external view returns (bool);
+
+    // >>>>>>>>>>>> [ INITIALIZER ] <<<<<<<<<<<<
+
+    function initialize(address owner_, address alignedNft_, uint96 vaultId_) external payable;
+    function disableInitializers() external payable;
+
+    // >>>>>>>>>>>> [ MANAGEMENT FUNCTIONS ] <<<<<<<<<<<<
+
+    function setDelegate(address newDelegate) external payable;
 
     // >>>>>>>>>>>> [ VIEW FUNCTIONS ] <<<<<<<<<<<<
 
@@ -164,19 +174,4 @@ interface IAlignmentVault {
         address recipient
     ) external payable;
     function unwrapEth() external payable;
-
-    // >>>>>>>>>>>> [ RECEIVE LOGIC ] <<<<<<<<<<<<
-
-    function onERC721Received(address, address, uint256, bytes memory) external returns (bytes4);
-    function onERC1155Received(address, address, uint256, uint256, bytes memory) external returns (bytes4);
-    function onERC1155BatchReceived(
-        address,
-        address,
-        uint256[] memory,
-        uint256[] memory,
-        bytes memory
-    ) external returns (bytes4);
-
-    //function disableInitializers() external payable;
-    function initialize(address owner_, address alignedNft_, uint96 vaultId_) external payable;
 }

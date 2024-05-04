@@ -17,7 +17,11 @@ interface IAlignmentVaultFactory {
     // >>>>>>>>>>>> [ EVENTS ] <<<<<<<<<<<<
 
     event AVF_ImplementationSet(address indexed implementation);
-    event AVF_Deployed(address indexed deployer, address indexed deployment);
+    event AVF_Deployed(address indexed deployer, address indexed deployment, address indexed alignedNft);
+
+    // >>>>>>>>>>>> [ STORAGE VARIABLES ] <<<<<<<<<<<<
+
+    function implementation() external view returns (address);
 
     // >>>>>>>>>>>> [ DEPLOYMENT FUNCTIONS ] <<<<<<<<<<<<
 

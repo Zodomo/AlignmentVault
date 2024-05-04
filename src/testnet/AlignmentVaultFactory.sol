@@ -2,14 +2,14 @@
 pragma solidity ^0.8.23;
 
 // Inheritance and Libraries
-import {Ownable} from "../lib/solady/src/auth/Ownable.sol";
-import {IAlignmentVaultFactory} from "./IAlignmentVaultFactory.sol";
-import {LibClone} from "../lib/solady/src/utils/LibClone.sol";
+import {Ownable} from "../../lib/solady/src/auth/Ownable.sol";
+import {IAlignmentVaultFactory} from "../IAlignmentVaultFactory.sol";
+import {LibClone} from "../../lib/solady/src/utils/LibClone.sol";
 
 // Interfaces
-import {IERC20} from "../lib/openzeppelin-contracts-v5/contracts/interfaces/IERC20.sol";
-import {IERC721} from "../lib/openzeppelin-contracts-v5/contracts/interfaces/IERC721.sol";
-import {IERC1155} from "../lib/openzeppelin-contracts-v5/contracts/interfaces/IERC1155.sol";
+import {IERC20} from "../../lib/openzeppelin-contracts-v5/contracts/interfaces/IERC20.sol";
+import {IERC721} from "../../lib/openzeppelin-contracts-v5/contracts/interfaces/IERC721.sol";
+import {IERC1155} from "../../lib/openzeppelin-contracts-v5/contracts/interfaces/IERC1155.sol";
 
 interface IInitialize {
     function initialize(address owner, address alignedNft, uint96 vaultId) external payable;
