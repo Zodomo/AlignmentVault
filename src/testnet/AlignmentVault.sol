@@ -77,7 +77,7 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
 
     constructor() payable {}
 
-    function initialize(address owner_, address alignedNft_, uint96 vaultId_) external payable virtual initializer {
+    function initialize(address owner_, address alignedNft_, uint96 vaultId_) public payable virtual initializer {
         _initializeOwner(owner_);
         alignedNft = alignedNft_;
         bool _is1155;
