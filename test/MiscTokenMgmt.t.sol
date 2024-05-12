@@ -61,7 +61,7 @@ contract MiscTokenMgmtTest is AlignmentVaultTest {
     }*/
 
     function testUnwrapEth() public prank(deployer) {
-        av.unwrapEth();
-        assertEq(address(av).balance, 11 ether, "post-WETH unwrap ETH balance error");
+        av.unwrapEth(1 ether);
+        assertEq(address(av).balance, FUNDING_AMOUNT + 1 ether, "post-WETH unwrap ETH balance error");
     }
 }

@@ -45,12 +45,11 @@ contract AlignmentVaultTest is Test {
     address public alignedNft;
 
     uint256[] public none = new uint256[](0);
-    int24 public constant MIN_TICK = -887_272;
-    int24 public constant MAX_TICK = 887_272;
     uint24 public constant STANDARD_FEE = 3000;
     uint24 public constant FIVE_PERCENT = 50_000;
     address public constant MILADY = 0x5Af0D9827E0c53E4799BB226655A1de152A425a5;
     uint96 public constant VAULT_ID = 5;
+    uint256 public constant FUNDING_AMOUNT = 100 ether;
 
     address deployer;
     address attacker;
@@ -67,8 +66,8 @@ contract AlignmentVaultTest is Test {
         deployer = makeAddr("deployer");
         attacker = makeAddr("attacker");
 
-        vm.deal(address(av), 10 ether);
-        vm.deal(deployer, 10 ether);
+        vm.deal(address(av), FUNDING_AMOUNT);
+        vm.deal(deployer, FUNDING_AMOUNT);
 
         vm.startPrank(deployer);
         av.initialize(deployer, MILADY, VAULT_ID);
@@ -145,7 +144,7 @@ contract AlignmentVaultTest is Test {
         //@response The initializer just wants it pointed at a standard 3/3/3 tax and finalized NFTX vault, if any exist
         av.initialize(deployer, alignedNft_, 0);
         av.disableInitializers();
-        vm.deal(address(av), 10 ether);
+        vm.deal(address(av), FUNDING_AMOUNT);
         setApprovals();
         vm.stopPrank();
     }
@@ -162,7 +161,7 @@ contract AlignmentVaultTest is Test {
         emit IAlignmentVault.AV_VaultInitialized(vault, vaultId_);
         av.initialize(deployer, alignedNft_, vaultId_);
         av.disableInitializers();
-        vm.deal(address(av), 10 ether);
+        vm.deal(address(av), FUNDING_AMOUNT);
         setApprovals();
         vm.stopPrank();
     }

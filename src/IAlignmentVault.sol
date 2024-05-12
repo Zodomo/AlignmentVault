@@ -79,24 +79,6 @@ interface IAlignmentVault {
         returns (uint128 token0Fees, uint128 token1Fees);
     function getTotalLiquidityPositionFees() external view returns (uint128 token0Fees, uint128 token1Fees);
 
-    // >>>>>>>>>>>> [ EXTERNAL DONATION MANAGEMENT ] <<<<<<<<<<<<
-
-    function donateInventoryPositionIncrease(uint256 positionId, uint256 vTokenAmount) external payable;
-    function donateInventoryCombinePositions(
-        uint256 positionId,
-        uint256[] calldata childPositionIds
-    ) external payable;
-    function donateLiquidityPositionIncrease(
-        uint256 positionId,
-        uint256 vTokenAmount,
-        uint256[] calldata tokenIds,
-        uint256[] calldata amounts
-    ) external payable;
-    function donateLiquidityCombinePositions(
-        uint256 positionId,
-        uint256[] calldata childPositionIds
-    ) external payable;
-
     // >>>>>>>>>>>> [ INVENTORY POSITION MANAGEMENT ] <<<<<<<<<<<<
 
     function inventoryPositionCreateVToken(uint256 vTokenAmount) external payable returns (uint256 positionId);
@@ -141,9 +123,10 @@ interface IAlignmentVault {
         uint256 positionId,
         uint256[] calldata tokenIds,
         uint256 vTokenPremiumLimit,
-        uint128 liquidity
+        uint128 liquidity,
+        uint256 amount0Min,
+        uint256 amount1Min
     ) external payable;
-    function liquidityPositionCombine(uint256 positionId, uint256[] calldata childPositionIds) external payable;
     function liquidityPositionCollectFees(uint256[] calldata positionIds) external payable;
     function liquidityPositionCollectAllFees() external payable;
 
@@ -157,10 +140,10 @@ interface IAlignmentVault {
         uint160 sqrtPriceLimitX96
     ) external payable;
     function mintVToken(uint256[] calldata tokenIds, uint256[] calldata amounts) external payable;
-    function buyVToken(uint256 ethAmount, uint24 fee) external payable;
-    function buyVTokenExact(uint256 ethAmount, uint256 vTokenAmountExact, uint24 fee) external payable;
-    function sellVToken(uint256 vTokenAmount, uint24 fee) external payable;
-    function sellVTokenExact(uint256 vTokenAmount, uint256 ethAmountExact, uint24 fee) external payable;
+    function buyVToken(uint256 ethAmount, uint24 fee, uint256 amountOutMinimum, uint160 sqrtPriceLimitX96) external payable;
+    function buyVTokenExact(uint256 ethAmount, uint24 fee, uint256 amountOutExact, uint160 sqrtPriceLimitX96) external payable;
+    function sellVToken(uint256 vTokenAmount, uint24 fee, uint256 amountOutMinimum, uint160 sqrtPriceLimitX96) external payable;
+    function sellVTokenExact(uint256 vTokenAmount, uint24 fee, uint256 amountOutExact, uint160 sqrtPriceLimitX96) external payable;
 
     // >>>>>>>>>>>> [ MISCELLANEOUS TOKEN MANAGEMENT ] <<<<<<<<<<<<
 
@@ -173,5 +156,6 @@ interface IAlignmentVault {
         uint256[] calldata amounts,
         address recipient
     ) external payable;
-    function unwrapEth() external payable;
+    function wrapEth(uint256 amount) external payable;
+    function unwrapEth(uint256 amount) external payable;
 }
