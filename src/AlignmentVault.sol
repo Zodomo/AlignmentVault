@@ -83,14 +83,10 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
     function initialize(address owner_, address alignedNft_, uint96 vaultId_) public payable virtual initializer {
         _initializeOwner(owner_);
         alignedNft = alignedNft_;
-        bool _is1155;
         if (vaultId_ != 0) {
             try _NFTX_VAULT_FACTORY.vault(vaultId_) returns (address vaultAddr) {
                 if (INFTXVaultV3(vaultAddr).assetAddress() != alignedNft_) revert AV_NFTX_InvalidVaultNft();
-                if (INFTXVaultV3(vaultAddr).is1155()) {
-                    _is1155 = true;
-                    is1155 = true;
-                }
+                if (INFTXVaultV3(vaultAddr).is1155()) is1155 = true;
                 vaultId = vaultId_;
                 vault = vaultAddr;
                 emit AV_VaultInitialized(vaultAddr, vaultId_);
@@ -107,10 +103,7 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
                 } else if (INFTXVaultV3(vaults[i]).manager() != address(0)) {
                     continue;
                 } else {
-                    if (INFTXVaultV3(vaults[i]).is1155()) {
-                        _is1155 = true;
-                        is1155 = true;
-                    }
+                    if (INFTXVaultV3(vaults[i]).is1155()) is1155 = true;
                     vaultId_ = uint96(INFTXVaultV3(vaults[i]).vaultId());
                     vaultId = vaultId_;
                     vault = vaults[i];
@@ -120,17 +113,12 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
             }
             if (vaultId_ == 0) revert AV_NFTX_NoStandardVault();
         }
-        if (!_is1155) {
-            IERC721(alignedNft_).setApprovalForAll(address(_NFTX_INVENTORY), true);
-            IERC721(alignedNft_).setApprovalForAll(address(_NFTX_POSITION_ROUTER), true);
-            IERC721(alignedNft_).setApprovalForAll(address(_NFTX_LIQUIDITY), true);
-            IERC721(alignedNft_).setApprovalForAll(vault, true);
-        } else {
-            IERC1155(alignedNft_).setApprovalForAll(address(_NFTX_INVENTORY), true);
-            IERC1155(alignedNft_).setApprovalForAll(address(_NFTX_POSITION_ROUTER), true);
-            IERC1155(alignedNft_).setApprovalForAll(address(_NFTX_LIQUIDITY), true);
-            IERC1155(alignedNft_).setApprovalForAll(vault, true);
-        }
+
+        IERC721(alignedNft_).setApprovalForAll(address(_NFTX_INVENTORY), true);
+        IERC721(alignedNft_).setApprovalForAll(address(_NFTX_POSITION_ROUTER), true);
+        IERC721(alignedNft_).setApprovalForAll(address(_NFTX_LIQUIDITY), true);
+        IERC721(alignedNft_).setApprovalForAll(vault, true);
+ 
         IERC20(vault).approve(address(_NFTX_INVENTORY), type(uint256).max);
         IERC20(vault).approve(address(_NFTX_POSITION_ROUTER), type(uint256).max);
         IERC20(vault).approve(address(_NFTX_LIQUIDITY), type(uint256).max);
