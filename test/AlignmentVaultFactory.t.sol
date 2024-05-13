@@ -55,13 +55,13 @@ contract AlignmentVaultFactoryTest is Test {
     //                HAPPY PATHS
     /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´*/
     function testDeployAlignmentVault() public prank(deployer) {
-        (address dplymnt) = avf.deploy(MILADY, VAULT_ID);
+        (address dplymnt) = avf.deploy(deployer, MILADY, VAULT_ID);
         console2.log("the vault deployment is", dplymnt);
     }
 
     function testVaultInitializesProperly() public prank(deployer) {
         // deployer deploys
-        (address cr) = avf.deploy(MILADY, VAULT_ID);
+        (address cr) = avf.deploy(deployer, MILADY, VAULT_ID);
         assertEq(MILADY, IAlignmentVault(cr).alignedNft());
         assertEq(VAULT_ID, IAlignmentVault(cr).vaultId());
 
@@ -73,7 +73,7 @@ contract AlignmentVaultFactoryTest is Test {
     }
 
     function testDeployDeterministic() public prank(deployer) {
-        (address dplyment) = avf.deployDeterministic(MILADY, VAULT_ID, bytes32("salt"));
+        (address dplyment) = avf.deployDeterministic(deployer, MILADY, VAULT_ID, bytes32("salt"));
         console2.log("determined address @", dplyment);
     }
 
@@ -88,7 +88,7 @@ contract AlignmentVaultFactoryTest is Test {
     }
 
     function testPredictedAddressesMatch() public prank(attacker) {
-        (address da) = avf.deployDeterministic(MILADY, VAULT_ID, bytes32("salt"));
+        (address da) = avf.deployDeterministic(deployer, MILADY, VAULT_ID, bytes32("salt"));
         (address ad) = avf.predictDeterministicAddress(bytes32("salt"));
 
         assertEq(da, ad);

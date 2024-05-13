@@ -45,11 +45,11 @@ contract AlignmentVaultFactory is Ownable, IAlignmentVaultFactory {
      * @param vaultId NFTX Vault ID associated with alignedNft
      * @return deployment Address of the newly deployed AlignmentVault.
      */
-    function deploy(address alignedNft, uint96 vaultId) external payable virtual returns (address deployment) {
+    function deploy(address vaultOwner, address alignedNft, uint96 vaultId) external payable virtual returns (address deployment) {
         deployment = LibClone.clone(implementation);
-        IInitialize(deployment).initialize(msg.sender, alignedNft, vaultId);
+        IInitialize(deployment).initialize(vaultOwner, alignedNft, vaultId);
         IInitialize(deployment).disableInitializers();
-        emit AVF_Deployed(msg.sender, deployment, alignedNft);
+        emit AVF_Deployed(vaultOwner, deployment, alignedNft);
     }
 
     /**
@@ -60,14 +60,15 @@ contract AlignmentVaultFactory is Ownable, IAlignmentVaultFactory {
      * @return deployment Address of the newly deployed AlignmentVault.
      */
     function deployDeterministic(
+        address vaultOwner,
         address alignedNft,
         uint96 vaultId,
         bytes32 salt
     ) external payable virtual returns (address deployment) {
         deployment = LibClone.cloneDeterministic(implementation, salt);
-        IInitialize(deployment).initialize(msg.sender, alignedNft, vaultId);
+        IInitialize(deployment).initialize(vaultOwner, alignedNft, vaultId);
         IInitialize(deployment).disableInitializers();
-        emit AVF_Deployed(msg.sender, deployment, alignedNft);
+        emit AVF_Deployed(vaultOwner, deployment, alignedNft);
     }
 
     /**
