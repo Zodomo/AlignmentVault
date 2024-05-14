@@ -48,6 +48,8 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
     uint256 private constant _DENOMINATOR = 1_000_000;
     uint256 private constant _ONE_PERCENT = 10_000;
     uint24 private constant _POOL_FEE = 3000;
+    int24 private constant _MIN_TICK = -887272;
+    int24 private constant _MAX_TICK = -_MIN_TICK;
 
     // >>>>>>>>>>>> [ CONTRACT INTERFACES ] <<<<<<<<<<<<
 
@@ -168,14 +170,15 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
         uint256 vTokenMin,
         uint160 sqrtPriceX96
     ) internal view returns (INFTXRouter.AddLiquidityParams memory params) {
-        int24 tickSpacing = IUniswapV3Pool(_getPool()).tickSpacing();
+        (tickLower, tickUpper) = _formatTicks(tickLower, tickUpper);
+
         params = INFTXRouter.AddLiquidityParams({
             vaultId: vaultId,
             vTokensAmount: vTokenAmount,
             nftIds: tokenIds,
             nftAmounts: amounts,
-            tickLower: int24(FixedPointMathLib.rawSDiv(tickLower, tickSpacing)) * tickSpacing,
-            tickUpper: int24(FixedPointMathLib.rawSDiv(tickUpper, tickSpacing)) * tickSpacing,
+            tickLower: tickLower,
+            tickUpper: tickUpper,
             fee: _POOL_FEE,
             sqrtPriceX96: sqrtPriceX96,
             vTokenMin: vTokenMin,
@@ -194,19 +197,17 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
         uint256 ethMin,
         uint256 vTokenMin
     ) internal view returns (INFTXRouter.IncreaseLiquidityParams memory params) {
-        unchecked {
-            params = INFTXRouter.IncreaseLiquidityParams({
-                positionId: positionId,
-                vaultId: vaultId,
-                vTokensAmount: vTokenAmount,
-                nftIds: tokenIds,
-                nftAmounts: amounts,
-                vTokenMin: vTokenMin,
-                wethMin: ethMin,
-                deadline: block.timestamp,
-                forceTimelock: true
-            });
-        }
+        params = INFTXRouter.IncreaseLiquidityParams({
+            positionId: positionId,
+            vaultId: vaultId,
+            vTokensAmount: vTokenAmount,
+            nftIds: tokenIds,
+            nftAmounts: amounts,
+            vTokenMin: vTokenMin,
+            wethMin: ethMin,
+            deadline: block.timestamp,
+            forceTimelock: true
+        });
     }
 
     function _buildRemoveLiquidityParams(
@@ -217,18 +218,30 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
         uint256 amount0Min,
         uint256 amount1Min
     ) internal view returns (INFTXRouter.RemoveLiquidityParams memory params) {
-        unchecked {
-            params = INFTXRouter.RemoveLiquidityParams({
-                positionId: positionId,
-                vaultId: vaultId,
-                nftIds: tokenIds,
-                vTokenPremiumLimit: vTokenPremiumLimit,
-                liquidity: liquidity,
-                amount0Min: amount0Min,
-                amount1Min: amount1Min,
-                deadline: block.timestamp
-            });
-        }
+        params = INFTXRouter.RemoveLiquidityParams({
+            positionId: positionId,
+            vaultId: vaultId,
+            nftIds: tokenIds,
+            vTokenPremiumLimit: vTokenPremiumLimit,
+            liquidity: liquidity,
+            amount0Min: amount0Min,
+            amount1Min: amount1Min,
+            deadline: block.timestamp
+        });
+    }
+
+    function _formatTicks(int24 tickLower, int24 tickUpper) internal view returns (int24, int24) {
+        (tickLower, tickUpper) = tickLower < tickUpper ? (tickLower, tickUpper) : (tickUpper, tickLower);
+
+        if (tickLower < _MIN_TICK) tickLower = _MIN_TICK;
+        if (tickUpper > _MAX_TICK) tickUpper = _MAX_TICK;
+
+        int24 tickSpacing = IUniswapV3Pool(_getPool()).tickSpacing();
+
+        if (tickLower % tickSpacing != 0) tickLower -= (tickLower % tickSpacing);
+        if (tickUpper % tickSpacing != 0) tickUpper -= (tickUpper % tickSpacing);
+
+        return (tickLower, tickUpper);
     }
 
     // >>>>>>>>>>>> [ VIEW FUNCTIONS ] <<<<<<<<<<<<
