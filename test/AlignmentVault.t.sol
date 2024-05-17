@@ -267,4 +267,14 @@ contract AlignmentVaultTest is Test {
         assertEq(av.vaultId(), VAULT_ID);
         assertEq(address(av.alignedNft()), MILADY);
     }
+
+    /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´*/
+    //                   HELPER FUNCTIONS
+    /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´*/
+
+    /// @dev foundry's changePrank() is deprecated :(
+    function _changePrank(address who) internal {
+        vm.stopPrank();
+        vm.startPrank(who);
+    }
 }
