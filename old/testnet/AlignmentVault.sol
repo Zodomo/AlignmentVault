@@ -343,7 +343,7 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
     }
 
     // TODO: Test
-    function inventoryPositionCollectFees(uint256[] calldata positionIds) external payable virtual onlyOwner {
+    function inventoryPositionCollectFees(address recipient, uint256[] calldata positionIds) external payable virtual onlyOwner {
         _NFTX_INVENTORY.collectWethFees(positionIds);
         emit AV_InventoryPositionsCollected(positionIds);
     }

@@ -68,6 +68,7 @@ contract AlignmentVaultTest is Test {
 
         vm.deal(address(av), FUNDING_AMOUNT);
         vm.deal(deployer, FUNDING_AMOUNT);
+        vm.deal(address(this), FUNDING_AMOUNT);
 
         vm.startPrank(deployer);
         av.initialize(deployer, MILADY, VAULT_ID);

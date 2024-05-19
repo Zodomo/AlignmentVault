@@ -51,7 +51,6 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
 
     uint256 private constant _NFTX_STANDARD_FEE = 30_000_000_000_000_000;
     uint256 private constant _DENOMINATOR = 1_000_000;
-    uint256 private constant _ONE_PERCENT = 10_000;
     uint24 private constant _POOL_FEE = 3000;
     int24 private constant _MIN_TICK = -887272;
     int24 private constant _MAX_TICK = -_MIN_TICK;
@@ -439,17 +438,25 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
         emit AV_InventoryPositionCombination(positionId, childPositionIds);
     }
 
-    // TODO: Test
-    function inventoryPositionCollectFees(uint256[] calldata positionIds) external payable virtual onlyOwner {
+    function inventoryPositionCollectFees(address recipient, uint256[] calldata positionIds) external payable virtual onlyOwner {
+        uint256 balance = _WETH.balanceOf(address(this));
         _NFTX_INVENTORY.collectWethFees(positionIds);
-        emit AV_InventoryPositionsCollected(positionIds);
+        uint256 difference = _WETH.balanceOf(address(this)) - balance;
+        if (difference > 0) {
+            _WETH.transfer(recipient, difference);
+            emit AV_InventoryPositionsCollected(positionIds, difference);
+        }
     }
 
-    // TODO: Test
-    function inventoryPositionCollectAllFees() external payable virtual onlyOwner {
+    function inventoryPositionCollectAllFees(address recipient) external payable virtual onlyOwner {
+        uint256 balance = _WETH.balanceOf(address(this));
         uint256[] memory positionIds = _inventoryPositionIds.values();
         _NFTX_INVENTORY.collectWethFees(positionIds);
-        emit AV_InventoryPositionsCollected(positionIds);
+        uint256 difference = _WETH.balanceOf(address(this)) - balance;
+        if (difference > 0) {
+            _WETH.transfer(recipient, difference);
+            emit AV_InventoryPositionsCollected(positionIds, difference);
+        }
     }
 
     // >>>>>>>>>>>> [ LIQUIDITY POSITION MANAGEMENT ] <<<<<<<<<<<<

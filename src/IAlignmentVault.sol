@@ -39,14 +39,13 @@ interface IAlignmentVault {
     event AV_InventoryPositionIncreased(uint256 indexed positionId, uint256 indexed vTokenAmount);
     event AV_InventoryPositionWithdrawal(uint256 indexed positionId, uint256 indexed vTokenAmount);
     event AV_InventoryPositionCombination(uint256 indexed positionId, uint256[] indexed childPositionIds);
-    event AV_InventoryPositionsCollected(uint256[] indexed positionIds);
+    event AV_InventoryPositionsCollected(uint256[] indexed positionIds, uint256 indexed amount);
 
     // >>>>>>>>>>>> [ LIQUIDITY MANAGEMENT EVENTS ] <<<<<<<<<<<<
 
     event AV_LiquidityPositionCreated(uint256 indexed positionId);
     event AV_LiquidityPositionIncreased(uint256 indexed positionId);
     event AV_LiquidityPositionWithdrawal(uint256 indexed positionId);
-    event AV_LiquidityPositionCombination(uint256 indexed positionId, uint256[] indexed childPositionIds);
     event AV_LiquidityPositionsCollected(uint256[] indexed positionIds);
 
     // >>>>>>>>>>>> [ STRUCTS ] <<<<<<<<<<<<
@@ -106,8 +105,8 @@ interface IAlignmentVault {
         uint256 vTokenPremiumLimit
     ) external payable;
     function inventoryPositionCombine(uint256 positionId, uint256[] calldata childPositionIds) external payable;
-    function inventoryPositionCollectFees(uint256[] calldata positionIds) external payable;
-    function inventoryPositionCollectAllFees() external payable;
+    function inventoryPositionCollectFees(address recipient, uint256[] calldata positionIds) external payable;
+    function inventoryPositionCollectAllFees(address recipient) external payable;
 
     // >>>>>>>>>>>> [ LIQUIDITY POSITION MANAGEMENT ] <<<<<<<<<<<<
 
