@@ -138,8 +138,8 @@ interface IAlignmentVault {
         uint256 amount0Min,
         uint256 amount1Min
     ) external payable;
-    function liquidityPositionCollectFees(uint256[] calldata positionIds) external payable;
-    function liquidityPositionCollectAllFees() external payable;
+    function liquidityPositionCollectFees(address recipient, uint256[] calldata positionIds) external payable;
+    function liquidityPositionCollectAllFees(address recipient) external payable;
 
     // >>>>>>>>>>>> [ ALIGNED TOKEN MANAGEMENT ] <<<<<<<<<<<<
 

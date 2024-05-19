@@ -514,12 +514,11 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
         emit AV_LiquidityPositionWithdrawal(positionId);
     }
 
-    // TODO: Test
-    function liquidityPositionCollectFees(uint256[] calldata positionIds) external payable virtual onlyOwner {
+    function liquidityPositionCollectFees(address recipient, uint256[] calldata positionIds) external payable virtual onlyOwner {
         for (uint256 i; i < positionIds.length; ++i) {
             INonfungiblePositionManager.CollectParams memory params = INonfungiblePositionManager.CollectParams({
                 tokenId: positionIds[i],
-                recipient: msg.sender,
+                recipient: recipient,
                 amount0Max: type(uint128).max,
                 amount1Max: type(uint128).max
             });
@@ -528,12 +527,12 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
         emit AV_LiquidityPositionsCollected(positionIds);
     }
 
-    function liquidityPositionCollectAllFees() external payable virtual onlyOwner {
+    function liquidityPositionCollectAllFees(address recipient) external payable virtual onlyOwner {
         uint256[] memory positionIds = _liquidityPositionIds.values();
         for (uint256 i; i < positionIds.length; ++i) {
             INonfungiblePositionManager.CollectParams memory params = INonfungiblePositionManager.CollectParams({
                 tokenId: positionIds[i],
-                recipient: msg.sender,
+                recipient: recipient,
                 amount0Max: type(uint128).max,
                 amount1Max: type(uint128).max
             });

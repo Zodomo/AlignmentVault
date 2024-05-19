@@ -267,7 +267,7 @@ contract LiquidityPositionsTest is AlignmentVaultTest {
         emit Collect(id, deployer, ethFeesExpected, 0);
 
         _changePrank(deployer);
-        av.liquidityPositionCollectAllFees();
+        av.liquidityPositionCollectAllFees(deployer);
 
         assertEq(WETH.balanceOf(deployer) - balBefore, ethFeesExpected, "unexpected eth fees collected");
     }
@@ -324,7 +324,7 @@ contract LiquidityPositionsTest is AlignmentVaultTest {
         emit Collect(id, deployer, ethFeesExpected, vTokenFeesExpected);
 
         _changePrank(deployer);
-        av.liquidityPositionCollectAllFees();
+        av.liquidityPositionCollectAllFees(deployer);
 
         assertEq(WETH.balanceOf(deployer) - balBeforeWeth, ethFeesExpected, "unexpected eth fees collected");
         assertEq(IERC20(vault).balanceOf(deployer) - balBeforeVToken, vTokenFeesExpected, "unexpected vToken fees collected");
