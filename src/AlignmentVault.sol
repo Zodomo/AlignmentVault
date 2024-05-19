@@ -11,6 +11,7 @@ import {ERC1155Holder} from "../lib/openzeppelin-contracts-v5/contracts/token/ER
 import {IAlignmentVault} from "./IAlignmentVault.sol";
 import {EnumerableSet} from "../lib/openzeppelin-contracts-v5/contracts/utils/structs/EnumerableSet.sol";
 import {FixedPointMathLib} from "../lib/solady/src/utils/FixedPointMathLib.sol";
+import {Tick} from "../lib/nftx-protocol-v3/src/uniswap/v3-core/libraries/Tick.sol";
 
 // Interfaces
 import {IWETH9} from "../lib/nftx-protocol-v3/src/uniswap/v3-periphery/interfaces/external/IWETH9.sol";
@@ -26,6 +27,7 @@ import {INFTXRouter} from "../lib/nftx-protocol-v3/src/interfaces/INFTXRouter.so
 import {ISwapRouter} from "../lib/nftx-protocol-v3/src/uniswap/v3-periphery/interfaces/ISwapRouter.sol";
 import {IUniswapV3Pool} from "../lib/nftx-protocol-v3/src/uniswap/v3-core/interfaces/IUniswapV3Pool.sol";
 import {IDelegateRegistry} from "../lib/delegate-registry/src/IDelegateRegistry.sol";
+import {IUniswapPool} from "./IUniswapPool.sol";
 
 // Temporary
 import {console2} from "../lib/forge-std/src/console2.sol";
@@ -50,6 +52,7 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
     uint24 private constant _POOL_FEE = 3000;
     int24 private constant _MIN_TICK = -887272;
     int24 private constant _MAX_TICK = -_MIN_TICK;
+    uint256 private constant _Q128 = 0x100000000000000000000000000000000;
 
     // >>>>>>>>>>>> [ CONTRACT INTERFACES ] <<<<<<<<<<<<
 
@@ -154,6 +157,88 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
                 totalCount += amounts[i];
             }
         }
+    }
+
+    function _getFeeGrowthInside(
+        Tick.Info memory lower,
+        Tick.Info memory upper,
+        int24 tickLower,
+        int24 tickUpper,
+        int24 tickCurrent,
+        uint256 feeGrowthGlobal0X128,
+        uint256 feeGrowthGlobal1X128
+    ) private pure returns (uint256 feeGrowthInside0X128, uint256 feeGrowthInside1X128) {
+        unchecked {
+            // calculate fee growth below
+            uint256 feeGrowthBelow0X128;
+            uint256 feeGrowthBelow1X128;
+            if (tickCurrent >= tickLower) {
+                feeGrowthBelow0X128 = lower.feeGrowthOutside0X128;
+                feeGrowthBelow1X128 = lower.feeGrowthOutside1X128;
+            } else {
+                feeGrowthBelow0X128 = feeGrowthGlobal0X128 - lower.feeGrowthOutside0X128;
+                feeGrowthBelow1X128 = feeGrowthGlobal1X128 - lower.feeGrowthOutside1X128;
+            }
+
+            // calculate fee growth above
+            uint256 feeGrowthAbove0X128;
+            uint256 feeGrowthAbove1X128;
+            if (tickCurrent < tickUpper) {
+                feeGrowthAbove0X128 = upper.feeGrowthOutside0X128;
+                feeGrowthAbove1X128 = upper.feeGrowthOutside1X128;
+            } else {
+                feeGrowthAbove0X128 = feeGrowthGlobal0X128 - upper.feeGrowthOutside0X128;
+                feeGrowthAbove1X128 = feeGrowthGlobal1X128 - upper.feeGrowthOutside1X128;
+            }
+
+            feeGrowthInside0X128 = feeGrowthGlobal0X128 - feeGrowthBelow0X128 - feeGrowthAbove0X128;
+            feeGrowthInside1X128 = feeGrowthGlobal1X128 - feeGrowthBelow1X128 - feeGrowthAbove1X128;
+        }
+    }
+
+    struct PositionData {
+        int24 tickLower;
+        int24 tickUpper;
+        uint128 liquidity;
+        uint256 feeGrowthInside0LastX128;
+        uint256 feeGrowthInside1LastX128;
+        uint128 token0Fees;
+        uint128 token1Fees;
+    }
+
+    function _getLiquidityPositionFees(
+        uint256 id,
+        IUniswapPool pool,
+        int24 tick, 
+        uint256 feeGrowthGlobal0X128,
+        uint256 feeGrowthGlobal1X128
+    ) private view returns (uint128 , uint128 ) {
+        PositionData memory position;
+        (
+            ,,,,,
+            position.tickLower,
+            position.tickUpper,
+            position.liquidity,
+            position.feeGrowthInside0LastX128,
+            position.feeGrowthInside1LastX128,
+            position.token0Fees,
+            position.token1Fees
+        ) = _NFTX_LIQUIDITY.positions(id);
+
+        (uint256 feeGrowthInside0X128, uint256 feeGrowthInside1X128) = _getFeeGrowthInside(
+            pool.ticks(position.tickLower),
+            pool.ticks(position.tickUpper),
+            position.tickLower,
+            position.tickUpper,
+            tick,
+            feeGrowthGlobal0X128,
+            feeGrowthGlobal1X128
+        );
+
+        position.token0Fees += uint128((feeGrowthInside0X128 - position.feeGrowthInside0LastX128) * position.liquidity / _Q128);
+        position.token1Fees += uint128((feeGrowthInside1X128 - position.feeGrowthInside1LastX128) * position.liquidity / _Q128);
+
+        return (position.token0Fees, position.token1Fees);
     }
 
     function _getPool() private view returns (address pool) {
@@ -282,17 +367,39 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
         virtual
         returns (uint128 token0Fees, uint128 token1Fees)
     {
-        (,,,,,,,,,, token0Fees, token1Fees) = _NFTX_LIQUIDITY.positions(positionId);
+        IUniswapPool pool = IUniswapPool(_getPool());
+        (, int24 currentTick,,,,,) = pool.slot0();
+        uint256 feeGrowthGlobal0X128 = pool.feeGrowthGlobal0X128();
+        uint256 feeGrowthGlobal1X128 = pool.feeGrowthGlobal1X128();
+
+        return _getLiquidityPositionFees(
+            positionId, pool, currentTick, feeGrowthGlobal0X128, feeGrowthGlobal1X128
+        );
     }
 
     // TODO: Test
     function getTotalLiquidityPositionFees() external view virtual returns (uint128 token0Fees, uint128 token1Fees) {
+        IUniswapPool pool = IUniswapPool(_getPool());
+        (, int24 currentTick,,,,,) = pool.slot0();
+        uint256 feeGrowthGlobal0X128 = pool.feeGrowthGlobal0X128();
+        uint256 feeGrowthGlobal1X128 = pool.feeGrowthGlobal1X128();
+
         uint256[] memory positionIds = _liquidityPositionIds.values();
-        for (uint256 i; i < positionIds.length; ++i) {
+        uint256 length = positionIds.length;
+
+        uint128 _token0Fees;
+        uint128 _token1Fees;
+
+        for (uint256 i; i < length; ) {
             unchecked {
-                (,,,,,,,,,, uint128 _token0Fees, uint128 _token1Fees) = _NFTX_LIQUIDITY.positions(positionIds[i]);
+                (_token0Fees, _token1Fees) = _getLiquidityPositionFees(
+                    positionIds[i], pool, currentTick, feeGrowthGlobal0X128, feeGrowthGlobal1X128
+                );
+
                 token0Fees += _token0Fees;
                 token1Fees += _token1Fees;
+
+                ++i;
             }
         }
     }
