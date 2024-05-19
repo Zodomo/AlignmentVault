@@ -10,14 +10,43 @@ contract AlignedTokenMgmtTest is AlignmentVaultTest {
         transferMilady(address(this), 333);
         IERC721(MILADY).transferFrom(address(this), address(av), 69);
         IERC721(MILADY).safeTransferFrom(address(this), address(av), 333);
+        transferMilady(address(av), 420);
+        transferMilady(address(av), 777);
+        transferMilady(address(av), 999);
     }
 
-    // TODO: Add liquidity to pool so buy can process, reverts if only one NFT is present
-    /*function testBuyNftsFromPool() public prank(deployer) {
-        uint256[] memory tokenIds = new uint256[](2);
-        tokenIds[0] = INFTXVaultV3(vault).nftIdAt(0);
-        av.buyNftsFromPool(10 ether, tokenIds, type(uint256).max, 3000, 0);
-    }*/
+    function testBuyNftsFromPool() public prank(deployer) {
+        // Add NFTs to inventory
+        uint256[] memory tokenIds = new uint256[](1);
+        tokenIds[0] = 420;
+        uint256[] memory amounts = new uint256[](1);
+        amounts[0] = 1;
+        av.inventoryPositionCreateNfts(tokenIds, amounts);
+
+        // Add NFTs to liquidity
+        tokenIds = new uint256[](2);
+        tokenIds[0] = 777;
+        tokenIds[1] = 999;
+        amounts = new uint256[](2);
+        amounts[0] = 1;
+        amounts[1] = 1;
+        av.liquidityPositionCreate({
+            ethAmount :  20 ether,
+            vTokenAmount : 0,
+            tokenIds : tokenIds,
+            amounts : amounts,
+            tickLower : type(int24).min,
+            tickUpper : type(int24).max,
+            sqrtPriceX96 : 0,
+            ethMin : 0,
+            vTokenMin : 0
+        });
+
+        // Buy NFT from pool
+        tokenIds = new uint256[](1);
+        tokenIds[0] = 420;
+        av.buyNftsFromPool(50 ether, tokenIds, type(uint256).max, 3000, 0);
+    }
 
     function testMintVToken() public prank(deployer) {
         uint256[] memory tokenIds = new uint256[](2);

@@ -543,7 +543,6 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
 
     // >>>>>>>>>>>> [ ALIGNED TOKEN MANAGEMENT ] <<<<<<<<<<<<
 
-    // TODO: Test
     function buyNftsFromPool(
         uint256 ethAmount,
         uint256[] calldata tokenIds,
