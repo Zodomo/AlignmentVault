@@ -27,10 +27,13 @@ import {INFTXRouter} from "../lib/nftx-protocol-v3/src/interfaces/INFTXRouter.so
 import {ISwapRouter} from "../lib/nftx-protocol-v3/src/uniswap/v3-periphery/interfaces/ISwapRouter.sol";
 import {IUniswapV3Pool} from "../lib/nftx-protocol-v3/src/uniswap/v3-core/interfaces/IUniswapV3Pool.sol";
 import {IDelegateRegistry} from "../lib/delegate-registry/src/IDelegateRegistry.sol";
-import {IUniswapPool} from "./IUniswapPool.sol";
 
 // Temporary
 import {console2} from "../lib/forge-std/src/console2.sol";
+
+interface IUniswapPool {
+    function ticks(int24 tick) external view returns (Tick.Info memory);
+}
 
 /**
  * @title AlignmentVault
@@ -367,19 +370,19 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
         virtual
         returns (uint128 token0Fees, uint128 token1Fees)
     {
-        IUniswapPool pool = IUniswapPool(_getPool());
+        IUniswapV3Pool pool = IUniswapV3Pool(_getPool());
         (, int24 currentTick,,,,,) = pool.slot0();
         uint256 feeGrowthGlobal0X128 = pool.feeGrowthGlobal0X128();
         uint256 feeGrowthGlobal1X128 = pool.feeGrowthGlobal1X128();
 
         return _getLiquidityPositionFees(
-            positionId, pool, currentTick, feeGrowthGlobal0X128, feeGrowthGlobal1X128
+            positionId, IUniswapPool(address(pool)), currentTick, feeGrowthGlobal0X128, feeGrowthGlobal1X128
         );
     }
 
     // TODO: Test
     function getTotalLiquidityPositionFees() external view virtual returns (uint128 token0Fees, uint128 token1Fees) {
-        IUniswapPool pool = IUniswapPool(_getPool());
+        IUniswapV3Pool pool = IUniswapV3Pool(_getPool());
         (, int24 currentTick,,,,,) = pool.slot0();
         uint256 feeGrowthGlobal0X128 = pool.feeGrowthGlobal0X128();
         uint256 feeGrowthGlobal1X128 = pool.feeGrowthGlobal1X128();
@@ -393,7 +396,7 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
         for (uint256 i; i < length; ) {
             unchecked {
                 (_token0Fees, _token1Fees) = _getLiquidityPositionFees(
-                    positionIds[i], pool, currentTick, feeGrowthGlobal0X128, feeGrowthGlobal1X128
+                    positionIds[i], IUniswapPool(address(pool)), currentTick, feeGrowthGlobal0X128, feeGrowthGlobal1X128
                 );
 
                 token0Fees += _token0Fees;
