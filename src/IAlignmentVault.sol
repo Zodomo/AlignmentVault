@@ -49,6 +49,18 @@ interface IAlignmentVault {
     event AV_LiquidityPositionCombination(uint256 indexed positionId, uint256[] indexed childPositionIds);
     event AV_LiquidityPositionsCollected(uint256[] indexed positionIds);
 
+    // >>>>>>>>>>>> [ STRUCTS ] <<<<<<<<<<<<
+
+    struct PositionData {
+        int24 tickLower;
+        int24 tickUpper;
+        uint128 liquidity;
+        uint256 feeGrowthInside0LastX128;
+        uint256 feeGrowthInside1LastX128;
+        uint128 token0Fees;
+        uint128 token1Fees;
+    }
+
     // >>>>>>>>>>>> [ PUBLIC STORAGE ] <<<<<<<<<<<<
 
     function vaultId() external view returns (uint96);

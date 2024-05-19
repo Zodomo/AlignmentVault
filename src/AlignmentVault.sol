@@ -199,16 +199,6 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
         }
     }
 
-    struct PositionData {
-        int24 tickLower;
-        int24 tickUpper;
-        uint128 liquidity;
-        uint256 feeGrowthInside0LastX128;
-        uint256 feeGrowthInside1LastX128;
-        uint128 token0Fees;
-        uint128 token1Fees;
-    }
-
     function _getLiquidityPositionFees(
         uint256 id,
         IUniswapPool pool,
@@ -363,7 +353,6 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
         }
     }
 
-    // TODO: Test
     function getSpecificLiquidityPositionFees(uint256 positionId)
         external
         view
@@ -469,7 +458,6 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
         emit AV_InventoryPositionsCollected(positionIds);
     }
 
-    // TODO: Test
     // >>>>>>>>>>>> [ LIQUIDITY POSITION MANAGEMENT ] <<<<<<<<<<<<
 
     function liquidityPositionCreate(
@@ -525,6 +513,7 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
         emit AV_LiquidityPositionWithdrawal(positionId);
     }
 
+    // TODO: Test
     function liquidityPositionCollectFees(uint256[] calldata positionIds) external payable virtual onlyOwner {
         for (uint256 i; i < positionIds.length; ++i) {
             INonfungiblePositionManager.CollectParams memory params = INonfungiblePositionManager.CollectParams({
