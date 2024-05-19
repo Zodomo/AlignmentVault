@@ -28,9 +28,6 @@ import {ISwapRouter} from "../lib/nftx-protocol-v3/src/uniswap/v3-periphery/inte
 import {IUniswapV3Pool} from "../lib/nftx-protocol-v3/src/uniswap/v3-core/interfaces/IUniswapV3Pool.sol";
 import {IDelegateRegistry} from "../lib/delegate-registry/src/IDelegateRegistry.sol";
 
-// Temporary
-import {console2} from "../lib/forge-std/src/console2.sol";
-
 interface IUniswapPool {
     function ticks(int24 tick) external view returns (Tick.Info memory);
 }

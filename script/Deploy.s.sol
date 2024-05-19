@@ -4,14 +4,12 @@ pragma solidity ^0.8.23;
 import {Script, console2} from "../lib/forge-std/src/Script.sol";
 import {AlignmentVault} from "../src/AlignmentVault.sol";
 import {AlignmentVaultImplementation} from "../src/AlignmentVaultImplementation.sol";
-import {AlignmentVaultFactory} from "../src/AlignmentVaultFactory.sol";
 import {AlignmentVault as AVTest} from "../src/testnet/AlignmentVault.sol";
 import {AlignmentVaultImplementation as AVITest} from "../src/testnet/AlignmentVaultImplementation.sol";
-import {AlignmentVaultFactory as AVFTest} from "../src/testnet/AlignmentVaultFactory.sol";
+import {AlignmentVaultFactory} from "../src/AlignmentVaultFactory.sol";
 
 interface IInitialize {
     function initialize(address owner, address alignedNft, uint256 vaultId) external payable;
-    function disableInitializers() external payable;
 }
 
 contract DeployScript is Script {
@@ -20,11 +18,10 @@ contract DeployScript is Script {
     AlignmentVaultFactory public avf;
     AVTest public avtest;
     AVITest public avitest;
-    AVFTest public avftest;
     uint256 deployerPrivateKey;
     address deployer;
 
-    address deployedFactoryTestnet = 0x9c9F968d36AacD2911b668DA9D2b277Dd783Ad8E; // Set this for upgradeTestnetImplementation()
+    address deployedFactoryTestnet = 0x7c1A6B4B373E70730c52dfCB2e0A67E7591d4AAa; // Set this for upgradeTestnetImplementation()
     address deployedFactoryMainnet; // Set this for upgradeMainnetImplementation();
     address alignedNftTestnet = 0xeA9aF8dBDdE2A8d3515C3B4E446eCd41afEdB1C6; // Set this for deployTestnetVault()
     address alignedNftMainnet = 0x5Af0D9827E0c53E4799BB226655A1de152A425a5; // Set this for deployMainnetVault()
@@ -49,17 +46,17 @@ contract DeployScript is Script {
         vm.createSelectFork("sepolia");
         vm.startBroadcast(deployerPrivateKey);
         avitest = new AVITest();
-        avftest = new AVFTest(deployer, address(avitest));
+        avf = new AlignmentVaultFactory(deployer, address(avitest));
         vm.stopBroadcast();
         console2.log("Testnet AlignmentVault Implementation:", address(avitest));
-        console2.log("Testnet AlignmentVaultFactory:", address(avftest));
+        console2.log("Testnet AlignmentVaultFactory:", address(avf));
     }
 
     function upgradeTestnetImplementation() public {
         vm.createSelectFork("sepolia");
         vm.startBroadcast(deployerPrivateKey);
         avitest = new AVITest();
-        AVFTest(deployedFactoryTestnet).updateImplementation(address(avitest));
+        AlignmentVaultFactory(deployedFactoryTestnet).updateImplementation(address(avitest));
         vm.stopBroadcast();
         console2.log("Testnet AlignmentVault Implementation:", address(avitest));
     }
