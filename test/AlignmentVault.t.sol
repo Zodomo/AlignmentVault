@@ -153,7 +153,6 @@ contract AlignmentVaultTest is Test {
     function targetInitialize(address alignedNft_, uint96 vaultId_) public {
         vm.startPrank(deployer);
         av = new AlignmentVault();
-        console2.log("alignment vault: ", address(av));
         vault = NFTX_VAULT_FACTORY.vault(vaultId_);
         vaultId = vaultId_;
         alignedNft = alignedNft_;
