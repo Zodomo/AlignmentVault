@@ -333,17 +333,14 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
         positionIds = _inventoryPositionIds.values();
     }
 
-    // TODO: Test
     function getLiquidityPositionIds() external view virtual returns (uint256[] memory positionIds) {
         positionIds = _liquidityPositionIds.values();
     }
 
-    // TODO: Test
     function getSpecificInventoryPositionFees(uint256 positionId) external view virtual returns (uint256 balance) {
         balance = _NFTX_INVENTORY.wethBalance(positionId);
     }
 
-    // TODO: Test
     function getTotalInventoryPositionFees() external view virtual returns (uint256 balance) {
         uint256[] memory positionIds = _inventoryPositionIds.values();
         for (uint256 i; i < positionIds.length; ++i) {
@@ -369,7 +366,6 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
         );
     }
 
-    // TODO: Test
     function getTotalLiquidityPositionFees() external view virtual returns (uint128 token0Fees, uint128 token1Fees) {
         IUniswapV3Pool pool = IUniswapV3Pool(_getPool());
         (, int24 currentTick,,,,,) = pool.slot0();
@@ -382,7 +378,7 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
         uint128 _token0Fees;
         uint128 _token1Fees;
 
-        for (uint256 i; i < length; ) {
+        for (uint256 i; i < length; ++i) {
             unchecked {
                 (_token0Fees, _token1Fees) = _getLiquidityPositionFees(
                     positionIds[i], IUniswapPool(address(pool)), currentTick, feeGrowthGlobal0X128, feeGrowthGlobal1X128
@@ -390,8 +386,6 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
 
                 token0Fees += _token0Fees;
                 token1Fees += _token1Fees;
-
-                ++i;
             }
         }
     }

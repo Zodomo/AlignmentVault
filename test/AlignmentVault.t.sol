@@ -213,17 +213,6 @@ contract AlignmentVaultTest is Test {
     // function testInventoryPositionCollectFees() public {}
     // function testInventoryPositionCollectAllFees() public {}
 
-    // /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´*/
-    // //                  EXTERNAL DONATION MANAGEMENT
-    // /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´*/
-
-    // function testDonateInventoryPositionIncrease() public {}
-    // function testDonateInventoryCombinePositions() public {}
-    // function testDonateLiquidityPositionIncrease() public {}
-    // function testDonateLiquidityCombinePositions() public {}
-    // function testDonateBuyNftsFromPool() public {}
-    // function testDonateMintVToken() public {}
-
     /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´*/
     //                  VIEW FUNCTIONS
     /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´*/
