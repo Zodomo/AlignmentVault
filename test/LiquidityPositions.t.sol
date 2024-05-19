@@ -2,12 +2,13 @@
 pragma solidity ^0.8.23;
 
 import "./AlignmentVault.t.sol";
-import { IUniswapV3Pool } from "../lib/nftx-protocol-v3/src/uniswap/v3-core/interfaces/IUniswapV3Pool.sol";
-import { INonfungiblePositionManager } from  "../lib/nftx-protocol-v3/src/uniswap/v3-periphery/interfaces/INonfungiblePositionManager.sol";
-import { Position } from "../lib/nftx-protocol-v3/src/uniswap/v3-core/libraries/Position.sol";
-import { TickMath } from "../lib/nftx-protocol-v3/src/uniswap/v3-core/libraries/TickMath.sol"; 
-import { LiquidityAmounts } from "../lib/nftx-protocol-v3/src/uniswap/v3-periphery/libraries/LiquidityAmounts.sol";
-import { FullMath } from "../lib/nftx-protocol-v3/src/uniswap/v3-core/libraries/FullMath.sol";
+import {IUniswapV3Pool} from "../lib/nftx-protocol-v3/src/uniswap/v3-core/interfaces/IUniswapV3Pool.sol";
+import {INonfungiblePositionManager} from
+    "../lib/nftx-protocol-v3/src/uniswap/v3-periphery/interfaces/INonfungiblePositionManager.sol";
+import {Position} from "../lib/nftx-protocol-v3/src/uniswap/v3-core/libraries/Position.sol";
+import {TickMath} from "../lib/nftx-protocol-v3/src/uniswap/v3-core/libraries/TickMath.sol";
+import {LiquidityAmounts} from "../lib/nftx-protocol-v3/src/uniswap/v3-periphery/libraries/LiquidityAmounts.sol";
+import {FullMath} from "../lib/nftx-protocol-v3/src/uniswap/v3-core/libraries/FullMath.sol";
 
 contract LiquidityPositionsTest is AlignmentVaultTest {
     using TickMath for int24;
@@ -24,14 +25,9 @@ contract LiquidityPositionsTest is AlignmentVaultTest {
         pool = _getPool();
     }
 
-    event Collect(
-        uint256 indexed tokenId,
-        address recipient,
-        uint256 amount0,
-        uint256 amount1
-    );
+    event Collect(uint256 indexed tokenId, address recipient, uint256 amount0, uint256 amount1);
 
-    int24 constant _MIN_TICK = -887272;
+    int24 constant _MIN_TICK = -887_272;
     int24 constant _MAX_TICK = -_MIN_TICK;
 
     uint256 constant Q128 = 0x100000000000000000000000000000000;
@@ -55,15 +51,15 @@ contract LiquidityPositionsTest is AlignmentVaultTest {
         uint128 expectedLiquidity = _getLiquidityForAmounts(ethAmount, vTokenAmount, tickLower, tickUpper);
 
         uint256 id = av.liquidityPositionCreate({
-            ethAmount : ethAmount,
-            vTokenAmount : vTokenAmount,
-            tokenIds : none,
-            amounts : none,
-            tickLower : tickLower,
-            tickUpper : tickUpper,
-            sqrtPriceX96 : 0,
-            ethMin : 0,
-            vTokenMin : 0
+            ethAmount: ethAmount,
+            vTokenAmount: vTokenAmount,
+            tokenIds: none,
+            amounts: none,
+            tickLower: tickLower,
+            tickUpper: tickUpper,
+            sqrtPriceX96: 0,
+            ethMin: 0,
+            vTokenMin: 0
         });
 
         uint128 liquidity = _getLiquidity(id);
@@ -86,17 +82,17 @@ contract LiquidityPositionsTest is AlignmentVaultTest {
         uint256 ethAmount = 3 ether;
 
         uint128 expectedLiquidity = _getLiquidityForAmounts(ethAmount, tokenIds.length * 1 ether, tickLower, tickUpper);
-        
+
         uint256 id = av.liquidityPositionCreate({
-            ethAmount :  ethAmount, 
-            vTokenAmount : 0,
-            tokenIds : tokenIds,
-            amounts : amounts,
-            tickLower : tickLower,
-            tickUpper : tickUpper,
-            sqrtPriceX96 : 0,
-            ethMin : 0,
-            vTokenMin : 0
+            ethAmount: ethAmount,
+            vTokenAmount: 0,
+            tokenIds: tokenIds,
+            amounts: amounts,
+            tickLower: tickLower,
+            tickUpper: tickUpper,
+            sqrtPriceX96: 0,
+            ethMin: 0,
+            vTokenMin: 0
         });
 
         uint128 liquidity = _getLiquidity(id);
@@ -116,18 +112,19 @@ contract LiquidityPositionsTest is AlignmentVaultTest {
         int24 tickLowerExpected = _conformTickSpacing(_MIN_TICK);
         int24 tickUpperExpected = _conformTickSpacing(_MAX_TICK);
 
-        uint128 expectedLiquidity = _getLiquidityForAmounts( ethAmount, vTokenAmount, tickLowerExpected, tickUpperExpected);
-        
+        uint128 expectedLiquidity =
+            _getLiquidityForAmounts(ethAmount, vTokenAmount, tickLowerExpected, tickUpperExpected);
+
         uint256 id = av.liquidityPositionCreate({
-            ethAmount :  ethAmount,
-            vTokenAmount : vTokenAmount,
-            tokenIds : none,
-            amounts : none,
-            tickLower : type(int24).min, // going out of tick bounds to test tick formatter
-            tickUpper : type(int24).max,
-            sqrtPriceX96 : 0,
-            ethMin : 0,
-            vTokenMin : 0
+            ethAmount: ethAmount,
+            vTokenAmount: vTokenAmount,
+            tokenIds: none,
+            amounts: none,
+            tickLower: type(int24).min, // going out of tick bounds to test tick formatter
+            tickUpper: type(int24).max,
+            sqrtPriceX96: 0,
+            ethMin: 0,
+            vTokenMin: 0
         });
 
         uint128 liquidity = _getLiquidity(id);
@@ -151,15 +148,15 @@ contract LiquidityPositionsTest is AlignmentVaultTest {
 
         // create initial position
         uint256 id = av.liquidityPositionCreate({
-            ethAmount : ethAmount,
-            vTokenAmount : vTokenAmount,
-            tokenIds : none,
-            amounts : none,
-            tickLower : tickLower,
-            tickUpper : tickUpper,
-            sqrtPriceX96 : 0,
-            ethMin : 0,
-            vTokenMin : 0
+            ethAmount: ethAmount,
+            vTokenAmount: vTokenAmount,
+            tokenIds: none,
+            amounts: none,
+            tickLower: tickLower,
+            tickUpper: tickUpper,
+            sqrtPriceX96: 0,
+            ethMin: 0,
+            vTokenMin: 0
         });
 
         uint128 liquidityBefore = _getLiquidity(id);
@@ -171,13 +168,13 @@ contract LiquidityPositionsTest is AlignmentVaultTest {
 
         // increase position
         av.liquidityPositionIncrease({
-            positionId : id,
-            ethAmount : ethAmount,
-            vTokenAmount : vTokenAmount,
-            tokenIds : none,
-            amounts : none,
-            ethMin : 0,
-            vTokenMin : 0
+            positionId: id,
+            ethAmount: ethAmount,
+            vTokenAmount: vTokenAmount,
+            tokenIds: none,
+            amounts: none,
+            ethMin: 0,
+            vTokenMin: 0
         });
 
         uint128 liquidity = _getLiquidity(id) - liquidityBefore;
@@ -195,15 +192,15 @@ contract LiquidityPositionsTest is AlignmentVaultTest {
 
         // create initial position
         uint256 id = av.liquidityPositionCreate({
-            ethAmount : ethAmount,
-            vTokenAmount : vTokenAmount,
-            tokenIds : none,
-            amounts : none,
-            tickLower : tickLower,
-            tickUpper : tickUpper,
-            sqrtPriceX96 : 0,
-            ethMin : 0,
-            vTokenMin : 0
+            ethAmount: ethAmount,
+            vTokenAmount: vTokenAmount,
+            tokenIds: none,
+            amounts: none,
+            tickLower: tickLower,
+            tickUpper: tickUpper,
+            sqrtPriceX96: 0,
+            ethMin: 0,
+            vTokenMin: 0
         });
 
         uint128 liquidityBefore = _getLiquidity(id);
@@ -219,13 +216,13 @@ contract LiquidityPositionsTest is AlignmentVaultTest {
 
         // increase position
         av.liquidityPositionIncrease({
-            positionId : id,
-            ethAmount : ethAmount,
-            vTokenAmount : 0,
-            tokenIds : tokenIds,
-            amounts : amounts,
-            ethMin : 0,
-            vTokenMin : 0
+            positionId: id,
+            ethAmount: ethAmount,
+            vTokenAmount: 0,
+            tokenIds: tokenIds,
+            amounts: amounts,
+            ethMin: 0,
+            vTokenMin: 0
         });
 
         uint128 liquidity = _getLiquidity(id) - liquidityBefore;
@@ -243,23 +240,23 @@ contract LiquidityPositionsTest is AlignmentVaultTest {
         deal(vault, address(av), vTokenAmount);
 
         positionKey = keccak256(abi.encodePacked(positionManager, tickLower, tickUpper));
-        
+
         uint256 id = av.liquidityPositionCreate({
-            ethAmount :  ethAmount, 
-            vTokenAmount : vTokenAmount,
-            tokenIds : none,
-            amounts : none,
-            tickLower : tickLower, 
-            tickUpper : tickUpper,
-            sqrtPriceX96 : 0,
-            ethMin : 0,
-            vTokenMin : 0
+            ethAmount: ethAmount,
+            vTokenAmount: vTokenAmount,
+            tokenIds: none,
+            amounts: none,
+            tickLower: tickLower,
+            tickUpper: tickUpper,
+            sqrtPriceX96: 0,
+            ethMin: 0,
+            vTokenMin: 0
         });
 
-        _buyVTokenFromPool(address(uint160(uint256(keccak256('trader 1')))), 1 ether);
-        _buyVTokenFromPool(address(uint160(uint256(keccak256('trader 2')))), 1.5 ether);
+        _buyVTokenFromPool(address(uint160(uint256(keccak256("trader 1")))), 1 ether);
+        _buyVTokenFromPool(address(uint160(uint256(keccak256("trader 2")))), 1.5 ether);
 
-        (uint128 ethFeesExpected, ) = av.getSpecificLiquidityPositionFees(id);
+        (uint128 ethFeesExpected,) = av.getSpecificLiquidityPositionFees(id);
 
         uint256 balBefore = WETH.balanceOf(deployer);
 
@@ -279,22 +276,22 @@ contract LiquidityPositionsTest is AlignmentVaultTest {
         uint256[] memory amounts = new uint256[](2);
         amounts[0] = 1;
         amounts[1] = 1;
-        
+
         uint256 id = av.liquidityPositionCreate({
-            ethAmount :  3 ether, 
-            vTokenAmount : 0,
-            tokenIds : tokenIds,
-            amounts : amounts,
-            tickLower : type(int24).min, 
-            tickUpper : type(int24).max,
-            sqrtPriceX96 : 0,
-            ethMin : 0,
-            vTokenMin : 0
+            ethAmount: 3 ether,
+            vTokenAmount: 0,
+            tokenIds: tokenIds,
+            amounts: amounts,
+            tickLower: type(int24).min,
+            tickUpper: type(int24).max,
+            sqrtPriceX96: 0,
+            ethMin: 0,
+            vTokenMin: 0
         });
 
-        _buyVTokenFromPool(address(uint160(uint256(keccak256('trader 1')))), 1 ether);
-        _buyVTokenFromPool(address(uint160(uint256(keccak256('trader 2')))), 1.5 ether);
-        _buyWethFromPool(address(uint160(uint256(keccak256('trader 3')))), 2 ether);
+        _buyVTokenFromPool(address(uint160(uint256(keccak256("trader 1")))), 1 ether);
+        _buyVTokenFromPool(address(uint160(uint256(keccak256("trader 2")))), 1.5 ether);
+        _buyWethFromPool(address(uint160(uint256(keccak256("trader 3")))), 2 ether);
 
         INonfungiblePositionManager.CollectParams memory params = INonfungiblePositionManager.CollectParams({
             tokenId: id,
@@ -305,15 +302,15 @@ contract LiquidityPositionsTest is AlignmentVaultTest {
 
         uint256 balBeforeWeth = WETH.balanceOf(deployer);
         uint256 balBeforeVToken = IERC20(vault).balanceOf(deployer);
- 
-        _changePrank(address(av)); // cache position fees so far in manager 
+
+        _changePrank(address(av)); // cache position fees so far in manager
         INonfungiblePositionManager(positionManager).collect(params);
 
         assertEq(WETH.balanceOf(deployer) - balBeforeWeth, 100, "non-zero eth fees collected");
         assertEq(IERC20(vault).balanceOf(deployer) - balBeforeVToken, 100, "non-zero eth fees collected");
 
-        _buyVTokenFromPool(address(uint160(uint256(keccak256('trader 4')))), .5 ether);
-        _buyWethFromPool(address(uint160(uint256(keccak256('trader 5')))), 1 ether);
+        _buyVTokenFromPool(address(uint160(uint256(keccak256("trader 4")))), 0.5 ether);
+        _buyWethFromPool(address(uint160(uint256(keccak256("trader 5")))), 1 ether);
 
         (uint128 ethFeesExpected, uint256 vTokenFeesExpected) = av.getSpecificLiquidityPositionFees(id);
 
@@ -327,9 +324,10 @@ contract LiquidityPositionsTest is AlignmentVaultTest {
         av.liquidityPositionCollectAllFees(deployer);
 
         assertEq(WETH.balanceOf(deployer) - balBeforeWeth, ethFeesExpected, "unexpected eth fees collected");
-        assertEq(IERC20(vault).balanceOf(deployer) - balBeforeVToken, vTokenFeesExpected, "unexpected vToken fees collected");
+        assertEq(
+            IERC20(vault).balanceOf(deployer) - balBeforeVToken, vTokenFeesExpected, "unexpected vToken fees collected"
+        );
     }
-
 
     /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´*/
     //                   HELPER FUNCTIONS
@@ -337,12 +335,12 @@ contract LiquidityPositionsTest is AlignmentVaultTest {
 
     function _getPool() internal view returns (IUniswapV3Pool) {
         (address poolAddress,,) = av.getUniswapPoolValues();
-        
+
         return IUniswapV3Pool(poolAddress);
     }
 
     function _getCurrentTick() internal view returns (int24 tick) {
-        (,tick,,,,,) = IUniswapV3Pool(pool).slot0();
+        (, tick,,,,,) = IUniswapV3Pool(pool).slot0();
     }
 
     function _getUpperLowerTicks() internal view returns (int24 tickUpper, int24 tickLower) {
@@ -361,19 +359,12 @@ contract LiquidityPositionsTest is AlignmentVaultTest {
         return tick % spacing == 0 ? tick : tick - (tick % spacing);
     }
 
-    function _getLiquidity(uint256 id) internal view returns(uint128 liquidity) {
-        (
-            ,,,,,,,
-            liquidity,,,,
-        ) = INonfungiblePositionManager(positionManager).positions(id);
+    function _getLiquidity(uint256 id) internal view returns (uint128 liquidity) {
+        (,,,,,,, liquidity,,,,) = INonfungiblePositionManager(positionManager).positions(id);
     }
 
     function _getPositionTicks(uint256 id) internal view returns (int24 tickLower, int24 tickUpper) {
-        (
-            ,,,,,
-            tickLower, tickUpper,
-            ,,,,
-        ) = INonfungiblePositionManager(positionManager).positions(id);
+        (,,,,, tickLower, tickUpper,,,,,) = INonfungiblePositionManager(positionManager).positions(id);
     }
 
     function _buyVTokenFromPool(address trader, uint256 amount) internal {
@@ -389,7 +380,7 @@ contract LiquidityPositionsTest is AlignmentVaultTest {
             amountOutMinimum: 0,
             sqrtPriceLimitX96: 0
         });
-        
+
         _changePrank(trader);
         WETH.approve(address(NFTX_SWAP_ROUTER), amount);
         NFTX_SWAP_ROUTER.exactInputSingle(params);
@@ -408,7 +399,7 @@ contract LiquidityPositionsTest is AlignmentVaultTest {
             amountOutMinimum: 0,
             sqrtPriceLimitX96: 0
         });
-        
+
         _changePrank(trader);
         IERC20(vault).approve(address(NFTX_SWAP_ROUTER), amount);
         NFTX_SWAP_ROUTER.exactInputSingle(params);
@@ -420,19 +411,15 @@ contract LiquidityPositionsTest is AlignmentVaultTest {
         int24 tickLower,
         int24 tickUpper
     ) internal view returns (uint128 liquidity) {
-        (uint160 sqrtPriceX96, , , , , , ) = pool.slot0();
+        (uint160 sqrtPriceX96,,,,,,) = pool.slot0();
         uint160 sqrtRatioAX96 = TickMath.getSqrtRatioAtTick(tickLower);
         uint160 sqrtRatioBX96 = TickMath.getSqrtRatioAtTick(tickUpper);
 
-        (uint256 amount0, uint256 amount1) = address(vault) < address(WETH) ? (vTokenAmount, ethAmount) : (ethAmount, vTokenAmount);
+        (uint256 amount0, uint256 amount1) =
+            address(vault) < address(WETH) ? (vTokenAmount, ethAmount) : (ethAmount, vTokenAmount);
 
-        liquidity = LiquidityAmounts.getLiquidityForAmounts(
-            sqrtPriceX96,
-            sqrtRatioAX96,
-            sqrtRatioBX96,
-            amount0,
-            amount1
-        );
+        liquidity =
+            LiquidityAmounts.getLiquidityForAmounts(sqrtPriceX96, sqrtRatioAX96, sqrtRatioBX96, amount0, amount1);
     }
 
     /// @dev refreshes position to get updated fee growth
@@ -440,5 +427,4 @@ contract LiquidityPositionsTest is AlignmentVaultTest {
         _changePrank(positionManager);
         pool.burn(tickLower, tickUpper, 0);
     }
-
 }

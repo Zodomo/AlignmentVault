@@ -31,15 +31,15 @@ contract AlignedTokenMgmtTest is AlignmentVaultTest {
         amounts[0] = 1;
         amounts[1] = 1;
         av.liquidityPositionCreate({
-            ethAmount :  20 ether,
-            vTokenAmount : 0,
-            tokenIds : tokenIds,
-            amounts : amounts,
-            tickLower : type(int24).min,
-            tickUpper : type(int24).max,
-            sqrtPriceX96 : 0,
-            ethMin : 0,
-            vTokenMin : 0
+            ethAmount: 20 ether,
+            vTokenAmount: 0,
+            tokenIds: tokenIds,
+            amounts: amounts,
+            tickLower: type(int24).min,
+            tickUpper: type(int24).max,
+            sqrtPriceX96: 0,
+            ethMin: 0,
+            vTokenMin: 0
         });
 
         // Buy NFT from pool

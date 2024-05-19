@@ -52,7 +52,7 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
     uint256 private constant _NFTX_STANDARD_FEE = 30_000_000_000_000_000;
     uint256 private constant _DENOMINATOR = 1_000_000;
     uint24 private constant _POOL_FEE = 3000;
-    int24 private constant _MIN_TICK = -887272;
+    int24 private constant _MIN_TICK = -887_272;
     int24 private constant _MAX_TICK = -_MIN_TICK;
     uint256 private constant _Q128 = 0x100000000000000000000000000000000;
 
@@ -125,16 +125,12 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
         IERC721(alignedNft_).setApprovalForAll(address(_NFTX_POSITION_ROUTER), true);
         IERC721(alignedNft_).setApprovalForAll(address(_NFTX_LIQUIDITY), true);
         IERC721(alignedNft_).setApprovalForAll(vault, true);
- 
+
         IERC20(vault).approve(address(_NFTX_INVENTORY), type(uint256).max);
         IERC20(vault).approve(address(_NFTX_POSITION_ROUTER), type(uint256).max);
         IERC20(vault).approve(address(_NFTX_LIQUIDITY), type(uint256).max);
         IERC20(vault).approve(address(_NFTX_SWAP_ROUTER), type(uint256).max);
         _WETH.approve(address(_NFTX_SWAP_ROUTER), type(uint256).max);
-    }
-
-    function disableInitializers() external payable virtual {
-        _disableInitializers();
     }
 
     // >>>>>>>>>>>> [ MANAGEMENT FUNCTIONS ] <<<<<<<<<<<<
@@ -201,13 +197,17 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
     function _getLiquidityPositionFees(
         uint256 id,
         IUniswapPool pool,
-        int24 tick, 
+        int24 tick,
         uint256 feeGrowthGlobal0X128,
         uint256 feeGrowthGlobal1X128
-    ) private view returns (uint128 , uint128 ) {
+    ) private view returns (uint128, uint128) {
         PositionData memory position;
         (
-            ,,,,,
+            ,
+            ,
+            ,
+            ,
+            ,
             position.tickLower,
             position.tickUpper,
             position.liquidity,
@@ -227,8 +227,10 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
             feeGrowthGlobal1X128
         );
 
-        position.token0Fees += uint128((feeGrowthInside0X128 - position.feeGrowthInside0LastX128) * position.liquidity / _Q128);
-        position.token1Fees += uint128((feeGrowthInside1X128 - position.feeGrowthInside1LastX128) * position.liquidity / _Q128);
+        position.token0Fees +=
+            uint128((feeGrowthInside0X128 - position.feeGrowthInside0LastX128) * position.liquidity / _Q128);
+        position.token1Fees +=
+            uint128((feeGrowthInside1X128 - position.feeGrowthInside1LastX128) * position.liquidity / _Q128);
 
         return (position.token0Fees, position.token1Fees);
     }
@@ -438,7 +440,10 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
         emit AV_InventoryPositionCombination(positionId, childPositionIds);
     }
 
-    function inventoryPositionCollectFees(address recipient, uint256[] calldata positionIds) external payable virtual onlyOwner {
+    function inventoryPositionCollectFees(
+        address recipient,
+        uint256[] calldata positionIds
+    ) external payable virtual onlyOwner {
         uint256 balance = _WETH.balanceOf(address(this));
         _NFTX_INVENTORY.collectWethFees(positionIds);
         uint256 difference = _WETH.balanceOf(address(this)) - balance;
@@ -514,7 +519,10 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
         emit AV_LiquidityPositionWithdrawal(positionId);
     }
 
-    function liquidityPositionCollectFees(address recipient, uint256[] calldata positionIds) external payable virtual onlyOwner {
+    function liquidityPositionCollectFees(
+        address recipient,
+        uint256[] calldata positionIds
+    ) external payable virtual onlyOwner {
         for (uint256 i; i < positionIds.length; ++i) {
             INonfungiblePositionManager.CollectParams memory params = INonfungiblePositionManager.CollectParams({
                 tokenId: positionIds[i],
@@ -571,7 +579,12 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
         emit AV_MintVTokens(tokenIds, amounts);
     }
 
-    function buyVToken(uint256 ethAmount, uint24 fee, uint256 amountOutMinimum, uint160 sqrtPriceLimitX96) external payable onlyOwner {
+    function buyVToken(
+        uint256 ethAmount,
+        uint24 fee,
+        uint256 amountOutMinimum,
+        uint160 sqrtPriceLimitX96
+    ) external payable onlyOwner {
         uint256 wethBalance = _WETH.balanceOf(address(this));
         if (ethAmount > wethBalance) _WETH.deposit{value: ethAmount - wethBalance}();
         ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({
@@ -588,7 +601,12 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
         _WETH.withdraw(_WETH.balanceOf(address(this)));
     }
 
-    function buyVTokenExact(uint256 ethAmount, uint24 fee, uint256 amountOutExact, uint160 sqrtPriceLimitX96) external payable onlyOwner {
+    function buyVTokenExact(
+        uint256 ethAmount,
+        uint24 fee,
+        uint256 amountOutExact,
+        uint160 sqrtPriceLimitX96
+    ) external payable onlyOwner {
         uint256 wethBalance = _WETH.balanceOf(address(this));
         if (ethAmount > wethBalance) _WETH.deposit{value: ethAmount - wethBalance}();
         ISwapRouter.ExactOutputSingleParams memory params = ISwapRouter.ExactOutputSingleParams({
@@ -605,7 +623,12 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
         _WETH.withdraw(_WETH.balanceOf(address(this)));
     }
 
-    function sellVToken(uint256 vTokenAmount, uint24 fee, uint256 amountOutMinimum, uint160 sqrtPriceLimitX96) external payable onlyOwner {
+    function sellVToken(
+        uint256 vTokenAmount,
+        uint24 fee,
+        uint256 amountOutMinimum,
+        uint160 sqrtPriceLimitX96
+    ) external payable onlyOwner {
         ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({
             tokenIn: vault,
             tokenOut: address(_WETH),
@@ -620,7 +643,12 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
         _WETH.withdraw(_WETH.balanceOf(address(this)));
     }
 
-    function sellVTokenExact(uint256 vTokenAmount, uint24 fee, uint256 amountOutExact, uint160 sqrtPriceLimitX96) external payable onlyOwner {
+    function sellVTokenExact(
+        uint256 vTokenAmount,
+        uint24 fee,
+        uint256 amountOutExact,
+        uint160 sqrtPriceLimitX96
+    ) external payable onlyOwner {
         ISwapRouter.ExactOutputSingleParams memory params = ISwapRouter.ExactOutputSingleParams({
             tokenIn: vault,
             tokenOut: address(_WETH),

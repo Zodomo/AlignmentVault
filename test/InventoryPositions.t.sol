@@ -360,10 +360,7 @@ contract InventoryPositionsTest is AlignmentVaultTest {
 
         startHoax(address(NFTX_VAULT_FACTORY.feeDistributor()));
         WETH.approve(address(NFTX_INVENTORY_STAKING), type(uint256).max);
-        bool rewardsDistributed = NFTX_INVENTORY_STAKING.receiveWethRewards(
-            vaultId,
-            10 ether
-        );
+        bool rewardsDistributed = NFTX_INVENTORY_STAKING.receiveWethRewards(vaultId, 10 ether);
         if (!rewardsDistributed) revert("Rewards not distributed");
         vm.stopPrank();
 

@@ -13,7 +13,6 @@ import {IERC1155} from "../lib/openzeppelin-contracts-v5/contracts/interfaces/IE
 
 interface IInitialize {
     function initialize(address owner, address alignedNft, uint96 vaultId) external payable;
-    function disableInitializers() external payable;
 }
 
 /**
@@ -45,10 +44,13 @@ contract AlignmentVaultFactory is Ownable, IAlignmentVaultFactory {
      * @param vaultId NFTX Vault ID associated with alignedNft
      * @return deployment Address of the newly deployed AlignmentVault.
      */
-    function deploy(address vaultOwner, address alignedNft, uint96 vaultId) external payable virtual returns (address deployment) {
+    function deploy(
+        address vaultOwner,
+        address alignedNft,
+        uint96 vaultId
+    ) external payable virtual returns (address deployment) {
         deployment = LibClone.clone(implementation);
         IInitialize(deployment).initialize(vaultOwner, alignedNft, vaultId);
-        IInitialize(deployment).disableInitializers();
         emit AVF_Deployed(vaultOwner, deployment, alignedNft);
     }
 
@@ -67,7 +69,6 @@ contract AlignmentVaultFactory is Ownable, IAlignmentVaultFactory {
     ) external payable virtual returns (address deployment) {
         deployment = LibClone.cloneDeterministic(implementation, salt);
         IInitialize(deployment).initialize(vaultOwner, alignedNft, vaultId);
-        IInitialize(deployment).disableInitializers();
         emit AVF_Deployed(vaultOwner, deployment, alignedNft);
     }
 
