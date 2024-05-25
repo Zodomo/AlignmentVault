@@ -744,4 +744,11 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
 
     receive() external payable virtual {}
     fallback() external payable virtual {}
+
+    // >>>>>>>>>>>> [ TEMP  ] <<<<<<<<<<<<
+    // implementing to compile
+    
+    function inventoryPositionUpdateSet(uint256 positionId) external payable {}
+    function liquidityPositionUpdateSet(uint256 positionId) external payable {}
+
 }

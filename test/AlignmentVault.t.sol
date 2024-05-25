@@ -5,6 +5,7 @@ import "../lib/forge-std/src/Test.sol";
 import {AlignmentVault} from "../src/AlignmentVault.sol";
 import {IAlignmentVault} from "../src/IAlignmentVault.sol";
 import {FixedPointMathLib} from "../lib/solady/src/utils/FixedPointMathLib.sol";
+import {AlignmentVaultFactory} from "./../src/AlignmentVaultFactory.sol";
 
 import {IWETH9} from "../lib/nftx-protocol-v3/src/uniswap/v3-periphery/interfaces/external/IWETH9.sol";
 import {IERC20} from "../lib/openzeppelin-contracts-v5/contracts/interfaces/IERC20.sol";
@@ -39,6 +40,7 @@ contract AlignmentVaultTest is Test {
     //@audit Router for stateless execution of swaps against Uniswap V3
     ISwapRouter public constant NFTX_SWAP_ROUTER = ISwapRouter(0x1703f8111B0E7A10e1d14f9073F53680d64277A3);
 
+    AlignmentVaultFactory public avf;
     AlignmentVault public av;
     address public vault;
     uint256 public vaultId;
@@ -56,27 +58,29 @@ contract AlignmentVaultTest is Test {
 
     function setUp() public virtual {
         vm.createSelectFork("mainnet");
-        av = new AlignmentVault();
+
+        deployer = makeAddr("deployer");
+        attacker = makeAddr("attacker");
+
+        avf = new AlignmentVaultFactory(deployer, address(new AlignmentVault()));
+        av = AlignmentVault(payable(avf.deploy(deployer, MILADY, VAULT_ID)));
+
         vm.label(address(av), "AlignmentVault");
         vm.label(address(MILADY), "Milady NFT");
         vm.label(address(NFTX_VAULT_FACTORY), "NFTX Vault Factory");
         vm.label(address(NFTX_SWAP_ROUTER), "NFTX Swap Router");
         vm.label(address(NFTX_POSITION_ROUTER), "NFTX Position Router");
         vm.label(address(NFTX_INVENTORY_STAKING), "NFTX Inventory Staking");
-        deployer = makeAddr("deployer");
-        attacker = makeAddr("attacker");
 
         vm.deal(address(av), FUNDING_AMOUNT);
         vm.deal(deployer, FUNDING_AMOUNT);
         vm.deal(address(this), FUNDING_AMOUNT);
 
-        vm.startPrank(deployer);
-        av.initialize(deployer, MILADY, VAULT_ID);
         vault = av.vault();
         vaultId = VAULT_ID;
         alignedNft = MILADY;
+
         setApprovals();
-        vm.stopPrank();
     }
 
     modifier prank(address who) {
@@ -87,7 +91,7 @@ contract AlignmentVaultTest is Test {
 
     receive() external payable {}
 
-    function setApprovals() public {
+    function setApprovals() public prank(deployer) {
         IERC721(alignedNft).setApprovalForAll(vault, true);
     }
 
@@ -120,7 +124,8 @@ contract AlignmentVaultTest is Test {
 
     function lazyInitialize(address alignedNft_) public {
         vm.startPrank(deployer);
-        av = new AlignmentVault();
+        bytes32 salt = keccak256('deterministic salt');
+        av = AlignmentVault(payable(avf.predictDeterministicAddress(salt)));
         alignedNft = alignedNft_;
         address[] memory vaults = NFTX_VAULT_FACTORY.vaultsForAsset(alignedNft_);
         if (vaults.length == 0) revert IAlignmentVault.AV_NFTX_NoVaultsExist();
@@ -142,25 +147,24 @@ contract AlignmentVaultTest is Test {
         emit IAlignmentVault.AV_VaultInitialized(vault, vaultId);
         //@audit what does it mean when vault id is zero?
         //@response The initializer just wants it pointed at a standard 3/3/3 tax and finalized NFTX vault, if any exist
-        av.initialize(deployer, alignedNft_, 0);
+        avf.deployDeterministic(deployer, alignedNft_, 0, salt);
         vm.deal(address(av), FUNDING_AMOUNT);
         setApprovals();
         vm.stopPrank();
     }
 
     function targetInitialize(address alignedNft_, uint96 vaultId_) public {
-        vm.startPrank(deployer);
-        av = new AlignmentVault();
+        bytes32 salt = keccak256('deterministic salt');
+        av = AlignmentVault(payable(avf.predictDeterministicAddress(salt)));
         vault = NFTX_VAULT_FACTORY.vault(vaultId_);
         vaultId = vaultId_;
         alignedNft = alignedNft_;
 
         vm.expectEmit(address(av));
         emit IAlignmentVault.AV_VaultInitialized(vault, vaultId_);
-        av.initialize(deployer, alignedNft_, vaultId_);
+        avf.deployDeterministic(deployer, alignedNft_, vaultId_, salt);
         vm.deal(address(av), FUNDING_AMOUNT);
         setApprovals();
-        vm.stopPrank();
     }
 
     /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´*/

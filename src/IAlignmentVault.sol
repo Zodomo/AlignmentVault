@@ -15,6 +15,10 @@ interface IAlignmentVault {
 
     error AV_UnalignedNft();
     error AV_ProhibitedWithdrawal();
+    error AV_MismatchedArrayLength();
+    error AV_PositionAlreadySet();
+    error AV_NotPositionOwner();
+    error AV_InsufficientSharesToWithdrawNft();
 
     // >>>>>>>>>>>> [ INITIALIZER ERRORS ] <<<<<<<<<<<<
 
@@ -96,13 +100,14 @@ interface IAlignmentVault {
     function inventoryPositionIncrease(uint256 positionId, uint256 vTokenAmount) external payable;
     function inventoryPositionWithdrawal(
         uint256 positionId_,
-        uint256 vTokenAmount,
+        uint256 vTokenShares,
         uint256[] calldata tokenIds,
         uint256 vTokenPremiumLimit
     ) external payable;
     function inventoryPositionCombine(uint256 positionId, uint256[] calldata childPositionIds) external payable;
     function inventoryPositionCollectFees(address recipient, uint256[] calldata positionIds) external payable;
     function inventoryPositionCollectAllFees(address recipient) external payable;
+    function inventoryPositionUpdateSet(uint256 positionId) external payable;
 
     // >>>>>>>>>>>> [ LIQUIDITY POSITION MANAGEMENT ] <<<<<<<<<<<<
 
@@ -136,6 +141,7 @@ interface IAlignmentVault {
     ) external payable;
     function liquidityPositionCollectFees(address recipient, uint256[] calldata positionIds) external payable;
     function liquidityPositionCollectAllFees(address recipient) external payable;
+    function liquidityPositionUpdateSet(uint256 positionId) external payable;
 
     // >>>>>>>>>>>> [ ALIGNED TOKEN MANAGEMENT ] <<<<<<<<<<<<
 
@@ -176,13 +182,6 @@ interface IAlignmentVault {
 
     function rescueERC20(address token, uint256 amount, address recipient) external payable;
     function rescueERC721(address token, uint256 tokenId, address recipient) external payable;
-    function rescueERC1155(address token, uint256 tokenId, uint256 amount, address recipient) external payable;
-    function rescueERC1155Batch(
-        address token,
-        uint256[] calldata tokenIds,
-        uint256[] calldata amounts,
-        address recipient
-    ) external payable;
     function wrapEth(uint256 amount) external payable;
     function unwrapEth(uint256 amount) external payable;
 }

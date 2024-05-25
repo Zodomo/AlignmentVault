@@ -227,13 +227,11 @@ contract InventoryPositionsTest is AlignmentVaultTest {
         amounts[0] = 1;
         amounts[1] = 1;
         uint256[] memory childPositionIds = new uint256[](1);
-        uint256[] memory positionIds = new uint256[](2);
+        uint256[] memory positionIds = new uint256[](1);
 
         av.mintVToken(tokenIds, amounts);
-        uint256 positionId = av.inventoryPositionCreateVToken(1 ether);
-        positionIds[0] = positionId;
+        uint256 positionId = positionIds[0] = av.inventoryPositionCreateVToken(1 ether);
         childPositionIds[0] = av.inventoryPositionCreateVToken(1 ether);
-        positionIds[1] = childPositionIds[0];
 
         vm.warp(block.timestamp + 3 days + 1);
         vm.expectEmit(address(av));
@@ -257,14 +255,12 @@ contract InventoryPositionsTest is AlignmentVaultTest {
         uint256[] memory amounts = new uint256[](1);
         amounts[0] = 1;
         uint256[] memory childPositionIds = new uint256[](1);
-        uint256[] memory positionIds = new uint256[](2);
+        uint256[] memory positionIds = new uint256[](1);
 
         av.mintVToken(tokenIds, amounts);
-        uint256 positionId = av.inventoryPositionCreateVToken(1 ether);
-        positionIds[0] = positionId;
+        uint256 positionId = positionIds[0] = av.inventoryPositionCreateVToken(1 ether);
         tokenIds[0] = 420;
         childPositionIds[0] = av.inventoryPositionCreateNfts(tokenIds, amounts);
-        positionIds[1] = childPositionIds[0];
 
         vm.warp(block.timestamp + 3 days + 1);
         vm.expectEmit(address(av));
@@ -288,14 +284,12 @@ contract InventoryPositionsTest is AlignmentVaultTest {
         uint256[] memory amounts = new uint256[](1);
         amounts[0] = 1;
         uint256[] memory childPositionIds = new uint256[](1);
-        uint256[] memory positionIds = new uint256[](2);
+        uint256[] memory positionIds = new uint256[](1);
 
-        uint256 positionId = av.inventoryPositionCreateNfts(tokenIds, amounts);
-        positionIds[0] = positionId;
+        uint256 positionId = positionIds[0] = av.inventoryPositionCreateNfts(tokenIds, amounts);
         tokenIds[0] = 420;
         av.mintVToken(tokenIds, amounts);
         childPositionIds[0] = av.inventoryPositionCreateVToken(1 ether);
-        positionIds[1] = childPositionIds[0];
 
         vm.warp(block.timestamp + 3 days + 1);
         vm.expectEmit(address(av));
@@ -319,13 +313,11 @@ contract InventoryPositionsTest is AlignmentVaultTest {
         uint256[] memory amounts = new uint256[](1);
         amounts[0] = 1;
         uint256[] memory childPositionIds = new uint256[](1);
-        uint256[] memory positionIds = new uint256[](2);
+        uint256[] memory positionIds = new uint256[](1);
 
-        uint256 positionId = av.inventoryPositionCreateNfts(tokenIds, amounts);
-        positionIds[0] = positionId;
+        uint256 positionId = positionIds[0] = av.inventoryPositionCreateNfts(tokenIds, amounts);
         tokenIds[0] = 420;
         childPositionIds[0] = av.inventoryPositionCreateNfts(tokenIds, amounts);
-        positionIds[1] = childPositionIds[0];
 
         vm.warp(block.timestamp + 3 days + 1);
         vm.expectEmit(address(av));

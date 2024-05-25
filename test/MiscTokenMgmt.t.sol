@@ -4,12 +4,10 @@ pragma solidity ^0.8.23;
 import "./AlignmentVault.t.sol";
 import {MockERC20} from "../lib/solady/test/utils/mocks/MockERC20.sol";
 import {MockERC721} from "../lib/solady/test/utils/mocks/MockERC721.sol";
-//import {MockERC1155} from "../lib/solady/test/utils/mocks/MockERC1155.sol";
 
 contract MiscTokenMgmtTest is AlignmentVaultTest {
     MockERC20 public erc20;
     MockERC721 public erc721;
-    //MockERC1155 public erc1155;
 
     function setUp() public override {
         super.setUp();
@@ -21,14 +19,7 @@ contract MiscTokenMgmtTest is AlignmentVaultTest {
         erc721.mint(address(this), 1);
         erc721.transferFrom(address(this), address(av), 1);
 
-        /*erc1155 = new MockERC1155();
-        erc1155.mint(address(this), 1, 1, "tokenURI_1");
-        erc1155.mint(address(this), 2, 2, "tokenURI_2");
-        erc1155.safeTransferFrom(address(this), address(av), 1, 1, "");
-        erc1155.safeTransferFrom(address(this), address(av), 2, 2, "");*/
-
-        WETH.deposit{value: 1 ether}();
-        WETH.transfer(address(av), 1 ether);
+        deal(address(WETH), address(av), FUNDING_AMOUNT);
     }
 
     function testRescueERC20() public prank(deployer) {
@@ -43,25 +34,13 @@ contract MiscTokenMgmtTest is AlignmentVaultTest {
         assertEq(erc721.ownerOf(1), deployer, "ERC721 ownerOf error");
     }
 
-    /*function testRescueERC1155() public prank(deployer) {
-        av.rescueERC1155(address(erc1155), 1, 1, deployer);
-        assertEq(erc1155.balanceOf(deployer, 1), 1, "ERC1155 balance error");
-    }
-
-    function testRescueERC1155Batch() public prank(deployer) {
-        uint256[] memory tokenIds = new uint256[](2);
-        tokenIds[0] = 1;
-        tokenIds[1] = 2;
-        uint256[] memory amounts = new uint256[](2);
-        amounts[0] = 1;
-        amounts[1] = 2;
-        av.rescueERC1155Batch(address(erc1155), tokenIds, amounts, deployer);
-        assertEq(erc1155.balanceOf(deployer, 1), 1, "ERC1155 balance error");
-        assertEq(erc1155.balanceOf(deployer, 2), 2, "ERC1155 balance error");
-    }*/
-
     function testUnwrapEth() public prank(deployer) {
         av.unwrapEth(1 ether);
         assertEq(address(av).balance, FUNDING_AMOUNT + 1 ether, "post-WETH unwrap ETH balance error");
+    }
+
+    function testWrapEth() public prank(deployer) {
+        av.wrapEth(1 ether);
+        assertEq(WETH.balanceOf(address(av)), FUNDING_AMOUNT + 1 ether, "post-WETH wrap WETH balance error");
     }
 }
