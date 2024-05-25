@@ -438,7 +438,7 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
         ) revert AV_InsufficientSharesToWithdrawNft();
         if (vTokenPremiumLimit == 0) vTokenPremiumLimit = type(uint256).max;
         _NFTX_INVENTORY.withdraw(positionId, vTokenShares, tokenIds, vTokenPremiumLimit);
-        // review: on full withdraw should we remove position from set?
+        // review: on full withdraw should we remove position from set (doesn't seem like position is burnable)?
         emit AV_InventoryPositionWithdrawal(positionId, vTokenShares);
     }
 
@@ -540,7 +540,7 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
         );
         _WETH.withdraw(_WETH.balanceOf(address(this)));
 
-        // review: on full withdraw should we burn the position & remove from set?
+        // review: on full withdraw should we burn the position & remove from set? could be a try catch for burn()
         emit AV_LiquidityPositionWithdrawal(positionId);
     }
 
@@ -580,7 +580,7 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
         if (_liquidityPositionIds.contains(positionId)) revert AV_PositionAlreadySet();
         if (IERC721(address(_NFTX_LIQUIDITY)).ownerOf(positionId) != address(this)) revert AV_NotPositionOwner();
         (,,address token0, address token1,,,,,,,,) = _NFTX_LIQUIDITY.positions(positionId);
-        address _vault = vault; // note: only saves 1 SLOAD, maybe not worth it for cleanliness?
+        address _vault = vault; // review: only saves 1 SLOAD, maybe not worth it for cleanliness?
         if (_vault != (_vault < address(_WETH) ? token0 : token1)) revert AV_UnalignedNft();
         _liquidityPositionIds.add(positionId);
         emit AV_LiquidityPositionCreated(positionId);
@@ -621,7 +621,7 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
         uint24 fee,
         uint256 amountOutMinimum,
         uint160 sqrtPriceLimitX96
-    ) external payable onlyOwner {
+    ) external payable onlyOwner returns (uint256 vTokenBought) {
         uint256 wethBalance = _WETH.balanceOf(address(this));
         if (ethAmount > wethBalance) _WETH.deposit{value: ethAmount - wethBalance}();
         ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({
@@ -634,7 +634,7 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
             amountOutMinimum: amountOutMinimum,
             sqrtPriceLimitX96: sqrtPriceLimitX96
         });
-        _NFTX_SWAP_ROUTER.exactInputSingle(params);
+        vTokenBought = _NFTX_SWAP_ROUTER.exactInputSingle(params);
         _WETH.withdraw(_WETH.balanceOf(address(this)));
     }
 
@@ -643,7 +643,7 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
         uint24 fee,
         uint256 amountOutExact,
         uint160 sqrtPriceLimitX96
-    ) external payable onlyOwner {
+    ) external payable onlyOwner returns (uint256 ethSpent) {
         uint256 wethBalance = _WETH.balanceOf(address(this));
         if (ethAmount > wethBalance) _WETH.deposit{value: ethAmount - wethBalance}();
         ISwapRouter.ExactOutputSingleParams memory params = ISwapRouter.ExactOutputSingleParams({
@@ -656,7 +656,7 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
             amountInMaximum: ethAmount,
             sqrtPriceLimitX96: sqrtPriceLimitX96
         });
-        _NFTX_SWAP_ROUTER.exactOutputSingle(params);
+        ethSpent = _NFTX_SWAP_ROUTER.exactOutputSingle(params);
         _WETH.withdraw(_WETH.balanceOf(address(this)));
     }
 
@@ -665,7 +665,7 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
         uint24 fee,
         uint256 amountOutMinimum,
         uint160 sqrtPriceLimitX96
-    ) external payable onlyOwner {
+    ) external payable onlyOwner returns (uint256 ethBought) {
         ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({
             tokenIn: vault,
             tokenOut: address(_WETH),
@@ -676,7 +676,7 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
             amountOutMinimum: amountOutMinimum,
             sqrtPriceLimitX96: sqrtPriceLimitX96
         });
-        _NFTX_SWAP_ROUTER.exactInputSingle(params);
+        ethBought = _NFTX_SWAP_ROUTER.exactInputSingle(params);
         _WETH.withdraw(_WETH.balanceOf(address(this)));
     }
 
@@ -685,7 +685,7 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
         uint24 fee,
         uint256 amountOutExact,
         uint160 sqrtPriceLimitX96
-    ) external payable onlyOwner {
+    ) external payable onlyOwner returns (uint256 vTokenSpent) {
         ISwapRouter.ExactOutputSingleParams memory params = ISwapRouter.ExactOutputSingleParams({
             tokenIn: vault,
             tokenOut: address(_WETH),
@@ -696,7 +696,7 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
             amountInMaximum: vTokenAmount,
             sqrtPriceLimitX96: sqrtPriceLimitX96
         });
-        _NFTX_SWAP_ROUTER.exactOutputSingle(params);
+        vTokenSpent = _NFTX_SWAP_ROUTER.exactOutputSingle(params);
         _WETH.withdraw(_WETH.balanceOf(address(this)));
     }
 
@@ -737,16 +737,20 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
         }
 
         if (msg.sender == address(_NFTX_INVENTORY)) {
-            (,uint256 _vaultId,,,,,,) = _NFTX_INVENTORY.positions(tokenId);
+            (,uint256 _vaultId,,,, uint256 vTokenShares,,) = _NFTX_INVENTORY.positions(tokenId);
             if (_vaultId != vaultId) revert AV_UnalignedNft();
 
             _inventoryPositionIds.add(tokenId);
+
+            emit AV_InventoryPositionCreated(tokenId, vTokenShares);
         } else if (msg.sender == address(_NFTX_LIQUIDITY)) {
             (,,address token0, address token1,,,,,,,,) = _NFTX_LIQUIDITY.positions(tokenId);
-            address _vault = vault; // note: only saves 1 SLOAD, maybe not worth it for cleanliness?
+            address _vault = vault; // review: only saves 1 SLOAD, maybe not worth it for cleanliness?
             if (_vault != (_vault < address(_WETH) ? token0 : token1)) revert AV_UnalignedNft();
 
             _liquidityPositionIds.add(tokenId);
+
+            emit AV_LiquidityPositionCreated(tokenId);
         }
         return this.onERC721Received.selector;
     }

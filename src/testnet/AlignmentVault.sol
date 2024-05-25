@@ -581,7 +581,7 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
         uint24 fee,
         uint256 amountOutMinimum,
         uint160 sqrtPriceLimitX96
-    ) external payable onlyOwner {
+    ) external payable onlyOwner returns (uint256 val) {
         uint256 wethBalance = _WETH.balanceOf(address(this));
         if (ethAmount > wethBalance) _WETH.deposit{value: ethAmount - wethBalance}();
         ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({
@@ -594,7 +594,7 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
             amountOutMinimum: amountOutMinimum,
             sqrtPriceLimitX96: sqrtPriceLimitX96
         });
-        _NFTX_SWAP_ROUTER.exactInputSingle(params);
+        val = _NFTX_SWAP_ROUTER.exactInputSingle(params);
         _WETH.withdraw(_WETH.balanceOf(address(this)));
     }
 
@@ -603,7 +603,7 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
         uint24 fee,
         uint256 amountOutExact,
         uint160 sqrtPriceLimitX96
-    ) external payable onlyOwner {
+    ) external payable onlyOwner returns (uint256 val) {
         uint256 wethBalance = _WETH.balanceOf(address(this));
         if (ethAmount > wethBalance) _WETH.deposit{value: ethAmount - wethBalance}();
         ISwapRouter.ExactOutputSingleParams memory params = ISwapRouter.ExactOutputSingleParams({
@@ -616,7 +616,7 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
             amountInMaximum: ethAmount,
             sqrtPriceLimitX96: sqrtPriceLimitX96
         });
-        _NFTX_SWAP_ROUTER.exactOutputSingle(params);
+        val = _NFTX_SWAP_ROUTER.exactOutputSingle(params);
         _WETH.withdraw(_WETH.balanceOf(address(this)));
     }
 
@@ -625,7 +625,7 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
         uint24 fee,
         uint256 amountOutMinimum,
         uint160 sqrtPriceLimitX96
-    ) external payable onlyOwner {
+    ) external payable onlyOwner returns (uint256 val) {
         ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({
             tokenIn: vault,
             tokenOut: address(_WETH),
@@ -636,7 +636,7 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
             amountOutMinimum: amountOutMinimum,
             sqrtPriceLimitX96: sqrtPriceLimitX96
         });
-        _NFTX_SWAP_ROUTER.exactInputSingle(params);
+        val = _NFTX_SWAP_ROUTER.exactInputSingle(params);
         _WETH.withdraw(_WETH.balanceOf(address(this)));
     }
 
@@ -645,7 +645,7 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
         uint24 fee,
         uint256 amountOutExact,
         uint160 sqrtPriceLimitX96
-    ) external payable onlyOwner {
+    ) external payable onlyOwner returns (uint256 val) {
         ISwapRouter.ExactOutputSingleParams memory params = ISwapRouter.ExactOutputSingleParams({
             tokenIn: vault,
             tokenOut: address(_WETH),
@@ -656,7 +656,7 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
             amountInMaximum: vTokenAmount,
             sqrtPriceLimitX96: sqrtPriceLimitX96
         });
-        _NFTX_SWAP_ROUTER.exactOutputSingle(params);
+        val = _NFTX_SWAP_ROUTER.exactOutputSingle(params);
         _WETH.withdraw(_WETH.balanceOf(address(this)));
     }
 

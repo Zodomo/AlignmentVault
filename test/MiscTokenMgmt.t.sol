@@ -22,6 +22,10 @@ contract MiscTokenMgmtTest is AlignmentVaultTest {
         deal(address(WETH), address(av), FUNDING_AMOUNT);
     }
 
+    /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´*/
+    //                  MISC TOKEN MANAGEMENT
+    /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´*/
+
     function testRescueERC20() public prank(deployer) {
         av.rescueERC20(address(erc20), 1 ether, deployer);
         assertEq(erc20.balanceOf(deployer), 1 ether, "ERC20 balance error");

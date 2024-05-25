@@ -15,6 +15,10 @@ contract AlignedTokenMgmtTest is AlignmentVaultTest {
         transferMilady(address(av), 999);
     }
 
+    /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´*/
+    //                  ALIGNED TOKEN MANAGEMENT
+    /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´*/
+
     function testBuyNftsFromPool() public prank(deployer) {
         // Add NFTs to inventory
         uint256[] memory tokenIds = new uint256[](1);
@@ -46,6 +50,8 @@ contract AlignedTokenMgmtTest is AlignmentVaultTest {
         tokenIds = new uint256[](1);
         tokenIds[0] = 420;
         av.buyNftsFromPool(50 ether, tokenIds, type(uint256).max, 3000, 0);
+
+        assertEq(IERC721(MILADY).ownerOf(420), address(av), "NFT wasn't bought from pool");
     }
 
     function testMintVToken() public prank(deployer) {
@@ -60,25 +66,33 @@ contract AlignedTokenMgmtTest is AlignmentVaultTest {
     }
 
     function testBuyVToken() public prank(deployer) {
-        av.buyVToken(1 ether, 3000, 0, 0);
-        assertEq(IERC20(vault).balanceOf(address(av)) > 0, true, "vToken balance didn't increase");
+        uint256 ethBalBefore = address(av).balance;
+        uint256 vTokenBought = av.buyVToken(1 ether, 3000, 0, 0);
+        assertEq(address(av).balance, ethBalBefore - 1 ether, "ETH balance inaccurate");
+        assertEq(IERC20(vault).balanceOf(address(av)), vTokenBought, "vToken balance didn't increase");
     }
 
     function testBuyVTokenExact() public prank(deployer) {
-        av.buyVTokenExact(5 ether, 3000, 0.1 ether, 0);
+        uint256 ethBalBefore = address(av).balance;
+        uint256 ethSpent = av.buyVTokenExact(5 ether, 3000, 0.1 ether, 0);
+        assertEq(address(av).balance, ethBalBefore - ethSpent, "ETH balance inaccurate");
         assertEq(IERC20(vault).balanceOf(address(av)), 0.1 ether, "vToken swap wasn't exact");
     }
 
     function testSellVToken() public prank(deployer) {
         av.buyVTokenExact(5 ether, 3000, 0.1 ether, 0);
-        av.sellVToken(0.1 ether, 3000, 0, 0);
+        uint256 ethBalBefore = address(av).balance;
+        uint256 ethBought = av.sellVToken(0.1 ether, 3000, 0, 0);
+        assertEq(address(av).balance, ethBalBefore + ethBought, "ETH balance inaccurate");
         assertEq(IERC20(vault).balanceOf(address(av)), 0, "vToken balance wasn't swapped");
     }
 
     function testSellVTokenExact() public prank(deployer) {
         av.buyVTokenExact(5 ether, 3000, 0.1 ether, 0);
-        uint256 balance = address(av).balance;
-        av.sellVTokenExact(0.1 ether, 3000, 0.01 ether, 0);
-        assertEq(address(av).balance, balance + 0.01 ether, "ETH balance didn't increase");
+        uint256 ethBalBefore = address(av).balance;
+        uint256 vTokenBalBefore = IERC20(vault).balanceOf(address(av));
+        uint256 vTokenSpent = av.sellVTokenExact(0.1 ether, 3000, 0.01 ether, 0);
+        assertEq(address(av).balance, ethBalBefore + 0.01 ether, "ETH balance didn't increase");
+        assertEq(IERC20(vault).balanceOf(address(av)), vTokenBalBefore - vTokenSpent, "vToken balance inaccurate");
     }
 }

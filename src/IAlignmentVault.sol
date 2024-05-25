@@ -158,25 +158,25 @@ interface IAlignmentVault {
         uint24 fee,
         uint256 amountOutMinimum,
         uint160 sqrtPriceLimitX96
-    ) external payable;
+    ) external payable returns (uint256 vTokenBought);
     function buyVTokenExact(
         uint256 ethAmount,
         uint24 fee,
         uint256 amountOutExact,
         uint160 sqrtPriceLimitX96
-    ) external payable;
+    ) external payable returns (uint256 ethSpent);
     function sellVToken(
         uint256 vTokenAmount,
         uint24 fee,
         uint256 amountOutMinimum,
         uint160 sqrtPriceLimitX96
-    ) external payable;
+    ) external payable returns (uint256 ethBought);
     function sellVTokenExact(
         uint256 vTokenAmount,
         uint24 fee,
         uint256 amountOutExact,
         uint160 sqrtPriceLimitX96
-    ) external payable;
+    ) external payable returns (uint256 vTokenSpent);
 
     // >>>>>>>>>>>> [ MISCELLANEOUS TOKEN MANAGEMENT ] <<<<<<<<<<<<
 

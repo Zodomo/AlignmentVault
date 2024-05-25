@@ -11,6 +11,10 @@ contract InventoryPositionsTest is AlignmentVaultTest {
         transferMilady(address(av), 420);
     }
 
+    /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´*/
+    //                  INVENTORY POSITION MANAGEMENT
+    /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´*/
+
     function testInventoryPositionCreateVToken() public prank(deployer) {
         uint256[] memory tokenIds = new uint256[](1);
         tokenIds[0] = 69;
@@ -334,6 +338,8 @@ contract InventoryPositionsTest is AlignmentVaultTest {
         assertEq(vTokenShareBalance1, 0, "vTokenShareBalance doesn't match position");
         assertEq(av.getInventoryPositionIds(), positionIds, "inventory position IDs unaccounted for");
     }
+    
+    function testInventoryPositionCollectFees() public { /* @todo */ }
 
     function testInventoryPositionCollectAllFees() public {
         uint256[] memory tokenIds = new uint256[](1);
