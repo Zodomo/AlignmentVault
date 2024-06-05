@@ -16,16 +16,83 @@ contract ViewFunctionsTest is AlignmentVaultTest {
     //                      VIEW FUNCTIONS
     /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´*/
     
-    /*function testGetInventoryPositionIds() public view {
-        av.getInventoryPositionIds();
+    function testGetInventoryPositionIds() public prank(deployer) {
+        uint256[] memory positionIds = new uint256[](2);
+
+        uint256[] memory tokenIds = new uint256[](1);
+        tokenIds[0] = 333;
+        uint256[] memory amounts = new uint256[](1);
+        amounts[0] = 1;
+
+        positionIds[0] = av.inventoryPositionCreateNfts(tokenIds, amounts);
+
+        tokenIds[0] = 420;
+
+        positionIds[1] = av.inventoryPositionCreateNfts(tokenIds, amounts);
+
+        assertEq(av.getInventoryPositionIds(), positionIds, 'unexpected inventory position ids');
     }
 
-    function testGetSpecificInventoryPositionFees(uint256 posId) public view {
-        av.getSpecificInventoryPositionFees(posId);
+    function testGetSpecificInventoryPositionFees() public prank(deployer) {
+        uint256[] memory tokenIds = new uint256[](1);
+        tokenIds[0] = 333;
+        uint256[] memory amounts = new uint256[](1);
+        amounts[0] = 1;
+
+        uint256[] memory ids = new uint256[](1);
+
+        uint256 id = ids[0] = av.inventoryPositionCreateNfts(tokenIds, amounts);
+
+        tokenIds[0] = 420;
+
+        av.inventoryPositionCreateNfts(tokenIds, amounts);
+
+        address distributor = NFTX_VAULT_FACTORY.feeDistributor();
+
+        deal(address(WETH), distributor, 10 ether);
+
+        _changePrank(distributor);
+        require(NFTX_INVENTORY_STAKING.receiveWethRewards(vaultId, 10 ether), 'fees not distributed');
+
+        uint256 expectedFees = av.getSpecificInventoryPositionFees(id);
+
+        uint256 balBefore = WETH.balanceOf(deployer);
+
+        _changePrank(deployer);
+        av.inventoryPositionCollectFees(deployer, ids);
+
+        assertEq(WETH.balanceOf(deployer) - balBefore, expectedFees, 'unexpected fees');
     }
 
-    function testGetTotalInventoryPositionFees() public view {
-        av.getTotalInventoryPositionFees();
+    function testGetTotalInventoryPositionFees() public prank(deployer) {
+        uint256[] memory tokenIds = new uint256[](1);
+        tokenIds[0] = 333;
+        uint256[] memory amounts = new uint256[](1);
+        amounts[0] = 1;
+
+        uint256[] memory ids = new uint256[](2);
+
+        ids[0] = av.inventoryPositionCreateNfts(tokenIds, amounts);
+
+        tokenIds[0] = 420;
+
+        ids[1] = av.inventoryPositionCreateNfts(tokenIds, amounts);
+
+        address distributor = NFTX_VAULT_FACTORY.feeDistributor();
+
+        deal(address(WETH), distributor, 10 ether);
+
+        _changePrank(distributor);
+        require(NFTX_INVENTORY_STAKING.receiveWethRewards(vaultId, 10 ether), 'fees not distributed');
+
+        uint256 expectedFees = av.getTotalInventoryPositionFees();
+
+        uint256 balBefore = WETH.balanceOf(deployer);
+
+        _changePrank(deployer);
+        av.inventoryPositionCollectAllFees(deployer);
+
+        assertEq(WETH.balanceOf(deployer) - balBefore, expectedFees, 'unexpected fees');
     }
 
     /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´*/

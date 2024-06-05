@@ -33,6 +33,8 @@ contract LiquidityPositionsTest is AlignmentVaultTest {
 
         uint128 expectedLiquidity = _getLiquidityForAmounts(ethAmount, vTokenAmount, tickLower, tickUpper);
 
+        vm.recordLogs();
+
         uint256 id = av.liquidityPositionCreate({
             ethAmount: ethAmount,
             vTokenAmount: vTokenAmount,
@@ -44,6 +46,16 @@ contract LiquidityPositionsTest is AlignmentVaultTest {
             ethMin: 0,
             vTokenMin: 0
         });
+
+        Vm.Log[] memory events = vm.getRecordedLogs();
+
+        bytes32 eventSig = events[events.length - 1].topics[0];
+        bytes32 idTopic = events[events.length - 1].topics[1];
+        address emitter = events[events.length - 1].emitter;
+
+        assertEq(emitter, address(av), "unexpected log: emitter");
+        assertEq(eventSig, keccak256("AV_LiquidityPositionCreated(uint256)"), "unexpected log: signature");
+        assertEq(idTopic, bytes32(id), "unexpected log: id");
 
         uint128 liquidity = _getLiquidity(id);
 
@@ -66,6 +78,8 @@ contract LiquidityPositionsTest is AlignmentVaultTest {
 
         uint128 expectedLiquidity = _getLiquidityForAmounts(ethAmount, tokenIds.length * 1 ether, tickLower, tickUpper);
 
+        vm.recordLogs();
+
         uint256 id = av.liquidityPositionCreate({
             ethAmount: ethAmount,
             vTokenAmount: 0,
@@ -77,6 +91,16 @@ contract LiquidityPositionsTest is AlignmentVaultTest {
             ethMin: 0,
             vTokenMin: 0
         });
+
+        Vm.Log[] memory events = vm.getRecordedLogs();
+
+        bytes32 eventSig = events[events.length - 1].topics[0];
+        bytes32 idTopic = events[events.length - 1].topics[1];
+        address emitter = events[events.length - 1].emitter;
+
+        assertEq(emitter, address(av), "unexpected log: emitter");
+        assertEq(eventSig, keccak256("AV_LiquidityPositionCreated(uint256)"), "unexpected log: signature");
+        assertEq(idTopic, bytes32(id), "unexpected log: id");
 
         uint128 liquidity = _getLiquidity(id);
 
@@ -98,6 +122,8 @@ contract LiquidityPositionsTest is AlignmentVaultTest {
         uint128 expectedLiquidity =
             _getLiquidityForAmounts(ethAmount, vTokenAmount, tickLowerExpected, tickUpperExpected);
 
+        vm.recordLogs();
+
         uint256 id = av.liquidityPositionCreate({
             ethAmount: ethAmount,
             vTokenAmount: vTokenAmount,
@@ -109,6 +135,16 @@ contract LiquidityPositionsTest is AlignmentVaultTest {
             ethMin: 0,
             vTokenMin: 0
         });
+
+        Vm.Log[] memory events = vm.getRecordedLogs();
+
+        bytes32 eventSig = events[events.length - 1].topics[0];
+        bytes32 idTopic = events[events.length - 1].topics[1];
+        address emitter = events[events.length - 1].emitter;
+
+        assertEq(emitter, address(av), "unexpected log: emitter");
+        assertEq(eventSig, keccak256("AV_LiquidityPositionCreated(uint256)"), "unexpected log: signature");
+        assertEq(idTopic, bytes32(id), "unexpected log: id");
 
         uint128 liquidity = _getLiquidity(id);
         (int24 tickLower, int24 tickUpper) = _getPositionTicks(id);
@@ -148,6 +184,9 @@ contract LiquidityPositionsTest is AlignmentVaultTest {
         ethAmount = 1.5 ether;
 
         uint128 expectedLiquidity = _getLiquidityForAmounts(ethAmount, vTokenAmount, tickLower, tickUpper);
+
+        vm.expectEmit(true, false, false, false, address(av));
+        emit IAlignmentVault.AV_LiquidityPositionIncreased(id);
 
         // increase position
         av.liquidityPositionIncrease({
@@ -197,6 +236,9 @@ contract LiquidityPositionsTest is AlignmentVaultTest {
 
         uint128 expectedLiquidity = _getLiquidityForAmounts(ethAmount, tokenIds.length * 1 ether, tickLower, tickUpper);
 
+        vm.expectEmit(true, false, false, false, address(av));
+        emit IAlignmentVault.AV_LiquidityPositionIncreased(id);
+
         // increase position
         av.liquidityPositionIncrease({
             positionId: id,
@@ -211,6 +253,106 @@ contract LiquidityPositionsTest is AlignmentVaultTest {
         uint128 liquidity = _getLiquidity(id) - liquidityBefore;
 
         assertEq(liquidity, expectedLiquidity, "unexpected liquidity added");
+    }
+
+    function test_LiquidityPositionWithdrawal_Tokens() public prank(deployer) {
+        uint256 vTokenAmount = 2 ether;
+        uint256 ethAmount = 3 ether;
+
+        deal(vault, address(av), vTokenAmount);
+
+        (int24 tickUpper, int24 tickLower) = _getUpperLowerTicks();
+
+        uint256 id = av.liquidityPositionCreate({
+            ethAmount: ethAmount,
+            vTokenAmount: vTokenAmount,
+            tokenIds: none,
+            amounts: none,
+            tickLower: tickLower,
+            tickUpper: tickUpper,
+            sqrtPriceX96: 0,
+            ethMin: 0,
+            vTokenMin: 0
+        });
+
+        // note: bypass timelock penalty
+        vm.warp(INonfungiblePositionManager(positionManager).lockedUntil(id) + 1);
+
+        uint128 liquidity = _getLiquidity(id);
+
+        uint128 withdrawnLiquidity = liquidity / 3;
+
+        (ethAmount, vTokenAmount) = _getAmountsForLiquidity(withdrawnLiquidity, tickLower, tickUpper);
+
+        uint256 ethBalBefore = address(av).balance;
+        uint256 vTokenBalBefore = IERC20(vault).balanceOf(address(av));
+
+        vm.expectEmit(true, false, false, false, address(av));
+        emit IAlignmentVault.AV_LiquidityPositionWithdrawal(id);
+
+        av.liquidityPositionWithdrawal({
+            positionId: id,
+            tokenIds: none,
+            vTokenPremiumLimit: 0,
+            liquidity: withdrawnLiquidity,
+            amount0Min: 0,
+            amount1Min: 0
+        });
+
+        assertEq(_getLiquidity(id), liquidity - withdrawnLiquidity, "unexpected liquidity remaining");
+        assertEq(address(av).balance - ethBalBefore, ethAmount, "unexpected eth withdrawn");
+        assertEq(IERC20(vault).balanceOf(address(av)) - vTokenBalBefore, vTokenAmount, "unexpected vToken withdrawn");
+    }
+
+    function test_LiquidityPositionWithdrawal_Nfts() public prank(deployer) {
+        uint256 vTokenAmount = 1.5 ether;
+        uint256 ethAmount = 8 ether;
+
+        deal(vault, address(av), vTokenAmount);
+
+        (int24 tickUpper, int24 tickLower) = _getUpperLowerTicks();
+
+        uint256 id = av.liquidityPositionCreate({
+            ethAmount: ethAmount,
+            vTokenAmount: vTokenAmount,
+            tokenIds: none,
+            amounts: none,
+            tickLower: tickLower,
+            tickUpper: tickUpper,
+            sqrtPriceX96: 0,
+            ethMin: 0,
+            vTokenMin: 0
+        });
+
+        // note: bypass timelock penalty
+        vm.warp(INonfungiblePositionManager(positionManager).lockedUntil(id) + 1);
+
+        uint128 liquidity = _getLiquidity(id);
+
+        (ethAmount, vTokenAmount) = _getAmountsForLiquidity(liquidity, tickLower, tickUpper);
+
+        uint256 ethBalBefore = address(av).balance;
+        uint256 vTokenBalBefore = IERC20(vault).balanceOf(address(av));
+
+        uint256[] memory tokenIds = new uint256[](1);
+        tokenIds[0] = INFTXVaultV3(vault).allHoldings()[0];
+
+        vm.expectEmit(true, false, false, false, address(av));
+        emit IAlignmentVault.AV_LiquidityPositionWithdrawal(id);
+
+        av.liquidityPositionWithdrawal({
+            positionId: id,
+            tokenIds: tokenIds,
+            vTokenPremiumLimit: 0,
+            liquidity: liquidity,
+            amount0Min: 0,
+            amount1Min: 0
+        });
+
+        assertEq(_getLiquidity(id), 0, "unexpected liquidity remaining");
+        assertEq(address(av).balance - ethBalBefore, ethAmount, "unexpected eth withdrawn");
+        assertEq(IERC20(vault).balanceOf(address(av)) - vTokenBalBefore, vTokenAmount - 1 ether, "unexpected vToken withdrawn");
+        assertEq(IERC721(MILADY).ownerOf(tokenIds[0]), address(av));
     }
 
     function testLiquidityPositionCollectFees() public prank(deployer) {
@@ -278,9 +420,12 @@ contract LiquidityPositionsTest is AlignmentVaultTest {
         ids[0] = id1;
         ids[1] = id2;
 
-        vm.expectEmit(true, false, false, true);
+        vm.expectEmit(true, false, false, true, positionManager);
         emit Collect(id1, deployer, ethFeesExpected1, vTokenFeesExpected1);
         emit Collect(id2, deployer, ethFeesExpected2, vTokenFeesExpected2);
+
+        vm.expectEmit(true, false, false, false, address(av));
+        emit IAlignmentVault.AV_LiquidityPositionsCollected(ids);
 
         _changePrank(deployer);
         av.liquidityPositionCollectFees(deployer, ids);
@@ -334,9 +479,12 @@ contract LiquidityPositionsTest is AlignmentVaultTest {
         uint256 wethBalBefore = WETH.balanceOf(deployer);
         uint256 vTokenBalBefore = IERC20(vault).balanceOf(deployer);
 
-        vm.expectEmit(true, false, false, true);
+        vm.expectEmit(true, false, false, true, positionManager);
         emit Collect(id1, deployer, ethFeesExpected1, vTokenFeesExpected1);
         emit Collect(id2, deployer, ethFeesExpected2, vTokenFeesExpected2);
+
+        vm.expectEmit(true, false, false, false, address(av));
+        emit IAlignmentVault.AV_LiquidityPositionsCollected(av.getLiquidityPositionIds());
 
         _changePrank(deployer);
         av.liquidityPositionCollectAllFees(deployer);
@@ -372,7 +520,7 @@ contract LiquidityPositionsTest is AlignmentVaultTest {
         assertEq(av.getLiquidityPositionIds(), none, "incorrect liquidity position before: av");
 
         vm.expectEmit(true, false, false, false, address(av));
-        emit AV_LiquidityPositionCreated(id);
+        emit IAlignmentVault.AV_LiquidityPositionCreated(id);
 
         _changePrank(address(donator));
         IERC721(positionManager).safeTransferFrom(address(donator), address(av), id);
@@ -410,7 +558,7 @@ contract LiquidityPositionsTest is AlignmentVaultTest {
         assertEq(av.getLiquidityPositionIds(), none, "incorrect liquidity position before: av");
 
         vm.expectEmit(true, false, false, false, address(av));
-        emit AV_LiquidityPositionCreated(id);
+        emit IAlignmentVault.AV_LiquidityPositionCreated(id);
 
         av.liquidityPositionUpdateSet(id);
         

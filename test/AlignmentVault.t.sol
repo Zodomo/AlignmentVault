@@ -73,7 +73,6 @@ contract AlignmentVaultTest is Test {
     address attacker;
 
     event Collect(uint256 indexed tokenId, address recipient, uint256 amount0, uint256 amount1);
-    event AV_LiquidityPositionCreated(uint256 indexed positionId);
 
     function setUp() public virtual {
         vm.createSelectFork("mainnet");
@@ -236,6 +235,25 @@ contract AlignmentVaultTest is Test {
 
         liquidity =
             LiquidityAmounts.getLiquidityForAmounts(sqrtPriceX96, sqrtRatioAX96, sqrtRatioBX96, amount0, amount1);
+    }
+
+    function _getAmountsForLiquidity(
+        uint128 liquidity,
+        int24 tickLower,
+        int24 tickUpper
+    ) internal view returns (uint256 ethAmount, uint256 vTokenAmount) {
+        (uint160 sqrtPriceX96,,,,,,) = pool.slot0();
+        uint160 sqrtRatioAX96 = TickMath.getSqrtRatioAtTick(tickLower);
+        uint160 sqrtRatioBX96 = TickMath.getSqrtRatioAtTick(tickUpper);
+
+        (uint256 amount0, uint256 amount1) = LiquidityAmounts.getAmountsForLiquidity(
+            sqrtPriceX96,
+            sqrtRatioAX96,
+            sqrtRatioBX96,
+            liquidity
+        );
+
+        (ethAmount, vTokenAmount) = address(vault) < address(WETH) ? (amount1, amount0) : (amount0, amount1);
     }
 
     /// @dev refreshes position to get updated fee growth

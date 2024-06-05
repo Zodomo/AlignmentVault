@@ -339,7 +339,39 @@ contract InventoryPositionsTest is AlignmentVaultTest {
         assertEq(av.getInventoryPositionIds(), positionIds, "inventory position IDs unaccounted for");
     }
     
-    function testInventoryPositionCollectFees() public { /* @todo */ }
+    function testInventoryPositionCollectFees() public prank(deployer) { 
+        uint256[] memory tokenIds = new uint256[](1);
+        tokenIds[0] = 333;
+        uint256[] memory amounts = new uint256[](1);
+        amounts[0] = 1;
+
+        uint256[] memory ids = new uint256[](1);
+
+        uint256 id = ids[0] = av.inventoryPositionCreateNfts(tokenIds, amounts);
+
+        tokenIds[0] = 420;
+
+        av.inventoryPositionCreateNfts(tokenIds, amounts);
+
+        address distributor = NFTX_VAULT_FACTORY.feeDistributor();
+
+        deal(address(WETH), distributor, 10 ether);
+
+        _changePrank(distributor);
+        require(NFTX_INVENTORY_STAKING.receiveWethRewards(vaultId, 10 ether), 'fees not distributed');
+
+        uint256 fees = av.getSpecificInventoryPositionFees(id);
+
+        uint256 balBefore = WETH.balanceOf(deployer);
+
+        vm.expectEmit(true, false, false, true, address(av));
+        emit IAlignmentVault.AV_InventoryPositionsCollected(ids, fees);
+
+        _changePrank(deployer);
+        av.inventoryPositionCollectFees(deployer, ids);
+
+        assertEq(WETH.balanceOf(deployer) - balBefore, fees, 'unexpected fees');
+    }
 
     function testInventoryPositionCollectAllFees() public {
         uint256[] memory tokenIds = new uint256[](1);
@@ -366,6 +398,8 @@ contract InventoryPositionsTest is AlignmentVaultTest {
         uint256 balance = WETH.balanceOf(deployer);
         uint256 fees = av.getTotalInventoryPositionFees();
         assertEq(fees, av.getSpecificInventoryPositionFees(positionId), "total vs specific fees getter mismatch");
+        vm.expectEmit(true, false, false, true, address(av));
+        emit IAlignmentVault.AV_InventoryPositionsCollected(av.getInventoryPositionIds(), fees);
         av.inventoryPositionCollectAllFees(deployer);
         assertEq(WETH.balanceOf(deployer), balance + fees, "balance not changed by exact fees claim amount");
         vm.stopPrank();

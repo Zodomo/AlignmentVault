@@ -123,6 +123,7 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
         IERC721(alignedNft_).setApprovalForAll(address(_NFTX_POSITION_ROUTER), true);
         IERC721(alignedNft_).setApprovalForAll(address(_NFTX_LIQUIDITY), true);
         IERC721(alignedNft_).setApprovalForAll(vault, true);
+        IERC721(address(_NFTX_POSITION_ROUTER.positionManager())).setApprovalForAll(address(_NFTX_POSITION_ROUTER), true);
 
         IERC20(vault).approve(address(_NFTX_INVENTORY), type(uint256).max);
         IERC20(vault).approve(address(_NFTX_POSITION_ROUTER), type(uint256).max);
