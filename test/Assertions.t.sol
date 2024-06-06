@@ -146,9 +146,34 @@ contract AssertionsTest is AlignmentVaultTest {
         av.rescueERC20(address(0), 0, address(0));
     }
 
+    function testRevert_RescueERC20_ProhibitedWithdrawal_VToken() public prank(deployer) {
+        vm.expectRevert(IAlignmentVault.AV_ProhibitedWithdrawal.selector);
+        av.rescueERC20(address(vault), 0, deployer);
+    }
+
+    function testRevert_RescueERC20_ProhibitedWithdrawal_Weth() public prank(deployer) {
+        vm.expectRevert(IAlignmentVault.AV_ProhibitedWithdrawal.selector);
+        av.rescueERC20(address(WETH), 0, deployer);
+    }
+
     function testRevert_RescueERC721_Ownable() public prank(notOwner) {
         vm.expectRevert(Ownable.Unauthorized.selector);
         av.rescueERC721(address(0), 0, address(0));
+    }
+
+    function testRevert_RescueERC721_ProhibitedWithdrawal_AlignedNft() public prank(deployer) {
+        vm.expectRevert(IAlignmentVault.AV_ProhibitedWithdrawal.selector);
+        av.rescueERC721(MILADY, 0, deployer);
+    }
+
+    function testRevert_RescueERC721_ProhibitedWithdrawal_LiquidityPosition() public prank(deployer) {
+        vm.expectRevert(IAlignmentVault.AV_ProhibitedWithdrawal.selector);
+        av.rescueERC721(address(NPM), 0, deployer);
+    }
+
+    function testRevert_RescueERC721_ProhibitedWithdrawal_InventoryPosition() public prank(deployer) {
+        vm.expectRevert(IAlignmentVault.AV_ProhibitedWithdrawal.selector);
+        av.rescueERC721(address(NFTX_INVENTORY_STAKING), 0, deployer);
     }
 
     function testRevert_UnwrapEth_Ownable() public prank(notOwner) {
@@ -162,26 +187,29 @@ contract AssertionsTest is AlignmentVaultTest {
     }
 
     /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´*/
-    //                  RECEIVER ASSERTIONS
+    //                   RECEIVER ASSERTIONS
     /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´*/
 
     function testRevert_OnERC721Received_UnalignedNft_Unaligned() public {
         IERC721 unaligned = IERC721(0xBC4CA0EdA7647A8aB7C2061c2E118A18a936f13D);
-        vm.startPrank(unaligned.ownerOf(1));
+        address holder = unaligned.ownerOf(1);
+        vm.prank(holder);
         vm.expectRevert(IAlignmentVault.AV_UnalignedNft.selector);
-        unaligned.safeTransferFrom(unaligned.ownerOf(1), address(av), 1);
+        unaligned.safeTransferFrom(holder, address(av), 1);
     }
 
     function testRevert_OnERC721Received_UnalignedNft_UnalignedLiquidityPosition() public {
-        vm.startPrank(NPM.ownerOf(10));
+        address holder = NPM.ownerOf(10);
+        vm.prank(holder);
         vm.expectRevert(IAlignmentVault.AV_UnalignedNft.selector); 
-        NPM.safeTransferFrom(NPM.ownerOf(10), address(av), 10);
+        NPM.safeTransferFrom(holder, address(av), 10);
     }
 
     function testRevert_OnERC721Received_UnalignedNft_UnalignedInventoryPosition() public {
-        vm.startPrank(NFTX_INVENTORY_STAKING.ownerOf(10));  
+        address holder = NFTX_INVENTORY_STAKING.ownerOf(10);
+        vm.prank(holder);  
         vm.expectRevert(IAlignmentVault.AV_UnalignedNft.selector);
-        NFTX_INVENTORY_STAKING.safeTransferFrom(NFTX_INVENTORY_STAKING.ownerOf(10), address(av), 10);
+        NFTX_INVENTORY_STAKING.safeTransferFrom(holder, address(av), 10);
     }
 
     function testRevert_OnERC1155Received_Unaligned() public prank(notOwner) {

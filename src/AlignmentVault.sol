@@ -439,7 +439,6 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
         ) revert AV_InsufficientSharesToWithdrawNft();
         if (vTokenPremiumLimit == 0) vTokenPremiumLimit = type(uint256).max;
         _NFTX_INVENTORY.withdraw(positionId, vTokenShares, tokenIds, vTokenPremiumLimit);
-        // review: on full withdraw should we remove position from set (doesn't seem like position is burnable)?
         emit AV_InventoryPositionWithdrawal(positionId, vTokenShares);
     }
 
@@ -448,10 +447,6 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
         uint256[] calldata childPositionIds
     ) external payable virtual onlyOwner {
         _NFTX_INVENTORY.combinePositions(positionId, childPositionIds);
-        uint256 length = childPositionIds.length;
-        for (uint256 i; i < length; ++i) {
-            _inventoryPositionIds.remove(childPositionIds[i]);
-        }
         emit AV_InventoryPositionCombination(positionId, childPositionIds);
     }
 
@@ -540,8 +535,6 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
             _buildRemoveLiquidityParams(positionId, tokenIds, vTokenPremiumLimit, liquidity, amount0Min, amount1Min)
         );
         _WETH.withdraw(_WETH.balanceOf(address(this)));
-
-        // review: on full withdraw should we burn the position & remove from set? could be a try catch for burn()
         emit AV_LiquidityPositionWithdrawal(positionId);
     }
 
@@ -581,8 +574,7 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
         if (_liquidityPositionIds.contains(positionId)) revert AV_PositionAlreadySet();
         if (IERC721(address(_NFTX_LIQUIDITY)).ownerOf(positionId) != address(this)) revert AV_NotPositionOwner();
         (,,address token0, address token1,,,,,,,,) = _NFTX_LIQUIDITY.positions(positionId);
-        address _vault = vault; // review: only saves 1 SLOAD, maybe not worth it for cleanliness?
-        if (_vault != (_vault < address(_WETH) ? token0 : token1)) revert AV_UnalignedNft();
+        if (vault != (vault < address(_WETH) ? token0 : token1)) revert AV_UnalignedNft();
         _liquidityPositionIds.add(positionId);
         emit AV_LiquidityPositionCreated(positionId);
     }
@@ -746,8 +738,7 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
             emit AV_InventoryPositionCreated(tokenId, vTokenShares);
         } else if (msg.sender == address(_NFTX_LIQUIDITY)) {
             (,,address token0, address token1,,,,,,,,) = _NFTX_LIQUIDITY.positions(tokenId);
-            address _vault = vault; // review: only saves 1 SLOAD, maybe not worth it for cleanliness?
-            if (_vault != (_vault < address(_WETH) ? token0 : token1)) revert AV_UnalignedNft();
+            if (vault != (vault < address(_WETH) ? token0 : token1)) revert AV_UnalignedNft();
 
             _liquidityPositionIds.add(tokenId);
 
@@ -779,4 +770,5 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
     }
 
     receive() external payable virtual {}
+    fallback() external payable virtual {}
 }
