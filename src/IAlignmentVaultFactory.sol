@@ -1,17 +1,56 @@
 // SPDX-License-Identifier: AGPL-3.0
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.23;
 
 /**
  * @title IAlignmentVaultFactory
- * @author Zodomo.eth (X: @0xZodomo, Telegram: @zodomo, Email: zodomo@proton.me)
+ * @notice This can be used by any EOA or contract to deploy an AlignmentVault owned by the deployer.
+ * @dev deploy() will perform a normal deployment. deployDeterministic() allows you to mine a deployment address.
+ * @author Zodomo.eth (X: @0xZodomo, Telegram: @zodomo, GitHub: Zodomo, Email: zodomo@proton.me)
+ * @custom:github https://github.com/Zodomo/AlignmentVault
+ * @custom:miyamaker https://miyamaker.com
  */
 interface IAlignmentVaultFactory {
-    function implementation() external view returns (address);
-    function vaultDeployers(address _vault) external view returns (address);
+    // >>>>>>>>>>>> [ ERRORS ] <<<<<<<<<<<<
 
-    function updateImplementation(address _implementation) external;
-    function deploy(address _erc721, uint256 _vaultId) external returns (address);
-    function deployDeterministic(address _erc721, uint256 _vaultId, bytes32 _salt) external returns (address);
-    function initCodeHash() external view returns (bytes32);
-    function predictDeterministicAddress(bytes32 _salt) external view returns (address);
+    error AVF_WithdrawalFailed();
+
+    // >>>>>>>>>>>> [ EVENTS ] <<<<<<<<<<<<
+
+    event AVF_ImplementationSet(address indexed implementation);
+    event AVF_Deployed(address indexed deployer, address indexed deployment, address indexed alignedNft);
+
+    // >>>>>>>>>>>> [ STORAGE VARIABLES ] <<<<<<<<<<<<
+
+    function implementation() external view returns (address);
+
+    // >>>>>>>>>>>> [ DEPLOYMENT FUNCTIONS ] <<<<<<<<<<<<
+
+    function deploy(
+        address vaultOwner,
+        address alignedNft,
+        uint96 vaultId
+    ) external payable returns (address deployment);
+    function deployDeterministic(
+        address vaultOwner,
+        address alignedNft,
+        uint96 vaultId,
+        bytes32 salt
+    ) external payable returns (address deployment);
+
+    function initCodeHash() external view returns (bytes32 codeHash);
+    function predictDeterministicAddress(bytes32 salt) external view returns (address addr);
+
+    // >>>>>>>>>>>> [ MANAGEMENT FUNCTIONS ] <<<<<<<<<<<<
+
+    function updateImplementation(address newImplementation) external payable;
+    function withdrawEth(address recipient) external payable;
+    function withdrawERC20(address token, address recipient) external payable;
+    function withdrawERC721(address token, uint256 tokenId, address recipient) external payable;
+    function withdrawERC1155(address token, uint256 tokenId, uint256 amount, address recipient) external payable;
+    function withdrawERC1155Batch(
+        address token,
+        uint256[] calldata tokenIds,
+        uint256[] calldata amounts,
+        address recipient
+    ) external payable;
 }

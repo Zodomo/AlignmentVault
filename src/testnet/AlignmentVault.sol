@@ -4,29 +4,29 @@ pragma solidity ^0.8.23;
 // >>>>>>>>>>>> [ IMPORTS ] <<<<<<<<<<<<
 
 // Inheritance and Libraries
-import {Ownable} from "../lib/solady/src/auth/Ownable.sol";
-import {Initializable} from "../lib/solady/src/utils/Initializable.sol";
-import {ERC721Holder} from "../lib/openzeppelin-contracts-v5/contracts/token/ERC721/utils/ERC721Holder.sol";
-import {ERC1155Holder} from "../lib/openzeppelin-contracts-v5/contracts/token/ERC1155/utils/ERC1155Holder.sol";
-import {IAlignmentVault} from "./IAlignmentVault.sol";
-import {EnumerableSet} from "../lib/openzeppelin-contracts-v5/contracts/utils/structs/EnumerableSet.sol";
-import {FixedPointMathLib} from "../lib/solady/src/utils/FixedPointMathLib.sol";
-import {Tick} from "../lib/nftx-protocol-v3/src/uniswap/v3-core/libraries/Tick.sol";
+import {Ownable} from "../../lib/solady/src/auth/Ownable.sol";
+import {Initializable} from "../../lib/solady/src/utils/Initializable.sol";
+import {ERC721Holder} from "../../lib/openzeppelin-contracts-v5/contracts/token/ERC721/utils/ERC721Holder.sol";
+import {ERC1155Holder} from "../../lib/openzeppelin-contracts-v5/contracts/token/ERC1155/utils/ERC1155Holder.sol";
+import {IAlignmentVault} from "../IAlignmentVault.sol";
+import {EnumerableSet} from "../../lib/openzeppelin-contracts-v5/contracts/utils/structs/EnumerableSet.sol";
+import {FixedPointMathLib} from "../../lib/solady/src/utils/FixedPointMathLib.sol";
+import {Tick} from "../../lib/nftx-protocol-v3/src/uniswap/v3-core/libraries/Tick.sol";
 
 // Interfaces
-import {IWETH9} from "../lib/nftx-protocol-v3/src/uniswap/v3-periphery/interfaces/external/IWETH9.sol";
-import {IERC20} from "../lib/openzeppelin-contracts-v5/contracts/interfaces/IERC20.sol";
-import {IERC721} from "../lib/openzeppelin-contracts-v5/contracts/interfaces/IERC721.sol";
-import {IERC1155} from "../lib/openzeppelin-contracts-v5/contracts/interfaces/IERC1155.sol";
-import {INFTXVaultFactoryV3} from "../lib/nftx-protocol-v3/src/interfaces/INFTXVaultFactoryV3.sol";
-import {INFTXVaultV3} from "../lib/nftx-protocol-v3/src/interfaces/INFTXVaultV3.sol";
-import {INFTXInventoryStakingV3} from "../lib/nftx-protocol-v3/src/interfaces/INFTXInventoryStakingV3.sol";
+import {IWETH9} from "../../lib/nftx-protocol-v3/src/uniswap/v3-periphery/interfaces/external/IWETH9.sol";
+import {IERC20} from "../../lib/openzeppelin-contracts-v5/contracts/interfaces/IERC20.sol";
+import {IERC721} from "../../lib/openzeppelin-contracts-v5/contracts/interfaces/IERC721.sol";
+import {IERC1155} from "../../lib/openzeppelin-contracts-v5/contracts/interfaces/IERC1155.sol";
+import {INFTXVaultFactoryV3} from "../../lib/nftx-protocol-v3/src/interfaces/INFTXVaultFactoryV3.sol";
+import {INFTXVaultV3} from "../../lib/nftx-protocol-v3/src/interfaces/INFTXVaultV3.sol";
+import {INFTXInventoryStakingV3} from "../../lib/nftx-protocol-v3/src/interfaces/INFTXInventoryStakingV3.sol";
 import {INonfungiblePositionManager} from
-    "../lib/nftx-protocol-v3/src/uniswap/v3-periphery/interfaces/INonfungiblePositionManager.sol";
-import {INFTXRouter} from "../lib/nftx-protocol-v3/src/interfaces/INFTXRouter.sol";
-import {ISwapRouter} from "../lib/nftx-protocol-v3/src/uniswap/v3-periphery/interfaces/ISwapRouter.sol";
-import {IUniswapV3Pool} from "../lib/nftx-protocol-v3/src/uniswap/v3-core/interfaces/IUniswapV3Pool.sol";
-import {IDelegateRegistry} from "../lib/delegate-registry/src/IDelegateRegistry.sol";
+    "../../lib/nftx-protocol-v3/src/uniswap/v3-periphery/interfaces/INonfungiblePositionManager.sol";
+import {INFTXRouter} from "../../lib/nftx-protocol-v3/src/interfaces/INFTXRouter.sol";
+import {ISwapRouter} from "../../lib/nftx-protocol-v3/src/uniswap/v3-periphery/interfaces/ISwapRouter.sol";
+import {IUniswapV3Pool} from "../../lib/nftx-protocol-v3/src/uniswap/v3-core/interfaces/IUniswapV3Pool.sol";
+import {IDelegateRegistry} from "../../lib/delegate-registry/src/IDelegateRegistry.sol";
 
 interface IUniswapPool {
     function ticks(int24 tick) external view returns (Tick.Info memory);
@@ -55,15 +55,15 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
 
     // >>>>>>>>>>>> [ CONTRACT INTERFACES ] <<<<<<<<<<<<
 
-    IWETH9 private constant _WETH = IWETH9(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
+    IWETH9 private constant _WETH = IWETH9(0xfFf9976782d46CC05630D1f6eBAb18b2324d6B14);
     INFTXVaultFactoryV3 private constant _NFTX_VAULT_FACTORY =
-        INFTXVaultFactoryV3(0xC255335bc5aBd6928063F5788a5E420554858f01);
+        INFTXVaultFactoryV3(0x31C56CaF49125043e80B4d3C7f8734f949d8178C);
     INFTXInventoryStakingV3 private constant _NFTX_INVENTORY =
-        INFTXInventoryStakingV3(0x889f313e2a3FDC1c9a45bC6020A8a18749CD6152);
+        INFTXInventoryStakingV3(0xfBFf0635f7c5327FD138E1EBa72BD9877A6a7C1C);
     INonfungiblePositionManager private constant _NFTX_LIQUIDITY =
-        INonfungiblePositionManager(0x26387fcA3692FCac1C1e8E4E2B22A6CF0d4b71bF);
-    INFTXRouter private constant _NFTX_POSITION_ROUTER = INFTXRouter(0x70A741A12262d4b5Ff45C0179c783a380EebE42a);
-    ISwapRouter private constant _NFTX_SWAP_ROUTER = ISwapRouter(0x1703f8111B0E7A10e1d14f9073F53680d64277A3);
+        INonfungiblePositionManager(0xA9bCC1e29d3460177875f68fDCC0264D22c40BF0);
+    INFTXRouter private constant _NFTX_POSITION_ROUTER = INFTXRouter(0x441b7DE4340AAa5aA86dB4DA43d9Badf7B2DAA66);
+    ISwapRouter private constant _NFTX_SWAP_ROUTER = ISwapRouter(0xa7069da6a7e600e0348620484fD2B1f24E075d5f);
     IDelegateRegistry private constant _DELEGATE_REGISTRY =
         IDelegateRegistry(0x00000000000000447e69651d841bD8D104Bed493);
 

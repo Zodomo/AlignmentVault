@@ -1,571 +1,266 @@
 // SPDX-License-Identifier: AGPL-3.0
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.23;
 
-import {DSTestPlus} from "solmate/test/utils/DSTestPlus.sol";
-import "forge-std/console2.sol";
-import "openzeppelin/token/ERC721/utils/ERC721Holder.sol";
-import "../lib/solady/test/utils/mocks/MockERC20.sol";
-import "../lib/solady/test/utils/mocks/MockERC721.sol";
-import "liquidity-helper/UniswapV2LiquidityHelper.sol";
-import "./TestingAlignmentVault.sol";
+import "../lib/forge-std/src/Test.sol";
+import {AlignmentVault} from "../src/AlignmentVault.sol";
+import {IAlignmentVault} from "../src/IAlignmentVault.sol";
+import {FixedPointMathLib} from "../lib/solady/src/utils/FixedPointMathLib.sol";
 
-interface IFallback {
-    function doesntExist(uint256 _unusedVar) external payable;
-}
+import {IWETH9} from "../lib/nftx-protocol-v3/src/uniswap/v3-periphery/interfaces/external/IWETH9.sol";
+import {IERC20} from "../lib/openzeppelin-contracts-v5/contracts/interfaces/IERC20.sol";
+import {IERC721} from "../lib/openzeppelin-contracts-v5/contracts/interfaces/IERC721.sol";
+import {IERC721Enumerable} from "../lib/openzeppelin-contracts-v5/contracts/interfaces/IERC721Enumerable.sol";
+import {IERC1155} from "../lib/openzeppelin-contracts-v5/contracts/interfaces/IERC1155.sol";
+import {INFTXVaultFactoryV3} from "../lib/nftx-protocol-v3/src/interfaces/INFTXVaultFactoryV3.sol";
+import {INFTXVaultV3} from "../lib/nftx-protocol-v3/src/interfaces/INFTXVaultV3.sol";
+import {INFTXInventoryStakingV3} from "../lib/nftx-protocol-v3/src/interfaces/INFTXInventoryStakingV3.sol";
+import {INonfungiblePositionManager} from
+    "../lib/nftx-protocol-v3/src/uniswap/v3-periphery/interfaces/INonfungiblePositionManager.sol";
+import {INFTXRouter} from "../lib/nftx-protocol-v3/src/interfaces/INFTXRouter.sol";
+import {ISwapRouter} from "../lib/nftx-protocol-v3/src/uniswap/v3-periphery/interfaces/ISwapRouter.sol";
 
-contract AlignmentVaultTest is DSTestPlus, ERC721Holder {
-    error Unauthorized();
+contract AlignmentVaultTest is Test {
+    uint256 private constant NFTX_STANDARD_FEE = 30_000_000_000_000_000;
+    IWETH9 public constant WETH = IWETH9(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
+    //@audit  is upgradable
+    //@audit pay attention to this integration
+    INFTXVaultFactoryV3 public constant NFTX_VAULT_FACTORY =
+        INFTXVaultFactoryV3(0xC255335bc5aBd6928063F5788a5E420554858f01);
+    //@audit  is upgradable
+    //@audit Allows users to stake vTokens to earn fees in vTokens and WETH. The position is minted as xNFT.
+    INFTXInventoryStakingV3 public constant NFTX_INVENTORY_STAKING =
+        INFTXInventoryStakingV3(0x889f313e2a3FDC1c9a45bC6020A8a18749CD6152);
 
-    TestingAlignmentVault alignmentVault;
-    TestingAlignmentVault alignmentVaultManual;
-    TestingAlignmentVault alignmentVaultInvalid;
-    IWETH weth = IWETH(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
-    IERC20 wethToken = IERC20(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
-    IERC721 nft = IERC721(0x5Af0D9827E0c53E4799BB226655A1de152A425a5); // Milady NFT
-    IUniswapV2Router02 sushiRouter = IUniswapV2Router02(0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F);
-    address sushiFactory = 0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac;
-    IERC20 nftxInv = IERC20(0x227c7DF69D3ed1ae7574A1a7685fDEd90292EB48); // NFTX MILADY token
-    IUniswapV2Pair nftWeth = IUniswapV2Pair(0x15A8E38942F9e353BEc8812763fb3C104c89eCf4); // MILADYWETH SLP
-    MockERC20 testToken;
-    MockERC721 testNFT;
-    UniswapV2LiquidityHelper liquidityHelper;
+    //@audit Wraps Uniswap V3 positions in the ERC721 non-fungible token interface
+    INonfungiblePositionManager public constant NPM =
+        INonfungiblePositionManager(0x26387fcA3692FCac1C1e8E4E2B22A6CF0d4b71bF);
+    //@audit  Router to facilitate vault tokens minting/burning + addition/removal of concentrated liquidity
+    INFTXRouter public constant NFTX_POSITION_ROUTER = INFTXRouter(0x70A741A12262d4b5Ff45C0179c783a380EebE42a);
+    //@audit Router for stateless execution of swaps against Uniswap V3
+    ISwapRouter public constant NFTX_SWAP_ROUTER = ISwapRouter(0x1703f8111B0E7A10e1d14f9073F53680d64277A3);
 
-    function setUp() public {
-        hevm.deal(address(this), 200 ether);
-        weth.deposit{value: 100 ether}();
-        alignmentVault = new TestingAlignmentVault();
-        alignmentVault.initialize(address(nft), address(this), 0);
-        testToken = new MockERC20("Test Token", "TEST", 18);
-        testToken.mint(address(this), 100 ether);
-        testNFT = new MockERC721();
-        testNFT.safeMint(address(this), 1);
-        liquidityHelper = new UniswapV2LiquidityHelper(sushiFactory, address(sushiRouter), address(weth));
+    AlignmentVault public av;
+    address public vault;
+    uint256 public vaultId;
+    address public alignedNft;
+
+    uint256[] public none = new uint256[](0);
+    uint24 public constant STANDARD_FEE = 3000;
+    uint24 public constant FIVE_PERCENT = 50_000;
+    address public constant MILADY = 0x5Af0D9827E0c53E4799BB226655A1de152A425a5;
+    uint96 public constant VAULT_ID = 5;
+    uint256 public constant FUNDING_AMOUNT = 100 ether;
+
+    address deployer;
+    address attacker;
+
+    function setUp() public virtual {
+        vm.createSelectFork("mainnet");
+        av = new AlignmentVault();
+        vm.label(address(av), "AlignmentVault");
+        vm.label(address(MILADY), "Milady NFT");
+        vm.label(address(NFTX_VAULT_FACTORY), "NFTX Vault Factory");
+        vm.label(address(NFTX_SWAP_ROUTER), "NFTX Swap Router");
+        vm.label(address(NFTX_POSITION_ROUTER), "NFTX Position Router");
+        vm.label(address(NFTX_INVENTORY_STAKING), "NFTX Inventory Staking");
+        deployer = makeAddr("deployer");
+        attacker = makeAddr("attacker");
+
+        vm.deal(address(av), FUNDING_AMOUNT);
+        vm.deal(deployer, FUNDING_AMOUNT);
+        vm.deal(address(this), FUNDING_AMOUNT);
+
+        vm.startPrank(deployer);
+        av.initialize(deployer, MILADY, VAULT_ID);
+        vault = av.vault();
+        vaultId = VAULT_ID;
+        alignedNft = MILADY;
+        setApprovals();
+        vm.stopPrank();
     }
 
-    function testDisableInitializers() public {
-        alignmentVault.disableInitializers();
+    modifier prank(address who) {
+        vm.startPrank(who);
+        _;
+        vm.stopPrank();
     }
 
-    function testRenounceOwnership() public {
-        alignmentVault.renounceOwnership();
-        require(alignmentVault.owner() != address(0));
+    receive() external payable {}
+
+    function setApprovals() public {
+        IERC721(alignedNft).setApprovalForAll(vault, true);
     }
 
-    function testManualVaultIdInitialization() public {
-        alignmentVaultManual = new TestingAlignmentVault();
-        alignmentVaultManual.initialize(address(nft), address(this), 392);
-        require(alignmentVaultManual.vaultId() == 392, "vaultId error");
+    function transferMilady(address recipient, uint256 tokenId) public {
+        address target = IERC721(MILADY).ownerOf(tokenId);
+        vm.prank(target);
+        IERC721(MILADY).transferFrom(target, recipient, tokenId);
     }
 
-    function testInvalidVaultId() public {
-        alignmentVaultInvalid = new TestingAlignmentVault();
-        hevm.expectRevert(AlignmentVault.InvalidVaultId.selector);
-        alignmentVaultInvalid.initialize(address(nft), address(this), 420);
-    }
-
-    function testMissingNFTXVault() public {
-        alignmentVaultInvalid = new TestingAlignmentVault();
-        hevm.expectRevert(AlignmentVault.NoNFTXVault.selector);
-        alignmentVaultInvalid.initialize(address(testNFT), address(this), 420);
-    }
-
-    function test_nftxInventory() public view {
-        require(address(alignmentVault.nftxInventory()) == 0x227c7DF69D3ed1ae7574A1a7685fDEd90292EB48); // NFTX MILADY
-    }
-
-    function test_nftxLiquidity() public view {
-        require(address(alignmentVault.nftxLiquidity()) == 0x15A8E38942F9e353BEc8812763fb3C104c89eCf4); // NFTX MILADYWETH SLP
-    }
-
-    function test_vaultId() public view {
-        require(alignmentVault.vaultId() == 392); // NFTX Milady Vault ID
-    }
-
-    function test_estimateFloor() public view {
-        require(alignmentVault.call_estimateFloor() > 0);
-    }
-
-    function test_estimateFloorReversedValues() public {
-        address sproto = 0xEeca64ea9fCf99A22806Cd99b3d29cf6e8D54925;
-        TestingAlignmentVault vaultBelowWeth = new TestingAlignmentVault();
-        vaultBelowWeth.initialize(sproto, address(this), 0);
-        require(vaultBelowWeth.call_estimateFloor() > 0);
-    }
-
-    function testAlignNftsNone() public {
-        uint256[] memory tokenIds = new uint256[](0);
-        hevm.expectRevert(bytes(""));
-        alignmentVault.alignNfts(tokenIds);
-    }
-
-    function testAlignNfts() public {
-        hevm.startPrank(nft.ownerOf(42));
-        nft.approve(address(this), 42);
-        nft.safeTransferFrom(nft.ownerOf(42), address(alignmentVault), 42);
-        hevm.stopPrank();
-        hevm.startPrank(nft.ownerOf(69));
-        nft.approve(address(this), 69);
-        nft.safeTransferFrom(nft.ownerOf(69), address(alignmentVault), 69);
-        hevm.stopPrank();
-        hevm.startPrank(nft.ownerOf(777));
-        nft.approve(address(this), 777);
-        nft.safeTransferFrom(nft.ownerOf(777), address(alignmentVault), 777);
-        hevm.stopPrank();
-        require(alignmentVault.nftsHeld(0) == 42, "tokenId error");
-        require(alignmentVault.nftsHeld(1) == 69, "tokenId error");
-        require(alignmentVault.nftsHeld(2) == 777, "tokenId error");
-
-        uint256[] memory tokenIds = new uint256[](3);
-        tokenIds[0] = 42;
-        tokenIds[1] = 69;
-        tokenIds[2] = 777;
-        hevm.deal(address(alignmentVault), 0.1 ether);
-        hevm.expectRevert(AlignmentVault.InsufficientFunds.selector);
-        alignmentVault.alignNfts(tokenIds);
-        hevm.expectRevert(AlignmentVault.InsufficientFunds.selector);
-        alignmentVault.alignNfts{ value: 0.25 ether }(tokenIds);
-        alignmentVault.alignNfts{ value: 50 ether }(tokenIds);
-        require(nft.ownerOf(42) != address(alignmentVault), "alignment error");
-        require(nft.ownerOf(69) != address(alignmentVault), "alignment error");
-        require(nft.ownerOf(777) != address(alignmentVault), "alignment error");
-        uint256[] memory inventory = alignmentVault.getInventory();
-        require(inventory.length == 0, "inventory purge error");
-    }
-
-    function testAlignNftsUnsafelyTransferred() public {
-        hevm.startPrank(nft.ownerOf(42));
-        nft.approve(address(this), 42);
-        nft.transferFrom(nft.ownerOf(42), address(alignmentVault), 42);
-        hevm.stopPrank();
-        hevm.startPrank(nft.ownerOf(69));
-        nft.approve(address(this), 69);
-        nft.transferFrom(nft.ownerOf(69), address(alignmentVault), 69);
-        hevm.stopPrank();
-        hevm.startPrank(nft.ownerOf(777));
-        nft.approve(address(this), 777);
-        nft.transferFrom(nft.ownerOf(777), address(alignmentVault), 777);
-        hevm.stopPrank();
-        uint256[] memory inventory = alignmentVault.getInventory();
-        require(inventory.length == 0, "inventory length error");
-
-        uint256[] memory tokenIds = new uint256[](3);
-        tokenIds[0] = 42;
-        tokenIds[1] = 69;
-        tokenIds[2] = 777;
-        alignmentVault.alignNfts{ value: 50 ether }(tokenIds);
-        require(nft.ownerOf(42) != address(alignmentVault), "alignment error");
-        require(nft.ownerOf(69) != address(alignmentVault), "alignment error");
-        require(nft.ownerOf(777) != address(alignmentVault), "alignment error");
-    }
-
-    function testAlignTokensNone() public {
-        alignmentVault.alignTokens(0);
-    }
-
-    function testAlignTokensInsufficientFunds() public {
-        hevm.expectRevert(AlignmentVault.InsufficientFunds.selector);
-        alignmentVault.alignTokens(1 ether);
-    }
-
-    function testAlignTokensPrepaid() public {
-        (bool success, ) = payable(address(alignmentVault)).call{ value: 5 ether }("");
-        require(success, "transfer failure");
-        alignmentVault.alignTokens(5 ether);
-        require(address(alignmentVault).balance == 0, "ETH balance error");
-        require(wethToken.balanceOf(address(alignmentVault)) == 0, "WETH balance error");
-    }
-    
-    function testAlignTokensPayable() public {
-        alignmentVault.alignTokens{ value: 5 ether }(5 ether);
-        require(address(alignmentVault).balance == 0, "ETH balance error");
-        require(wethToken.balanceOf(address(alignmentVault)) == 0, "WETH balance error");
-    }
-
-    function testAlignTokensFractionalizedNftTokens() public {
-        wethToken.approve(address(sushiRouter), 10 ether);
-        address[] memory path = new address[](2);
-        path[0] = address(weth);
-        path[1] = address(nftxInv);
-        sushiRouter.swapTokensForExactTokens(1 ether, 10 ether, path, address(alignmentVault), block.timestamp);
-        uint256 nftxBal = nftxInv.balanceOf(address(alignmentVault));
-        require(nftxBal > 0, "swap error");
-        alignmentVault.alignTokens(0);
-        nftxBal = nftxInv.balanceOf(address(alignmentVault));
-        require(nftxBal == 0, "align inventory tokens error");
-    }
-
-    function testAlignTokensBoth() public {
-        wethToken.approve(address(sushiRouter), 10 ether);
-        address[] memory path = new address[](2);
-        path[0] = address(weth);
-        path[1] = address(nftxInv);
-        sushiRouter.swapTokensForExactTokens(1 ether, 10 ether, path, address(alignmentVault), block.timestamp);
-        uint256 nftxBal = nftxInv.balanceOf(address(alignmentVault));
-        require(nftxBal > 0, "swap error");
-
-        (bool success, ) = payable(address(alignmentVault)).call{ value: 5 ether }("");
-        require(success, "transfer failure");
-
-        alignmentVault.alignTokens(5 ether);
-        nftxBal = nftxInv.balanceOf(address(alignmentVault));
-        require(nftxBal == 0, "align inventory tokens error");
-        require(address(alignmentVault).balance == 0, "ETH balance error");
-        require(wethToken.balanceOf(address(alignmentVault)) == 0, "WETH balance error");
-    }
-
-    function testAlignMaxLiquidityNoLiquidity() public {
-        alignmentVault.alignMaxLiquidity();
-    }
-
-    function testAlignMaxLiquidityETH() public {
-        hevm.deal(address(alignmentVault), 1 ether);
-        require(address(alignmentVault).balance == 1 ether);
-        alignmentVault.alignMaxLiquidity();
-        require(address(alignmentVault).balance == 0, "eth balance error");
-        require(wethToken.balanceOf(address(alignmentVault)) == 0, "weth balance error");
-        require(nftxInv.balanceOf(address(alignmentVault)) == 0, "nftxInv balance error");
-        require(nftWeth.balanceOf(address(alignmentVault)) == 0, "nftWeth balance error");
-    }
-
-    function testAlignMaxLiquidityWETH() public {
-        wethToken.transfer(address(alignmentVault), 1 ether);
-        require(wethToken.balanceOf(address(alignmentVault)) == 1 ether);
-        alignmentVault.alignMaxLiquidity();
-        require(address(alignmentVault).balance == 0, "eth balance error");
-        require(wethToken.balanceOf(address(alignmentVault)) == 0, "weth balance error");
-        require(nftxInv.balanceOf(address(alignmentVault)) == 0, "nftxInv balance error");
-        require(nftWeth.balanceOf(address(alignmentVault)) == 0, "nftWeth balance error");
-    }
-
-    function testAlignMaxLiquidityNftxInventory() public {
-        wethToken.approve(address(sushiRouter), 10 ether);
-        address[] memory path = new address[](2);
-        path[0] = address(weth);
-        path[1] = address(nftxInv);
-        sushiRouter.swapTokensForExactTokens(1 ether, 10 ether, path, address(alignmentVault), block.timestamp);
-        uint256 nftxBal = nftxInv.balanceOf(address(alignmentVault));
-        require(nftxBal > 0, "swap error");
-        alignmentVault.alignMaxLiquidity();
-        require(address(alignmentVault).balance == 0, "eth balance error");
-        require(wethToken.balanceOf(address(alignmentVault)) == 0, "weth balance error");
-        require(nftxInv.balanceOf(address(alignmentVault)) == 0, "nftxInv balance error");
-        require(nftWeth.balanceOf(address(alignmentVault)) == 0, "nftWeth balance error");
-    }
-
-    function testAlignMaxLiquidityNftxLiquidity() public {
-        wethToken.approve(address(liquidityHelper), type(uint256).max);
-        nftxInv.approve(address(liquidityHelper), type(uint256).max);
-        uint256 liquidity = liquidityHelper.swapAndAddLiquidityTokenAndToken(
-            address(weth), address(nftxInv), 10 ether, 0, 1, address(alignmentVault)
-        );
-        uint256 nftxBal = nftWeth.balanceOf(address(alignmentVault));
-        require(liquidity == nftxBal, "liqHelper return error");
-        require(nftxBal > 0, "swap and add error");
-        alignmentVault.alignMaxLiquidity();
-        require(address(alignmentVault).balance == 0, "eth balance error");
-        require(wethToken.balanceOf(address(alignmentVault)) == 0, "weth balance error");
-        require(nftxInv.balanceOf(address(alignmentVault)) == 0, "nftxInv balance error");
-        require(nftWeth.balanceOf(address(alignmentVault)) == 0, "nftWeth balance error");
-    }
-
-    function testAlignMaxLiquidityNftNoETH() public {
-        hevm.deal(nft.ownerOf(42), 1 ether);
-        hevm.startPrank(nft.ownerOf(42));
-        nft.approve(address(this), 42);
-        nft.safeTransferFrom(nft.ownerOf(42), address(alignmentVault), 42);
-        hevm.stopPrank();
-        alignmentVault.alignMaxLiquidity();
-        require(address(alignmentVault).balance == 0, "eth balance error");
-        require(wethToken.balanceOf(address(alignmentVault)) == 0, "weth balance error");
-        require(nftxInv.balanceOf(address(alignmentVault)) == 0, "nftxInv balance error");
-        require(nftWeth.balanceOf(address(alignmentVault)) == 0, "nftWeth balance error");
-        require(nft.balanceOf(address(alignmentVault)) == 1, "nft balance error");
-        require(alignmentVault.nftsHeld(0) == 42, "nftsHeld tokenId error");
-        hevm.expectRevert(bytes(""));
-        alignmentVault.nftsHeld(1);
-    }
-
-    function testAlignMaxLiquidityNftWithETH() public {
-        hevm.deal(address(alignmentVault), 10 ether);
-        hevm.startPrank(nft.ownerOf(42));
-        nft.approve(address(this), 42);
-        nft.safeTransferFrom(nft.ownerOf(42), address(alignmentVault), 42);
-        hevm.stopPrank();
-        require(nft.balanceOf(address(alignmentVault)) == 1, "nft balance error");
-        require(alignmentVault.nftsHeld(0) == 42, "nftsHeld tokenId error");
-        alignmentVault.alignMaxLiquidity();
-        require(address(alignmentVault).balance == 0, "eth balance error");
-        require(wethToken.balanceOf(address(alignmentVault)) == 0, "weth balance error");
-        require(nftxInv.balanceOf(address(alignmentVault)) == 0, "nftxInv balance error");
-        require(nftWeth.balanceOf(address(alignmentVault)) == 0, "nftWeth balance error");
-        require(nft.balanceOf(address(alignmentVault)) == 0, "nft balance error");
-        hevm.expectRevert(bytes(""));
-        alignmentVault.nftsHeld(0);
-    }
-
-    function testAlignMaxLiquidityMultipleNftsWithETH() public {
-        hevm.deal(address(alignmentVault), 42 ether);
-        hevm.startPrank(nft.ownerOf(42));
-        nft.approve(address(this), 42);
-        nft.safeTransferFrom(nft.ownerOf(42), address(alignmentVault), 42);
-        hevm.stopPrank();
-        hevm.startPrank(nft.ownerOf(69));
-        nft.approve(address(this), 69);
-        nft.safeTransferFrom(nft.ownerOf(69), address(alignmentVault), 69);
-        hevm.stopPrank();
-        hevm.startPrank(nft.ownerOf(777));
-        nft.approve(address(this), 777);
-        nft.safeTransferFrom(nft.ownerOf(777), address(alignmentVault), 777);
-        hevm.stopPrank();
-        require(nft.balanceOf(address(alignmentVault)) == 3, "nft balance error");
-        require(alignmentVault.nftsHeld(0) == 42, "nftsHeld tokenId error");
-        require(alignmentVault.nftsHeld(1) == 69, "nftsHeld tokenId error");
-        require(alignmentVault.nftsHeld(2) == 777, "nftsHeld tokenId error");
-        alignmentVault.alignMaxLiquidity();
-        require(address(alignmentVault).balance == 0, "eth balance error");
-        require(wethToken.balanceOf(address(alignmentVault)) == 0, "weth balance error");
-        require(nftxInv.balanceOf(address(alignmentVault)) == 0, "nftxInv balance error");
-        require(nftWeth.balanceOf(address(alignmentVault)) == 0, "nftWeth balance error");
-        require(nft.balanceOf(address(alignmentVault)) == 0, "nft balance error");
-        hevm.expectRevert(bytes(""));
-        alignmentVault.nftsHeld(0);
-    }
-
-    function testClaimYieldNone() public {
-        alignmentVault.claimYield(address(this));
-    }
-
-    function testCompoundYieldNone() public {
-        alignmentVault.claimYield(address(0));
-    }
-
-    function testClaimYieldGenerated() public {
-        hevm.deal(address(alignmentVault), 100 ether);
-        alignmentVault.alignMaxLiquidity();
-        require(address(alignmentVault).balance == 0, "eth balance error");
-        require(wethToken.balanceOf(address(alignmentVault)) == 0, "weth balance error");
-        require(nftxInv.balanceOf(address(alignmentVault)) == 0, "nftxInv balance error");
-        require(nftWeth.balanceOf(address(alignmentVault)) == 0, "nftWeth balance error");
-        wethToken.transfer(address(420), 100 ether);
-        hevm.startPrank(address(420));
-        wethToken.approve(address(sushiRouter), type(uint256).max);
-        nftxInv.approve(address(sushiRouter), type(uint256).max);
-        address[] memory path = new address[](2);
-        uint256 balance;
-        for (uint256 i; i < 10; ++i) {
-            balance = wethToken.balanceOf(address(420));
-            path[0] = address(weth);
-            path[1] = address(nftxInv);
-            sushiRouter.swapExactTokensForTokens(balance, 1, path, address(420), block.timestamp);
-            uint256 nftxBal = nftxInv.balanceOf(address(420));
-            path[0] = address(nftxInv);
-            path[1] = address(weth);
-            sushiRouter.swapExactTokensForTokens(nftxBal, 1, path, address(420), block.timestamp);
+    function mintVToken(
+        uint256[] memory tokenIds,
+        uint256[] memory amounts,
+        address depositor,
+        address to
+    ) public payable {
+        uint256 tokenCount;
+        for (uint256 i; i < tokenIds.length; ++i) {
+            unchecked {
+                tokenCount += amounts[i];
+            }
         }
-        balance = wethToken.balanceOf(address(420));
-        path[0] = address(weth);
-        path[1] = address(nftxInv);
-        sushiRouter.swapExactTokensForTokens(balance, 1, path, address(alignmentVault), block.timestamp);
-        hevm.stopPrank();
-        alignmentVault.claimYield(address(69));
-        require(nftxInv.balanceOf(address(69)) > 0, "nftxInv claim balance error");
-        require(address(alignmentVault).balance == 0, "eth balance error");
-        require(wethToken.balanceOf(address(alignmentVault)) == 0, "weth balance error");
-        require(nftxInv.balanceOf(address(alignmentVault)) == 0, "nftxInv balance error");
-        require(nftWeth.balanceOf(address(alignmentVault)) == 0, "nftWeth balance error");
+        uint256 ethRequired =
+            FixedPointMathLib.fullMulDivUp(INFTXVaultV3(vault).vTokenToETH(tokenCount * 1 ether), 30_000, 1_000_000);
+        INFTXVaultV3(vault).mint{value: ethRequired}(tokenIds, amounts, to, depositor);
     }
 
-    function testCompoundYieldGenerated() public {
-        hevm.deal(address(alignmentVault), 100 ether);
-        alignmentVault.alignMaxLiquidity();
-        require(address(alignmentVault).balance == 0, "eth balance error");
-        require(wethToken.balanceOf(address(alignmentVault)) == 0, "weth balance error");
-        require(nftxInv.balanceOf(address(alignmentVault)) == 0, "nftxInv balance error");
-        require(nftWeth.balanceOf(address(alignmentVault)) == 0, "nftWeth balance error");
-        wethToken.transfer(address(420), 100 ether);
-        hevm.startPrank(address(420));
-        wethToken.approve(address(sushiRouter), type(uint256).max);
-        nftxInv.approve(address(sushiRouter), type(uint256).max);
-        address[] memory path = new address[](2);
-        uint256 balance;
-        for (uint256 i; i < 10; ++i) {
-            balance = wethToken.balanceOf(address(420));
-            path[0] = address(weth);
-            path[1] = address(nftxInv);
-            sushiRouter.swapExactTokensForTokens(balance, 1, path, address(420), block.timestamp);
-            uint256 nftxBal = nftxInv.balanceOf(address(420));
-            path[0] = address(nftxInv);
-            path[1] = address(weth);
-            sushiRouter.swapExactTokensForTokens(nftxBal, 1, path, address(420), block.timestamp);
+    /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´*/
+    //                  INIT LOGIC
+    /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´*/
+
+    function lazyInitialize(address alignedNft_) public {
+        vm.startPrank(deployer);
+        av = new AlignmentVault();
+        alignedNft = alignedNft_;
+        address[] memory vaults = NFTX_VAULT_FACTORY.vaultsForAsset(alignedNft_);
+        if (vaults.length == 0) revert IAlignmentVault.AV_NFTX_NoVaultsExist();
+
+        for (uint256 i; i < vaults.length; ++i) {
+            (uint256 mintFee, uint256 redeemFee, uint256 swapFee) = INFTXVaultV3(vaults[i]).vaultFees();
+            if (mintFee != NFTX_STANDARD_FEE || redeemFee != NFTX_STANDARD_FEE || swapFee != NFTX_STANDARD_FEE) {
+                continue;
+            } else if (INFTXVaultV3(vaults[i]).manager() != address(0)) {
+                continue;
+            } else {
+                vaultId = INFTXVaultV3(vaults[i]).vaultId();
+                vault = vaults[i];
+                break;
+            }
         }
-        balance = wethToken.balanceOf(address(420));
-        path[0] = address(weth);
-        path[1] = address(nftxInv);
-        sushiRouter.swapExactTokensForTokens(balance, 1, path, address(alignmentVault), block.timestamp);
-        hevm.stopPrank();
-        alignmentVault.claimYield(address(0));
-        require(address(alignmentVault).balance == 0, "eth balance error");
-        require(wethToken.balanceOf(address(alignmentVault)) == 0, "weth balance error");
-        require(nftxInv.balanceOf(address(alignmentVault)) == 0, "nftxInv balance error");
-        require(nftWeth.balanceOf(address(alignmentVault)) == 0, "nftWeth balance error");
+
+        vm.expectEmit(address(av));
+        emit IAlignmentVault.AV_VaultInitialized(vault, vaultId);
+        //@audit what does it mean when vault id is zero?
+        //@response The initializer just wants it pointed at a standard 3/3/3 tax and finalized NFTX vault, if any exist
+        av.initialize(deployer, alignedNft_, 0);
+        vm.deal(address(av), FUNDING_AMOUNT);
+        setApprovals();
+        vm.stopPrank();
     }
 
-    function testGetInventoryNone() public view {
-        uint256[] memory tokenIds = alignmentVault.getInventory();
-        require(tokenIds.length == 0, "length error");
-    }
-    
-    function testGetInventory() public {
-        hevm.startPrank(nft.ownerOf(69));
-        nft.approve(address(this), 69);
-        nft.safeTransferFrom(nft.ownerOf(69), address(alignmentVault), 69);
-        hevm.stopPrank();
-        hevm.startPrank(nft.ownerOf(420));
-        nft.approve(address(this), 420);
-        nft.safeTransferFrom(nft.ownerOf(420), address(alignmentVault), 420);
-        hevm.stopPrank();
-        hevm.startPrank(nft.ownerOf(710));
-        nft.approve(address(this), 710);
-        nft.safeTransferFrom(nft.ownerOf(710), address(alignmentVault), 710);
-        hevm.stopPrank();
-        uint256[] memory tokenIds = alignmentVault.getInventory();
-        require(tokenIds.length == 3, "length error");
-        require(tokenIds[0] == 69, "tokenId error");
-        require(tokenIds[1] == 420, "tokenId error");
-        require(tokenIds[2] == 710, "tokenId error");
+    function targetInitialize(address alignedNft_, uint96 vaultId_) public {
+        vm.startPrank(deployer);
+        av = new AlignmentVault();
+        vault = NFTX_VAULT_FACTORY.vault(vaultId_);
+        vaultId = vaultId_;
+        alignedNft = alignedNft_;
+
+        vm.expectEmit(address(av));
+        emit IAlignmentVault.AV_VaultInitialized(vault, vaultId_);
+        av.initialize(deployer, alignedNft_, vaultId_);
+        vm.deal(address(av), FUNDING_AMOUNT);
+        setApprovals();
+        vm.stopPrank();
     }
 
-    function testCheckInventoryNone() public {
-        uint256[] memory tokenIds = new uint256[](3);
-        tokenIds[0] = 69;
-        tokenIds[1] = 420;
-        tokenIds[2] = 710;
-        alignmentVault.checkInventory(tokenIds);
-        hevm.expectRevert(bytes(""));
-        alignmentVault.nftsHeld(0);
+    /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´*/
+    //                  RECEIVE LOGIC
+    /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´*/
+
+    /*function testRescueERC20() public {
+        av.rescueERC20(address(0), 1, address(0));
     }
 
-    function testUnsafeTransferAndCheckInventory() public {
-        hevm.startPrank(nft.ownerOf(69));
-        nft.approve(address(this), 69);
-        nft.transferFrom(nft.ownerOf(69), address(alignmentVault), 69);
-        hevm.stopPrank();
-        hevm.startPrank(nft.ownerOf(420));
-        nft.approve(address(this), 420);
-        nft.transferFrom(nft.ownerOf(420), address(alignmentVault), 420);
-        hevm.stopPrank();
-        hevm.startPrank(nft.ownerOf(710));
-        nft.approve(address(this), 710);
-        nft.transferFrom(nft.ownerOf(710), address(alignmentVault), 710);
-        hevm.stopPrank();
-        hevm.expectRevert(bytes(""));
-        alignmentVault.nftsHeld(0);
-        uint256[] memory tokenIds = new uint256[](3);
-        tokenIds[0] = 69;
-        tokenIds[1] = 420;
-        tokenIds[2] = 710;
-        alignmentVault.checkInventory(tokenIds);
-        require(alignmentVault.nftsHeld(0) == 69);
-        require(alignmentVault.nftsHeld(1) == 420);
-        require(alignmentVault.nftsHeld(2) == 710);
-        hevm.expectRevert(bytes(""));
-        alignmentVault.nftsHeld(3);
+    function testRescueERC1155() public {
+        av.rescueERC1155(address(0), 1, 1, address(0));
     }
 
-    function test_rescueERC20_ETH() public {
-        address liqHelper = alignmentVault.view_liqHelper();
-        (bool success,) = payable(liqHelper).call{value: 1 ether}("");
-        require(success);
-        uint256 recoveredETH = alignmentVault.rescueERC20(address(0), address(this));
-        require(recoveredETH == 0);
-        require(wethToken.balanceOf(address(alignmentVault)) == 1 ether);
+    function testRescueERC721() public {
+        av.rescueERC721(address(0), 1, address(0));
+    }*/
+
+    // /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´*/
+    // //                  ALIGNED TOKEN MANAGEMENT
+    // /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´*/
+
+    // function testBuyNftsFromPool() public {}
+    // function testMintVToken() public {}
+    // function testBuyVToken() public {}
+    // function testBuyVTokenExact() public {}
+    // function testSellVToken() public {}
+    // function testSellVTokenExact() public {}
+    // function testUnwrapEth() public {}
+
+    // /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´*/
+    // //                  LIQUIDITY POSITION MANAGEMENT
+    // /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´*/
+
+    // function testliquidityPositionCreatename() public {}
+    // function testliquidityPositionIncrease() public {}
+
+    // /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´*/
+    // //                  INVENTORY POSITION MANAGEMENT
+    // /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´*/
+
+    // function testInventoryPositionCreateVToken() public {}
+    // function testInventoryPositionCreateNfts() public {}
+    // function testInventoryPositionIncrease() public {}
+    // function testInventoryPositionWithdrawal() public {}
+    // function testInventoryPositionCombine() public {}
+    // function testInventoryPositionCollectFees() public {}
+    // function testInventoryPositionCollectAllFees() public {}
+
+    /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´*/
+    //                  VIEW FUNCTIONS
+    /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´*/
+
+    /*function testGetInventoryPositionIds() public view {
+        av.getInventoryPositionIds();
     }
 
-    function test_rescueERC20_WETH() public {
-        address liqHelper = alignmentVault.view_liqHelper();
-        wethToken.transfer(liqHelper, 1 ether);
-        uint256 wethBal = wethToken.balanceOf(address(alignmentVault));
-        uint256 recoveredWETH = alignmentVault.rescueERC20(address(weth), address(this));
-        require(recoveredWETH == 0);
-        uint256 wethBalDiff = wethToken.balanceOf(address(alignmentVault)) - wethBal;
-        require(wethBalDiff > 0);
+    function testGetLiquidityPositionIds() public view {
+        av.getLiquidityPositionIds();
     }
 
-    function test_rescueERC20_NFTX() public {
-        address liqHelper = alignmentVault.view_liqHelper();
-        wethToken.approve(address(sushiRouter), 100 ether);
-        address[] memory path = new address[](2);
-        path[0] = address(weth);
-        path[1] = address(nftxInv);
-        sushiRouter.swapTokensForExactTokens(1 ether, 100 ether, path, address(liqHelper), block.timestamp + 60 seconds);
-        uint256 nftxBal = nftxInv.balanceOf(address(alignmentVault));
-        uint256 recoveredNFTX = alignmentVault.rescueERC20(address(nftxInv), address(this));
-        require(recoveredNFTX == 0);
-        uint256 nftxBalDiff = nftxInv.balanceOf(address(alignmentVault)) - nftxBal;
-        require(nftxBalDiff > 0);
+    function testGetSpecificInventoryPositionFees(uint256 posId) public view {
+        av.getSpecificInventoryPositionFees(posId);
     }
 
-    function test_rescueERC20_NFTWETH() public {
-        address liqHelper = alignmentVault.view_liqHelper();
-        wethToken.approve(address(liquidityHelper), type(uint256).max);
-        nftxInv.approve(address(liquidityHelper), type(uint256).max);
-        uint256 liqBal = nftWeth.balanceOf(address(alignmentVault));
-        uint256 liquidity =
-            liquidityHelper.swapAndAddLiquidityTokenAndToken(address(weth), address(nftxInv), 1 ether, 0, 1, liqHelper);
-        require(liquidity > 0);
-        uint256 recoveredNFTXLiq = alignmentVault.rescueERC20(address(nftWeth), address(this));
-        require(recoveredNFTXLiq == 0);
-        uint256 liqBalDiff = nftWeth.balanceOf(address(alignmentVault)) - liqBal;
-        require(liqBalDiff > 0);
+    function testGetTotalInventoryPositionFees() public view {
+        av.getTotalInventoryPositionFees();
     }
 
-    function test_rescueERC20_ETC() public {
-        address liqHelper = alignmentVault.view_liqHelper();
-        testToken.transfer(address(alignmentVault), 1 ether);
-        testToken.transfer(address(liqHelper), 1 ether);
-        uint256 recoveredTEST = alignmentVault.rescueERC20(address(testToken), address(42));
-        require(recoveredTEST == 2 ether);
-        require(testToken.balanceOf(address(42)) == recoveredTEST);
+    function testGetSpecificLiquidityPositionFees(uint256 id) public view {
+        av.getSpecificLiquidityPositionFees(id);
     }
 
-    function test_rescueERC721() public {
-        testNFT.transferFrom(address(this), address(alignmentVault), 1);
-        require(testNFT.ownerOf(1) == address(alignmentVault));
-        alignmentVault.rescueERC721(address(testNFT), address(42), 1);
-        require(testNFT.ownerOf(1) == address(42));
+    function testGetTotalLiquidityPositionFees() public view {
+        av.getTotalLiquidityPositionFees();
+    }*/
+
+    /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´*/
+    //                  INIT LOGIC TESTS
+    /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´*/
+
+    function testTargetInitialize() public {
+        targetInitialize(MILADY, VAULT_ID);
+        assertEq(av.vaultId(), VAULT_ID);
+        assertEq(address(av.alignedNft()), MILADY);
     }
 
-    function test_rescueERC721_AlignedAsset() public {
-        hevm.assume(nft.ownerOf(42) > address(0));
-        hevm.startPrank(nft.ownerOf(42));
-        nft.approve(address(this), 42);
-        nft.transferFrom(nft.ownerOf(42), address(alignmentVault), 42);
-        hevm.stopPrank();
-        hevm.expectRevert(AlignmentVault.AlignedAsset.selector);
-        alignmentVault.rescueERC721(address(nft), address(42), 42);
+    function testLazyInitialize() public {
+        lazyInitialize(MILADY);
+        assertEq(av.vaultId(), VAULT_ID);
+        assertEq(address(av.alignedNft()), MILADY);
     }
 
-    function testReceive() public {
-        address liqHelper = alignmentVault.view_liqHelper();
-        (bool success,) = payable(liqHelper).call{value: 1 ether}("");
-        require(success);
-        require(address(liqHelper).balance == 1 ether);
-        success = false;
-        (success,) = payable(address(alignmentVault)).call{value: 1 ether}("");
-        require(success);
-        require(wethToken.balanceOf(address(alignmentVault)) == 1 ether);
-    }
+    /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´*/
+    //                   HELPER FUNCTIONS
+    /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´*/
 
-    function testOnERC721Received() public {
-        hevm.startPrank(nft.ownerOf(42));
-        nft.approve(address(this), 42);
-        nft.safeTransferFrom(nft.ownerOf(42), address(alignmentVault), 42);
-        hevm.stopPrank();
-        require(nft.ownerOf(42) == address(alignmentVault), "NFT redirection failed");
-    }
-
-    function testOnERC721Received_UnwantedNFT() public {
-        hevm.expectRevert(AlignmentVault.UnwantedNFT.selector);
-        testNFT.safeTransferFrom(address(this), address(alignmentVault), 1);
+    /// @dev foundry's changePrank() is deprecated :(
+    function _changePrank(address who) internal {
+        vm.stopPrank();
+        vm.startPrank(who);
     }
 }
