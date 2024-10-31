@@ -27,9 +27,6 @@ import {ISwapRouter} from "../lib/nftx-protocol-v3/src/uniswap/v3-periphery/inte
 import {IUniswapV3Pool} from "../lib/nftx-protocol-v3/src/uniswap/v3-core/interfaces/IUniswapV3Pool.sol";
 import {IDelegateRegistry} from "../lib/delegate-registry/src/IDelegateRegistry.sol";
 
-// Temporary
-import {console2} from "../lib/forge-std/src/console2.sol";
-
 /**
  * @title AlignmentVault
  * @notice This allows anything to send ETH to a vault for the purpose of permanently deepening the floor liquidity of a target NFT collection.
@@ -242,17 +239,14 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
         positionIds = _inventoryPositionIds.values();
     }
 
-    // TODO: Test
     function getLiquidityPositionIds() external view virtual returns (uint256[] memory positionIds) {
         positionIds = _liquidityPositionIds.values();
     }
 
-    // TODO: Test
     function getSpecificInventoryPositionFees(uint256 positionId) external view virtual returns (uint256 balance) {
         balance = _NFTX_INVENTORY.wethBalance(positionId);
     }
 
-    // TODO: Test
     function getTotalInventoryPositionFees() external view virtual returns (uint256 balance) {
         uint256[] memory positionIds = _inventoryPositionIds.values();
         for (uint256 i; i < positionIds.length; ++i) {
@@ -262,7 +256,6 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
         }
     }
 
-    // TODO: Test
     function getSpecificLiquidityPositionFees(uint256 positionId)
         external
         view
@@ -272,7 +265,6 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
         (,,,,,,,,,, token0Fees, token1Fees) = _NFTX_LIQUIDITY.positions(positionId);
     }
 
-    // TODO: Test
     function getTotalLiquidityPositionFees() external view virtual returns (uint128 token0Fees, uint128 token1Fees) {
         uint256[] memory positionIds = _liquidityPositionIds.values();
         for (uint256 i; i < positionIds.length; ++i) {
@@ -333,20 +325,17 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
         emit AV_InventoryPositionCombination(positionId, childPositionIds);
     }
 
-    // TODO: Test
     function inventoryPositionCollectFees(uint256[] calldata positionIds) external payable virtual onlyOwner {
         _NFTX_INVENTORY.collectWethFees(positionIds);
         emit AV_InventoryPositionsCollected(positionIds);
     }
 
-    // TODO: Test
     function inventoryPositionCollectAllFees() external payable virtual onlyOwner {
         uint256[] memory positionIds = _inventoryPositionIds.values();
         _NFTX_INVENTORY.collectWethFees(positionIds);
         emit AV_InventoryPositionsCollected(positionIds);
     }
 
-    // TODO: Test
     // >>>>>>>>>>>> [ LIQUIDITY POSITION MANAGEMENT ] <<<<<<<<<<<<
 
     function liquidityPositionCreate(
@@ -431,7 +420,6 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
 
     // >>>>>>>>>>>> [ ALIGNED TOKEN MANAGEMENT ] <<<<<<<<<<<<
 
-    // TODO: Test
     function buyNftsFromPool(
         uint256 ethAmount,
         uint256[] calldata tokenIds,

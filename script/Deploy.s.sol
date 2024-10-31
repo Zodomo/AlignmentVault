@@ -24,7 +24,7 @@ contract DeployScript is Script {
     uint256 deployerPrivateKey;
     address deployer;
 
-    address deployedFactoryTestnet = 0x9c9F968d36AacD2911b668DA9D2b277Dd783Ad8E; // Set this for upgradeTestnetImplementation()
+    address deployedFactoryTestnet = 0xD1ac539e856F8C86c7bf2217eC4b70D0D1c0D82C; // Set this for upgradeTestnetImplementation()
     address deployedFactoryMainnet; // Set this for upgradeMainnetImplementation();
     address alignedNftTestnet = 0xeA9aF8dBDdE2A8d3515C3B4E446eCd41afEdB1C6; // Set this for deployTestnetVault()
     address alignedNftMainnet = 0x5Af0D9827E0c53E4799BB226655A1de152A425a5; // Set this for deployMainnetVault()
