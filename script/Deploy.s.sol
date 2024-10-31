@@ -4,14 +4,12 @@ pragma solidity ^0.8.23;
 import {Script, console2} from "../lib/forge-std/src/Script.sol";
 import {AlignmentVault} from "../src/AlignmentVault.sol";
 import {AlignmentVaultImplementation} from "../src/AlignmentVaultImplementation.sol";
-import {AlignmentVaultFactory} from "../src/AlignmentVaultFactory.sol";
 import {AlignmentVault as AVTest} from "../src/testnet/AlignmentVault.sol";
 import {AlignmentVaultImplementation as AVITest} from "../src/testnet/AlignmentVaultImplementation.sol";
-import {AlignmentVaultFactory as AVFTest} from "../src/testnet/AlignmentVaultFactory.sol";
+import {AlignmentVaultFactory} from "../src/AlignmentVaultFactory.sol";
 
 interface IInitialize {
     function initialize(address owner, address alignedNft, uint256 vaultId) external payable;
-    function disableInitializers() external payable;
 }
 
 contract DeployScript is Script {
@@ -20,7 +18,6 @@ contract DeployScript is Script {
     AlignmentVaultFactory public avf;
     AVTest public avtest;
     AVITest public avitest;
-    AVFTest public avftest;
     uint256 deployerPrivateKey;
     address deployer;
 
@@ -49,17 +46,17 @@ contract DeployScript is Script {
         vm.createSelectFork("sepolia");
         vm.startBroadcast(deployerPrivateKey);
         avitest = new AVITest();
-        avftest = new AVFTest(deployer, address(avitest));
+        avf = new AlignmentVaultFactory(deployer, address(avitest));
         vm.stopBroadcast();
         console2.log("Testnet AlignmentVault Implementation:", address(avitest));
-        console2.log("Testnet AlignmentVaultFactory:", address(avftest));
+        console2.log("Testnet AlignmentVaultFactory:", address(avf));
     }
 
     function upgradeTestnetImplementation() public {
         vm.createSelectFork("sepolia");
         vm.startBroadcast(deployerPrivateKey);
         avitest = new AVITest();
-        AVFTest(deployedFactoryTestnet).updateImplementation(address(avitest));
+        AlignmentVaultFactory(deployedFactoryTestnet).updateImplementation(address(avitest));
         vm.stopBroadcast();
         console2.log("Testnet AlignmentVault Implementation:", address(avitest));
     }

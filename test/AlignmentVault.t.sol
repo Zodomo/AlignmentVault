@@ -68,10 +68,10 @@ contract AlignmentVaultTest is Test {
 
         vm.deal(address(av), FUNDING_AMOUNT);
         vm.deal(deployer, FUNDING_AMOUNT);
+        vm.deal(address(this), FUNDING_AMOUNT);
 
         vm.startPrank(deployer);
         av.initialize(deployer, MILADY, VAULT_ID);
-        av.disableInitializers();
         vault = av.vault();
         vaultId = VAULT_ID;
         alignedNft = MILADY;
@@ -143,7 +143,6 @@ contract AlignmentVaultTest is Test {
         //@audit what does it mean when vault id is zero?
         //@response The initializer just wants it pointed at a standard 3/3/3 tax and finalized NFTX vault, if any exist
         av.initialize(deployer, alignedNft_, 0);
-        av.disableInitializers();
         vm.deal(address(av), FUNDING_AMOUNT);
         setApprovals();
         vm.stopPrank();
@@ -152,7 +151,6 @@ contract AlignmentVaultTest is Test {
     function targetInitialize(address alignedNft_, uint96 vaultId_) public {
         vm.startPrank(deployer);
         av = new AlignmentVault();
-        console2.log("alignment vault: ", address(av));
         vault = NFTX_VAULT_FACTORY.vault(vaultId_);
         vaultId = vaultId_;
         alignedNft = alignedNft_;
@@ -160,7 +158,6 @@ contract AlignmentVaultTest is Test {
         vm.expectEmit(address(av));
         emit IAlignmentVault.AV_VaultInitialized(vault, vaultId_);
         av.initialize(deployer, alignedNft_, vaultId_);
-        av.disableInitializers();
         vm.deal(address(av), FUNDING_AMOUNT);
         setApprovals();
         vm.stopPrank();
@@ -213,17 +210,6 @@ contract AlignmentVaultTest is Test {
     // function testInventoryPositionCollectFees() public {}
     // function testInventoryPositionCollectAllFees() public {}
 
-    // /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´*/
-    // //                  EXTERNAL DONATION MANAGEMENT
-    // /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´*/
-
-    // function testDonateInventoryPositionIncrease() public {}
-    // function testDonateInventoryCombinePositions() public {}
-    // function testDonateLiquidityPositionIncrease() public {}
-    // function testDonateLiquidityCombinePositions() public {}
-    // function testDonateBuyNftsFromPool() public {}
-    // function testDonateMintVToken() public {}
-
     /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´*/
     //                  VIEW FUNCTIONS
     /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´*/
@@ -266,5 +252,15 @@ contract AlignmentVaultTest is Test {
         lazyInitialize(MILADY);
         assertEq(av.vaultId(), VAULT_ID);
         assertEq(address(av.alignedNft()), MILADY);
+    }
+
+    /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´*/
+    //                   HELPER FUNCTIONS
+    /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´*/
+
+    /// @dev foundry's changePrank() is deprecated :(
+    function _changePrank(address who) internal {
+        vm.stopPrank();
+        vm.startPrank(who);
     }
 }

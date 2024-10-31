@@ -342,4 +342,34 @@ contract InventoryPositionsTest is AlignmentVaultTest {
         assertEq(vTokenShareBalance1, 0, "vTokenShareBalance doesn't match position");
         assertEq(av.getInventoryPositionIds(), positionIds, "inventory position IDs unaccounted for");
     }
+
+    function testInventoryPositionCollectAllFees() public {
+        uint256[] memory tokenIds = new uint256[](1);
+        tokenIds[0] = 69;
+        uint256[] memory amounts = new uint256[](1);
+        amounts[0] = 1;
+
+        vm.startPrank(deployer);
+        mintVToken(tokenIds, amounts, deployer, deployer);
+        IERC20(vault).transfer(address(av), 1 ether);
+        uint256 positionId = av.inventoryPositionCreateVToken(1 ether);
+        vm.stopPrank();
+
+        WETH.deposit{value: 10 ether}();
+        WETH.transfer(address(NFTX_VAULT_FACTORY.feeDistributor()), 10 ether);
+
+        startHoax(address(NFTX_VAULT_FACTORY.feeDistributor()));
+        WETH.approve(address(NFTX_INVENTORY_STAKING), type(uint256).max);
+        bool rewardsDistributed = NFTX_INVENTORY_STAKING.receiveWethRewards(vaultId, 10 ether);
+        if (!rewardsDistributed) revert("Rewards not distributed");
+        vm.stopPrank();
+
+        vm.startPrank(deployer);
+        uint256 balance = WETH.balanceOf(deployer);
+        uint256 fees = av.getTotalInventoryPositionFees();
+        assertEq(fees, av.getSpecificInventoryPositionFees(positionId), "total vs specific fees getter mismatch");
+        av.inventoryPositionCollectAllFees(deployer);
+        assertEq(WETH.balanceOf(deployer), balance + fees, "balance not changed by exact fees claim amount");
+        vm.stopPrank();
+    }
 }

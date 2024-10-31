@@ -14,9 +14,6 @@ interface IAlignmentVault {
     // >>>>>>>>>>>> [ GENERAL ERRORS ] <<<<<<<<<<<<
 
     error AV_UnalignedNft();
-    error AV_BadPriceRange();
-    error AV_InvalidPosition();
-    error AV_TransactionFailed();
     error AV_ProhibitedWithdrawal();
 
     // >>>>>>>>>>>> [ INITIALIZER ERRORS ] <<<<<<<<<<<<
@@ -39,15 +36,26 @@ interface IAlignmentVault {
     event AV_InventoryPositionIncreased(uint256 indexed positionId, uint256 indexed vTokenAmount);
     event AV_InventoryPositionWithdrawal(uint256 indexed positionId, uint256 indexed vTokenAmount);
     event AV_InventoryPositionCombination(uint256 indexed positionId, uint256[] indexed childPositionIds);
-    event AV_InventoryPositionsCollected(uint256[] indexed positionIds);
+    event AV_InventoryPositionsCollected(uint256[] indexed positionIds, uint256 indexed amount);
 
     // >>>>>>>>>>>> [ LIQUIDITY MANAGEMENT EVENTS ] <<<<<<<<<<<<
 
     event AV_LiquidityPositionCreated(uint256 indexed positionId);
     event AV_LiquidityPositionIncreased(uint256 indexed positionId);
     event AV_LiquidityPositionWithdrawal(uint256 indexed positionId);
-    event AV_LiquidityPositionCombination(uint256 indexed positionId, uint256[] indexed childPositionIds);
     event AV_LiquidityPositionsCollected(uint256[] indexed positionIds);
+
+    // >>>>>>>>>>>> [ STRUCTS ] <<<<<<<<<<<<
+
+    struct PositionData {
+        int24 tickLower;
+        int24 tickUpper;
+        uint128 liquidity;
+        uint256 feeGrowthInside0LastX128;
+        uint256 feeGrowthInside1LastX128;
+        uint128 token0Fees;
+        uint128 token1Fees;
+    }
 
     // >>>>>>>>>>>> [ PUBLIC STORAGE ] <<<<<<<<<<<<
 
@@ -60,7 +68,6 @@ interface IAlignmentVault {
     // >>>>>>>>>>>> [ INITIALIZER ] <<<<<<<<<<<<
 
     function initialize(address owner_, address alignedNft_, uint96 vaultId_) external payable;
-    function disableInitializers() external payable;
 
     // >>>>>>>>>>>> [ MANAGEMENT FUNCTIONS ] <<<<<<<<<<<<
 
@@ -94,8 +101,8 @@ interface IAlignmentVault {
         uint256 vTokenPremiumLimit
     ) external payable;
     function inventoryPositionCombine(uint256 positionId, uint256[] calldata childPositionIds) external payable;
-    function inventoryPositionCollectFees(uint256[] calldata positionIds) external payable;
-    function inventoryPositionCollectAllFees() external payable;
+    function inventoryPositionCollectFees(address recipient, uint256[] calldata positionIds) external payable;
+    function inventoryPositionCollectAllFees(address recipient) external payable;
 
     // >>>>>>>>>>>> [ LIQUIDITY POSITION MANAGEMENT ] <<<<<<<<<<<<
 
@@ -127,8 +134,8 @@ interface IAlignmentVault {
         uint256 amount0Min,
         uint256 amount1Min
     ) external payable;
-    function liquidityPositionCollectFees(uint256[] calldata positionIds) external payable;
-    function liquidityPositionCollectAllFees() external payable;
+    function liquidityPositionCollectFees(address recipient, uint256[] calldata positionIds) external payable;
+    function liquidityPositionCollectAllFees(address recipient) external payable;
 
     // >>>>>>>>>>>> [ ALIGNED TOKEN MANAGEMENT ] <<<<<<<<<<<<
 
@@ -140,10 +147,30 @@ interface IAlignmentVault {
         uint160 sqrtPriceLimitX96
     ) external payable;
     function mintVToken(uint256[] calldata tokenIds, uint256[] calldata amounts) external payable;
-    function buyVToken(uint256 ethAmount, uint24 fee, uint256 amountOutMinimum, uint160 sqrtPriceLimitX96) external payable;
-    function buyVTokenExact(uint256 ethAmount, uint24 fee, uint256 amountOutExact, uint160 sqrtPriceLimitX96) external payable;
-    function sellVToken(uint256 vTokenAmount, uint24 fee, uint256 amountOutMinimum, uint160 sqrtPriceLimitX96) external payable;
-    function sellVTokenExact(uint256 vTokenAmount, uint24 fee, uint256 amountOutExact, uint160 sqrtPriceLimitX96) external payable;
+    function buyVToken(
+        uint256 ethAmount,
+        uint24 fee,
+        uint256 amountOutMinimum,
+        uint160 sqrtPriceLimitX96
+    ) external payable;
+    function buyVTokenExact(
+        uint256 ethAmount,
+        uint24 fee,
+        uint256 amountOutExact,
+        uint160 sqrtPriceLimitX96
+    ) external payable;
+    function sellVToken(
+        uint256 vTokenAmount,
+        uint24 fee,
+        uint256 amountOutMinimum,
+        uint160 sqrtPriceLimitX96
+    ) external payable;
+    function sellVTokenExact(
+        uint256 vTokenAmount,
+        uint24 fee,
+        uint256 amountOutExact,
+        uint160 sqrtPriceLimitX96
+    ) external payable;
 
     // >>>>>>>>>>>> [ MISCELLANEOUS TOKEN MANAGEMENT ] <<<<<<<<<<<<
 
