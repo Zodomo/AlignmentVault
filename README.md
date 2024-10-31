@@ -58,7 +58,7 @@ The **`AlignmentVault`** primitive is a smart contract that allows locking ETH, 
 
 This contract harnesses the economic velocity of derivative collections and directs it towards boosting a primary collection. It forces alignment of derivative teams in a way that is beneficial and allows them to retain the economic utility from the aligned capital. This is regenerative finance ("ReFi") for NFT communities.
 
-There is a **testnet** deployment of an `AlignmentVaultFactory` available at `0x7c1A6B4B373E70730c52dfCB2e0A67E7591d4AAa` on Sepolia.
+There is a **testnet** deployment of an `AlignmentVaultFactory` available at `0xD1ac539e856F8C86c7bf2217eC4b70D0D1c0D82C` on Sepolia.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
