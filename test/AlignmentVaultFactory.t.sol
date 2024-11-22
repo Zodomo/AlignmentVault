@@ -45,7 +45,9 @@ contract AlignmentVaultFactoryTest is Test {
         vm.label(address(avf), "alignment factory ");
     }
 
-    modifier prank(address who) {
+    modifier prank(
+        address who
+    ) {
         vm.startPrank(who);
         _;
         vm.stopPrank();

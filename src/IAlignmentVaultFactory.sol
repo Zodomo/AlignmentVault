@@ -38,12 +38,18 @@ interface IAlignmentVaultFactory {
     ) external payable returns (address deployment);
 
     function initCodeHash() external view returns (bytes32 codeHash);
-    function predictDeterministicAddress(bytes32 salt) external view returns (address addr);
+    function predictDeterministicAddress(
+        bytes32 salt
+    ) external view returns (address addr);
 
     // >>>>>>>>>>>> [ MANAGEMENT FUNCTIONS ] <<<<<<<<<<<<
 
-    function updateImplementation(address newImplementation) external payable;
-    function withdrawEth(address recipient) external payable;
+    function updateImplementation(
+        address newImplementation
+    ) external payable;
+    function withdrawEth(
+        address recipient
+    ) external payable;
     function withdrawERC20(address token, address recipient) external payable;
     function withdrawERC721(address token, uint256 tokenId, address recipient) external payable;
     function withdrawERC1155(address token, uint256 tokenId, uint256 amount, address recipient) external payable;

@@ -29,7 +29,9 @@ import {IUniswapV3Pool} from "../lib/nftx-protocol-v3/src/uniswap/v3-core/interf
 import {IDelegateRegistry} from "../lib/delegate-registry/src/IDelegateRegistry.sol";
 
 interface IUniswapPool {
-    function ticks(int24 tick) external view returns (Tick.Info memory);
+    function ticks(
+        int24 tick
+    ) external view returns (Tick.Info memory);
 }
 
 /**
@@ -134,7 +136,9 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
 
     function renounceOwnership() public payable virtual override(Ownable) onlyOwner {}
 
-    function setDelegate(address newDelegate) external payable virtual onlyOwner {
+    function setDelegate(
+        address newDelegate
+    ) external payable virtual onlyOwner {
         address _delegate = delegate;
         if (_delegate != address(0)) _DELEGATE_REGISTRY.delegateAll(_delegate, "", false);
         _DELEGATE_REGISTRY.delegateAll(newDelegate, "", true);
@@ -335,7 +339,9 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
         positionIds = _liquidityPositionIds.values();
     }
 
-    function getSpecificInventoryPositionFees(uint256 positionId) external view virtual returns (uint256 balance) {
+    function getSpecificInventoryPositionFees(
+        uint256 positionId
+    ) external view virtual returns (uint256 balance) {
         balance = _NFTX_INVENTORY.wethBalance(positionId);
     }
 
@@ -348,12 +354,9 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
         }
     }
 
-    function getSpecificLiquidityPositionFees(uint256 positionId)
-        external
-        view
-        virtual
-        returns (uint128 token0Fees, uint128 token1Fees)
-    {
+    function getSpecificLiquidityPositionFees(
+        uint256 positionId
+    ) external view virtual returns (uint128 token0Fees, uint128 token1Fees) {
         IUniswapV3Pool pool = IUniswapV3Pool(_getPool());
         (, int24 currentTick,,,,,) = pool.slot0();
         uint256 feeGrowthGlobal0X128 = pool.feeGrowthGlobal0X128();
@@ -390,13 +393,9 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
 
     // >>>>>>>>>>>> [ INVENTORY POSITION MANAGEMENT ] <<<<<<<<<<<<
 
-    function inventoryPositionCreateVToken(uint256 vTokenAmount)
-        external
-        payable
-        virtual
-        onlyOwner
-        returns (uint256 positionId)
-    {
+    function inventoryPositionCreateVToken(
+        uint256 vTokenAmount
+    ) external payable virtual onlyOwner returns (uint256 positionId) {
         positionId = _NFTX_INVENTORY.deposit(vaultId, vTokenAmount, address(this), "", false, true);
         _inventoryPositionIds.add(positionId);
         emit AV_InventoryPositionCreated(positionId, vTokenAmount);
@@ -450,7 +449,9 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
         }
     }
 
-    function inventoryPositionCollectAllFees(address recipient) external payable virtual onlyOwner {
+    function inventoryPositionCollectAllFees(
+        address recipient
+    ) external payable virtual onlyOwner {
         uint256 balance = _WETH.balanceOf(address(this));
         uint256[] memory positionIds = _inventoryPositionIds.values();
         _NFTX_INVENTORY.collectWethFees(positionIds);
@@ -532,7 +533,9 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
         emit AV_LiquidityPositionsCollected(positionIds);
     }
 
-    function liquidityPositionCollectAllFees(address recipient) external payable virtual onlyOwner {
+    function liquidityPositionCollectAllFees(
+        address recipient
+    ) external payable virtual onlyOwner {
         uint256[] memory positionIds = _liquidityPositionIds.values();
         for (uint256 i; i < positionIds.length; ++i) {
             INonfungiblePositionManager.CollectParams memory params = INonfungiblePositionManager.CollectParams({
@@ -694,11 +697,15 @@ contract AlignmentVault is Ownable, Initializable, ERC721Holder, ERC1155Holder, 
         IERC1155(token).safeBatchTransferFrom(address(this), recipient, tokenIds, amounts, "");
     }
 
-    function wrapEth(uint256 amount) external payable virtual onlyOwner {
+    function wrapEth(
+        uint256 amount
+    ) external payable virtual onlyOwner {
         _WETH.deposit{value: amount}();
     }
 
-    function unwrapEth(uint256 amount) external payable virtual onlyOwner {
+    function unwrapEth(
+        uint256 amount
+    ) external payable virtual onlyOwner {
         _WETH.withdraw(amount);
     }
 

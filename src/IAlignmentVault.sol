@@ -71,24 +71,29 @@ interface IAlignmentVault {
 
     // >>>>>>>>>>>> [ MANAGEMENT FUNCTIONS ] <<<<<<<<<<<<
 
-    function setDelegate(address newDelegate) external payable;
+    function setDelegate(
+        address newDelegate
+    ) external payable;
 
     // >>>>>>>>>>>> [ VIEW FUNCTIONS ] <<<<<<<<<<<<
 
     function getUniswapPoolValues() external view returns (address pool, uint160 sqrtPriceX96, int24 tick);
     function getInventoryPositionIds() external view returns (uint256[] memory positionIds);
     function getLiquidityPositionIds() external view returns (uint256[] memory positionIds);
-    function getSpecificInventoryPositionFees(uint256 positionId) external view returns (uint256 balance);
+    function getSpecificInventoryPositionFees(
+        uint256 positionId
+    ) external view returns (uint256 balance);
     function getTotalInventoryPositionFees() external view returns (uint256 balance);
-    function getSpecificLiquidityPositionFees(uint256 positionId)
-        external
-        view
-        returns (uint128 token0Fees, uint128 token1Fees);
+    function getSpecificLiquidityPositionFees(
+        uint256 positionId
+    ) external view returns (uint128 token0Fees, uint128 token1Fees);
     function getTotalLiquidityPositionFees() external view returns (uint128 token0Fees, uint128 token1Fees);
 
     // >>>>>>>>>>>> [ INVENTORY POSITION MANAGEMENT ] <<<<<<<<<<<<
 
-    function inventoryPositionCreateVToken(uint256 vTokenAmount) external payable returns (uint256 positionId);
+    function inventoryPositionCreateVToken(
+        uint256 vTokenAmount
+    ) external payable returns (uint256 positionId);
     function inventoryPositionCreateNfts(
         uint256[] calldata tokenIds,
         uint256[] calldata amounts
@@ -102,7 +107,9 @@ interface IAlignmentVault {
     ) external payable;
     function inventoryPositionCombine(uint256 positionId, uint256[] calldata childPositionIds) external payable;
     function inventoryPositionCollectFees(address recipient, uint256[] calldata positionIds) external payable;
-    function inventoryPositionCollectAllFees(address recipient) external payable;
+    function inventoryPositionCollectAllFees(
+        address recipient
+    ) external payable;
 
     // >>>>>>>>>>>> [ LIQUIDITY POSITION MANAGEMENT ] <<<<<<<<<<<<
 
@@ -135,7 +142,9 @@ interface IAlignmentVault {
         uint256 amount1Min
     ) external payable;
     function liquidityPositionCollectFees(address recipient, uint256[] calldata positionIds) external payable;
-    function liquidityPositionCollectAllFees(address recipient) external payable;
+    function liquidityPositionCollectAllFees(
+        address recipient
+    ) external payable;
 
     // >>>>>>>>>>>> [ ALIGNED TOKEN MANAGEMENT ] <<<<<<<<<<<<
 
@@ -183,6 +192,10 @@ interface IAlignmentVault {
         uint256[] calldata amounts,
         address recipient
     ) external payable;
-    function wrapEth(uint256 amount) external payable;
-    function unwrapEth(uint256 amount) external payable;
+    function wrapEth(
+        uint256 amount
+    ) external payable;
+    function unwrapEth(
+        uint256 amount
+    ) external payable;
 }

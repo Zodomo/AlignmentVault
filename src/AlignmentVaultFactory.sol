@@ -86,7 +86,9 @@ contract AlignmentVaultFactory is Ownable, IAlignmentVaultFactory {
      * @param salt The unique salt used to determine the address.
      * @return addr Address of the deterministic clone.
      */
-    function predictDeterministicAddress(bytes32 salt) external view virtual returns (address addr) {
+    function predictDeterministicAddress(
+        bytes32 salt
+    ) external view virtual returns (address addr) {
         return LibClone.predictDeterministicAddress(implementation, salt, address(this));
     }
 
@@ -97,7 +99,9 @@ contract AlignmentVaultFactory is Ownable, IAlignmentVaultFactory {
      * @dev Does not affect previously deployed clones.
      * @param newImplementation The new implementation address for clones.
      */
-    function updateImplementation(address newImplementation) external payable virtual onlyOwner {
+    function updateImplementation(
+        address newImplementation
+    ) external payable virtual onlyOwner {
         if (newImplementation == implementation) return;
         implementation = newImplementation;
         emit AVF_ImplementationSet(newImplementation);
@@ -106,7 +110,9 @@ contract AlignmentVaultFactory is Ownable, IAlignmentVaultFactory {
     /**
      * @notice Used to withdraw any ETH sent to the factory
      */
-    function withdrawEth(address recipient) external payable virtual onlyOwner {
+    function withdrawEth(
+        address recipient
+    ) external payable virtual onlyOwner {
         if (recipient == address(0) || recipient == address(0xdead)) revert AVF_WithdrawalFailed();
         (bool success,) = payable(recipient).call{value: address(this).balance}("");
         if (!success) revert AVF_WithdrawalFailed();

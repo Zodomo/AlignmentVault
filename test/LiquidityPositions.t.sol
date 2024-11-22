@@ -354,16 +354,22 @@ contract LiquidityPositionsTest is AlignmentVaultTest {
         (tickUpper, tickLower) = tick1 > tick2 ? (tick1, tick2) : (tick2, tick1);
     }
 
-    function _conformTickSpacing(int24 tick) internal view returns (int24) {
+    function _conformTickSpacing(
+        int24 tick
+    ) internal view returns (int24) {
         int24 spacing = pool.tickSpacing();
         return tick % spacing == 0 ? tick : tick - (tick % spacing);
     }
 
-    function _getLiquidity(uint256 id) internal view returns (uint128 liquidity) {
+    function _getLiquidity(
+        uint256 id
+    ) internal view returns (uint128 liquidity) {
         (,,,,,,, liquidity,,,,) = INonfungiblePositionManager(positionManager).positions(id);
     }
 
-    function _getPositionTicks(uint256 id) internal view returns (int24 tickLower, int24 tickUpper) {
+    function _getPositionTicks(
+        uint256 id
+    ) internal view returns (int24 tickLower, int24 tickUpper) {
         (,,,,, tickLower, tickUpper,,,,,) = INonfungiblePositionManager(positionManager).positions(id);
     }
 

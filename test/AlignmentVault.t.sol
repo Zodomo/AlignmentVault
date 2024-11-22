@@ -79,7 +79,9 @@ contract AlignmentVaultTest is Test {
         vm.stopPrank();
     }
 
-    modifier prank(address who) {
+    modifier prank(
+        address who
+    ) {
         vm.startPrank(who);
         _;
         vm.stopPrank();
@@ -118,7 +120,9 @@ contract AlignmentVaultTest is Test {
     //                  INIT LOGIC
     /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´*/
 
-    function lazyInitialize(address alignedNft_) public {
+    function lazyInitialize(
+        address alignedNft_
+    ) public {
         vm.startPrank(deployer);
         av = new AlignmentVault();
         alignedNft = alignedNft_;
@@ -259,7 +263,9 @@ contract AlignmentVaultTest is Test {
     /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´*/
 
     /// @dev foundry's changePrank() is deprecated :(
-    function _changePrank(address who) internal {
+    function _changePrank(
+        address who
+    ) internal {
         vm.stopPrank();
         vm.startPrank(who);
     }
